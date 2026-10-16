@@ -1,0 +1,376 @@
+import { FormEvent, useEffect, useState } from 'react';
+import { ArrowLeft, BadgeDollarSign, Calculator, Check, CheckCircle2, Circle, CreditCard, Hammer, Landmark, Plus, Receipt, ShoppingCart, Sparkles, TrendingUp, Trash2 } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import api from '@/lib/api';
+
+type Kind = 'money' | 'percent' | 'integer' | 'text' | 'date';
+const money = (value: unknown) => Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const percent = (value: unknown) => `${Number(value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+const decisions = {
+  excellent: ['Excelente negócio', 'Excelente negócio. Alto retorno sobre o capital investido.', 'bg-emerald-100 text-emerald-700'],
+  good: ['Bom negócio', 'Bom negócio. Retorno atrativo para operação de flip.', 'bg-blue-100 text-blue-700'],
+  warning: ['Atenção', 'Atenção. Margem apertada, revisar custos e preço de venda.', 'bg-amber-100 text-amber-700'],
+  rejected: ['Reprovado', 'Reprovado. Retorno baixo para o risco da operação.', 'bg-red-100 text-red-700'],
+} as const;
+const decisionFor = (roi: number) => roi >= 30 ? decisions.excellent : roi >= 20 ? decisions.good : roi >= 10 ? decisions.warning : decisions.rejected;
+
+export default function CentralFinanceira() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [data, setData] = useState<any>(null);
+  const [tab, setTab] = useState('viability');
+  const [form, setForm] = useState<any>({});
+  const [financing, setFinancing] = useState<any>({ financing_system: 'SAC' });
+  const [financingReference, setFinancingReference] = useState<any>(null);
+  const [banks, setBanks] = useState<any[]>([]);
+  const [cost, setCost] = useState<any>({ category: 'renovation', description: '', amount: '', payment_status: 'pending' });
+  const [result, setResult] = useState<any>({});
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [scenario, setScenario] = useState('realistic');
+  const [viewMode, setViewMode] = useState<'executive' | 'complete'>('executive');
+  const [revealingInvestmentScore, setRevealingInvestmentScore] = useState(false);
+  const [showScoreGuide, setShowScoreGuide] = useState(() => localStorage.getItem('investflip-score-guide-seen') !== '1');
+  const [linkedProject, setLinkedProject] = useState<any>(null);
+
+  async function load() {
+    try {
+      const response = await api.get(`/investment-analyses/${id}`);
+      const analysis = response.data.data;
+      setData(analysis); setForm(analysis);
+      const reference = await api.get(`/investment-analyses/${id}/financing-reference`);
+      setBanks(reference.data.banks); setFinancingReference(reference.data.data);
+      if (analysis.financing_detail) {
+        const selectedBank = reference.data.banks.find((bank: any) => bank.name === analysis.financing_detail.bank_name);
+        setFinancing({ ...analysis.financing_detail, bank_id: selectedBank?.id ?? '' });
+      } else setFinancing(reference.data.data);
+      setResult({ ...(analysis.result ?? { flip_duration_months: analysis.expected_months_until_sale }), payoff_amount: analysis.financing_detail?.payoff_amount ?? analysis.result?.payoff_amount ?? 0, total_own_capital_invested: analysis.actual_own_capital_invested });
+      const projects = await api.get('/projetos', { params: { per_page: 100 } }).catch(() => null);
+      const existing = (projects?.data?.data ?? []).find((project: any) => String(project.descricao ?? '').includes(`análise financeira #${id}`));
+      setLinkedProject(existing ?? null);
+      if (analysis.result) setTab('result');
+    } catch (exception: any) { setError(exception.response?.data?.message ?? 'Erro ao carregar análise.'); }
+  }
+  useEffect(() => { load(); }, [id]);
+  useEffect(() => {
+    if (!data?.intelligence?.financial_analysis_complete) return;
+    setRevealingInvestmentScore(true);
+    const timer = window.setTimeout(() => setRevealingInvestmentScore(false), 1000);
+    return () => window.clearTimeout(timer);
+  }, [data?.intelligence?.financial_analysis_complete]);
+  const validationMessage = (exception: any) => Object.values(exception.response?.data?.errors ?? {}).flat().join(' ') || exception.response?.data?.message || 'Revise os campos informados.';
+  async function saveViability(event: FormEvent) { event.preventDefault(); setSaving(true); setError(''); try { const response = await api.put(`/investment-analyses/${id}`, form); setData(response.data.data); setForm(response.data.data); setTab('financing'); } catch (exception) { setError(validationMessage(exception)); } finally { setSaving(false); } }
+  async function saveFinancing(event: FormEvent) { event.preventDefault(); setError(''); setSuccess(''); setSaving(true); try { await api.put(`/investment-analyses/${id}/financing`, financing); await load(); setSuccess('Financiamento salvo e valores sincronizados com a Viabilidade.'); setTab('costs'); } catch (exception) { setError(validationMessage(exception)); } finally { setSaving(false); } }
+  async function reloadFinancingReference(bankId?: unknown) { const selectedBank = typeof bankId === 'string' ? bankId : financing.bank_id; const response = await api.get(`/investment-analyses/${id}/financing-reference`, { params: { bank: selectedBank, system: financing.financing_system ?? 'SAC', installments: financing.total_installments || 360 } }); setBanks(response.data.banks); setFinancing(response.data.data); setFinancingReference(response.data.data); }
+  async function addFinancingSimulation() { setError(''); try { await api.post(`/investment-analyses/${id}/financing-simulations`, { ...financing, label: financing.bank_name }); setSuccess('Simulação adicionada ao comparador.'); await load(); } catch (exception) { setError(validationMessage(exception)); } }
+  async function selectFinancingSimulation(simulationId: number) { const response = await api.patch(`/financing-details/${simulationId}/select`); setData(response.data.data); setFinancing(response.data.data.financing_detail); setSuccess('Financiamento escolhido. Toda a operação foi recalculada.'); }
+  async function deleteFinancingSimulation(simulationId: number) { if (!confirm('Excluir esta simulação?')) return; await api.delete(`/financing-details/${simulationId}`); await load(); }
+  async function addCost(event: FormEvent) { event.preventDefault(); setError(''); try { await api.post(`/investment-analyses/${id}/costs`, cost); setCost({ category: 'renovation', description: '', amount: '', payment_status: 'pending' }); await load(); } catch (exception) { setError(validationMessage(exception)); } }
+  async function deleteCost(costId: number) { await api.delete(`/investment-costs/${costId}`); await load(); }
+  async function saveResult(event: FormEvent) { event.preventDefault(); setError(''); try { await api.post(`/investment-analyses/${id}/result`, result); await load(); } catch (exception) { setError(validationMessage(exception)); } }
+  async function createProjectFromAnalysis() {
+    if (linkedProject) { navigate('/projetos'); return; }
+    setSaving(true); setError(''); setSuccess('');
+    try {
+      const opportunity = data.opportunity;
+      const costs = data.costs ?? [];
+      const sumCosts = (predicate: (item: any) => boolean) => costs.filter(predicate).reduce((sum: number, item: any) => sum + Number(item.amount || 0), 0);
+      const renovationBudget = sumCosts((item: any) => ['renovation', 'materials', 'labor', 'painting', 'woodwork', 'electricity', 'plumbing'].includes(item.category));
+      const distribution = [['Mão de obra', .30], ['Acabamento', .22], ['Hidráulica', .12], ['Elétrica', .12], ['Demolição', .10], ['Pintura', .10], ['Outros', .04]] as const;
+      const etapas = distribution.map(([nome, share], index) => ({ nome, ordem: index + 1, orcamento: Math.round(renovationBudget * share * 100) / 100, status: 'pendente' }));
+      const projectBudget = renovationBudget || Number(data.detailed_costs_total || 0);
+      const property = await api.post('/propriedades', {
+        apelido: opportunity.title,
+        tipo: opportunity.property_type ?? 'imovel',
+        area_m2: opportunity.area_m2,
+        valor_aquisicao: data.purchase_price,
+        valor_venda_alvo: data.result?.sale_price ?? data.expected_sale_price,
+        status: 'prospeccao',
+        endereco: { cidade: opportunity.city, estado: opportunity.state },
+      });
+      const propertyId = property.data.data?.id ?? property.data.id;
+      const project = await api.post('/projetos', {
+        propriedade_id: propertyId,
+        nome: `Flip · ${opportunity.title}`,
+        descricao: `Projeto originado da análise financeira #${id}. ROI ${percent(data.result?.roi_percentage ?? data.expected_roi_percentage)} · lucro ${money(data.result?.net_profit ?? data.expected_net_profit)}.`,
+        orcamento_total: projectBudget,
+        status: 'planejamento',
+        etapas,
+      });
+      setLinkedProject(project.data.data ?? project.data);
+      setSuccess('Projeto criado com sucesso.');
+      navigate('/projetos');
+    } catch (exception) { setError(validationMessage(exception)); } finally { setSaving(false); }
+  }
+
+  useEffect(() => {
+    const principal = Number(data?.financed_amount || 0);
+    const installments = Number(financing.total_installments || 0);
+    if (!principal || !installments) return;
+    const paid = Math.min(Number(financing.paid_installments || 0), installments);
+    const rate = Number(financing.interest_rate_monthly || 0) / 100;
+    let payment = 0;
+    let outstanding = principal;
+    if (financing.financing_system === 'PRICE' && rate > 0) {
+      payment = principal * (rate * (1 + rate) ** installments) / ((1 + rate) ** installments - 1);
+      outstanding = paid > 0 ? principal * (1 + rate) ** paid - payment * (((1 + rate) ** paid - 1) / rate) : principal;
+    } else {
+      const amortization = principal / installments;
+      outstanding = Math.max(0, principal - amortization * paid);
+      payment = amortization + outstanding * rate;
+    }
+    const nextPayment = Math.round(payment * 100) / 100;
+    const nextOutstanding = Math.round(Math.max(0, outstanding) * 100) / 100;
+    setFinancing((current: any) => current.installment_value === nextPayment && current.outstanding_balance === nextOutstanding && current.payoff_amount === nextOutstanding ? current : { ...current, installment_value: nextPayment, outstanding_balance: nextOutstanding, payoff_amount: nextOutstanding });
+  }, [data?.financed_amount, financing.total_installments, financing.paid_installments, financing.interest_rate_monthly, financing.financing_system]);
+
+  if (!data) return <div className="p-10 text-center">{error || 'Carregando Central Financeira...'}</div>;
+  const tabs = [['viability', 'Viabilidade', Calculator], ['financing', 'Financiamento', CreditCard], ['costs', 'Custos da Operação', Receipt], ['result', 'Resultado', TrendingUp]] as const;
+  const finalDecision = data.result ? decisionFor(Number(data.result.roi_percentage)) : null;
+  const intelligence = data.intelligence;
+  const opportunityScore = intelligence.opportunity_score ?? intelligence;
+  const investmentScore = intelligence.investment_score;
+  const financialComplete = Boolean(intelligence.financial_analysis_complete && investmentScore);
+  const activeScenario = intelligence?.scenarios?.[scenario];
+  const hasResult = Boolean(data.result);
+  const displayedProfit = Number(hasResult ? data.result.net_profit : activeScenario?.profit ?? data.expected_net_profit ?? 0);
+  const displayedRoi = Number(hasResult ? data.result.roi_percentage : activeScenario?.roi ?? data.expected_roi_percentage ?? 0);
+  const displayedMonths = Number(hasResult ? data.result.flip_duration_months : activeScenario?.months ?? data.expected_months_until_sale ?? 0);
+  const displayedSalePrice = Number(hasResult ? data.result.sale_price : activeScenario?.sale_price ?? data.expected_sale_price ?? 0);
+  const displayedOwnCapital = Number(hasResult ? data.result.total_own_capital_invested : data.actual_own_capital_invested ?? data.total_own_capital_invested ?? 0);
+  const displayedMonthlyRoi = Number(hasResult ? data.result.monthly_roi_percentage : displayedRoi / Math.max(1, displayedMonths));
+  const displayedAnnualizedRoi = Number(hasResult ? data.result.annualized_roi_percentage : ((1 + displayedMonthlyRoi / 100) ** 12 - 1) * 100);
+  const estimatedRenovation = (data.costs ?? []).filter((item: any) => ['renovation', 'materials', 'labor', 'painting', 'woodwork', 'electricity', 'plumbing'].includes(item.category)).reduce((sum: number, item: any) => sum + Number(item.amount || 0), 0);
+  const previewSalePrice = Number(result.sale_price || 0);
+  const previewSaleCosts = Number(result.sale_costs || 0);
+  const previewPayoff = Number(result.payoff_amount || 0);
+  const previewCapital = Number(result.total_own_capital_invested || data.result?.total_own_capital_invested || data.actual_own_capital_invested || 0);
+  const previewMonths = Math.max(1, Number(result.flip_duration_months || 1));
+  const previewNetAmount = previewSalePrice - previewSaleCosts - previewPayoff;
+  const previewProfit = previewNetAmount - previewCapital;
+  const previewRoi = previewCapital > 0 ? (previewProfit / previewCapital) * 100 : 0;
+  const previewMonthlyRoi = previewRoi / previewMonths;
+  const previewAnnualizedRoi = ((1 + previewMonthlyRoi / 100) ** 12 - 1) * 100;
+  const previewProfitPerMonth = previewProfit / previewMonths;
+  const previewProfitPerDay = previewProfit / Math.max(1, previewMonths * 30);
+  const timelineCompleted = [data.progress.viability, data.progress.costs, data.progress.result, data.progress.result];
+
+  return <div className="space-y-5">
+    <div><Link to="/leads" className="text-sm text-primary-600 flex gap-1 items-center"><ArrowLeft className="w-4 h-4" />Voltar às oportunidades</Link><h1 className="text-2xl font-bold mt-2">Central Financeira do Investimento</h1><p className="text-sm text-gray-500">{data.opportunity.title} · {data.opportunity.city}{data.opportunity.state && ` - ${data.opportunity.state}`}</p></div>
+    <HeroExecutive opportunity={data.opportunity} intelligence={{ ...intelligence, ...opportunityScore }} market={form} />
+    {showScoreGuide && <ScoreGuide onDismiss={() => { localStorage.setItem('investflip-score-guide-seen', '1'); setShowScoreGuide(false); }} />}
+    {financialComplete && revealingInvestmentScore ? <ScoreCalculationTransition opportunity={opportunityScore} investment={investmentScore} /> : financialComplete ? <>
+      <RecommendationCard intelligence={{ ...intelligence, ...investmentScore, score: investmentScore.score, net_profit: displayedProfit, roi: displayedRoi }} ownCapital={displayedOwnCapital} />
+      <ExecutiveIndicators ownCapital={displayedOwnCapital} profit={displayedProfit} roi={displayedRoi} months={displayedMonths} financed={data.financed_amount} risk={investmentScore.signal.label} />
+      <InvestFlipAssistant discount={intelligence.discount_percentage} financed={data.financed_amount} purchase={data.purchase_price} renovation={estimatedRenovation} roi={investmentScore.roi} />
+      {investmentScore.signal.color !== 'green' && <ImprovementPlan purchase={data.purchase_price} sale={displayedSalePrice} renovation={estimatedRenovation} roi={investmentScore.roi} profit={investmentScore.net_profit} score={investmentScore.score} target={intelligence.scenarios?.optimistic} />}
+    </> : <FinancialAnalysisPending progress={data.progress} analysis={data} onOpen={() => navigate(`/analises-financeiras/${id}/wizard`)} />}
+    {(financialComplete || viewMode === 'complete') && <div className="flex justify-center py-3"><button type="button" onClick={() => setViewMode(current => current === 'executive' ? 'complete' : 'executive')} className="bg-slate-950 hover:bg-slate-800 text-white px-8 py-3.5 rounded-xl font-bold shadow-lg flex items-center gap-2">{viewMode === 'executive' ? 'Ver Análise Completa' : 'Voltar ao Resumo Executivo'} <TrendingUp className="w-4 h-4" /></button></div>}
+    {viewMode === 'complete' && <>
+    {financialComplete && <><DecisionReasons discount={intelligence.discount_percentage} roi={investmentScore.roi} months={displayedMonths} financed={data.financed_amount} purchase={data.purchase_price} renovation={estimatedRenovation} /><ScoreTransition opportunity={opportunityScore} investment={investmentScore} /></>}
+    <OwnCapitalSpotlight amount={displayedOwnCapital} />
+    <BenchmarkComparison roi={displayedRoi} />
+    <OpportunityRanking score={intelligence.score} confidence={intelligence.confidence} />
+    <RegionalHistory opportunity={data.opportunity} form={form} discount={intelligence.discount_percentage} />
+    <section className="bg-white border rounded-2xl px-6 py-5"><div className="grid grid-cols-4 max-w-4xl mx-auto">{[[ShoppingCart, 'Compra'], [Hammer, 'Reforma'], [BadgeDollarSign, 'Venda'], [TrendingUp, 'Resultado']].map(([Icon, label]: any, index) => <div key={label} className="relative flex flex-col items-center"><div className={`w-11 h-11 rounded-full grid place-items-center z-10 ${timelineCompleted[index] ? 'bg-emerald-500 text-white' : index === timelineCompleted.findIndex((done: boolean) => !done) ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-400'}`}>{timelineCompleted[index] ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}</div><div className="font-semibold text-sm mt-2">{label}</div>{index < 3 && <div className={`absolute h-1 top-5 left-1/2 w-full ${timelineCompleted[index] ? 'bg-emerald-200' : 'bg-gray-100'}`} />}</div>)}</div></section>
+    <section className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">{[['Capital próprio', money(displayedOwnCapital)], [hasResult ? 'Lucro líquido' : 'Lucro previsto', money(displayedProfit)], ['Lucro realizado', money(data.result?.net_profit ?? data.executive.realized_profit)], ['ROI', percent(displayedRoi)], ['ROI mensal', percent(displayedMonthlyRoi)], ['ROI anualizado', percent(displayedAnnualizedRoi)], ['Financiado', money(data.executive.financed_capital)], ['Capital empatado', money(displayedOwnCapital)]].map(([label, value]) => <Metric key={label} label={label} value={value} />)}</section>
+    {error && <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg">{error}</div>}
+    {success && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-3 rounded-lg">{success}</div>}
+    <div className="bg-white border rounded-xl p-2 grid grid-cols-2 lg:grid-cols-4 gap-2">{tabs.map(([key, label, Icon], index) => { const completed = data.progress[key]; return <button key={key} onClick={() => { setTab(key); setError(''); setSuccess(''); }} className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold ${tab === key ? 'bg-primary-600 text-white shadow' : 'text-gray-600 hover:bg-gray-50'}`}><span className={`w-7 h-7 rounded-full grid place-items-center ${completed ? 'bg-emerald-500 text-white' : tab === key ? 'bg-white/20' : 'bg-gray-100'}`}>{completed ? <Check className="w-4 h-4" /> : index + 1}</span><Icon className="w-4 h-4" /><span>{label}</span></button>; })}</div>
+
+    {tab === 'viability' && <>
+      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">{[['Capital próprio necessário', money(displayedOwnCapital)], ['Valor financiado', money(data.financed_amount)], ['Reforma estimada', money(estimatedRenovation)], [hasResult ? 'Venda realizada' : 'Venda prevista', money(displayedSalePrice)], [hasResult ? 'Lucro líquido' : 'Lucro previsto', money(displayedProfit)], [hasResult ? 'ROI real' : 'ROI previsto', percent(displayedRoi)], ['Tempo previsto', `${displayedMonths} meses`]].map(([label, value]) => <Metric key={label} label={label} value={value} />)}</div>
+      {!hasResult && <section className="bg-white border rounded-2xl p-5"><div className="flex items-center justify-between"><div><h3 className="font-bold">Cenários automáticos</h3><p className="text-xs text-gray-500 mt-1">Compare o impacto de preço, custos e prazo.</p></div></div><div className="grid md:grid-cols-3 gap-3 mt-4">{Object.entries(intelligence.scenarios).map(([key, item]: any) => <button key={key} onClick={() => setScenario(key)} className={`text-left border-2 rounded-xl p-4 transition ${scenario === key ? 'border-primary-500 bg-primary-50' : 'border-gray-100 hover:border-gray-200'}`}><div className="flex justify-between"><strong>{item.label}</strong>{scenario === key && <CheckCircle2 className="w-5 h-5 text-primary-600" />}</div><div className="grid grid-cols-2 gap-2 mt-4 text-sm"><div><span className="text-xs text-gray-400 block">Venda</span>{money(item.sale_price)}</div><div><span className="text-xs text-gray-400 block">Lucro</span>{money(item.profit)}</div><div><span className="text-xs text-gray-400 block">ROI</span>{percent(item.roi)}</div><div><span className="text-xs text-gray-400 block">Tempo</span>{item.months} meses</div></div></button>)}</div>{activeScenario && <button type="button" onClick={() => setForm({ ...form, expected_sale_price: activeScenario.sale_price, expected_months_until_sale: activeScenario.months })} className="mt-4 text-primary-600 text-sm font-semibold">Usar cenário {activeScenario.label.toLowerCase()} na simulação →</button>}</section>}
+      <InvestmentCharts ownCapital={displayedOwnCapital} financed={data.financed_amount} purchase={form.purchase_price} renovation={estimatedRenovation} sale={displayedSalePrice} profit={displayedProfit} />
+      <MarketValueBreakdown opportunity={data.opportunity} intelligence={intelligence} form={form} />
+      <form onSubmit={saveViability} className="bg-white border rounded-xl p-5"><div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <MaskedField name="purchase_price" label="Valor de compra" kind="money" state={form} setState={setForm} />
+        <MaskedField name="down_payment" label="Entrada" kind="money" state={form} setState={setForm} />
+        <label><span className="text-xs font-medium">Valor financiado (automático)</span><input className="input mt-1 bg-gray-50" value={money(Math.max(0, Number(form.purchase_price || 0) - Number(form.down_payment || 0)))} disabled /></label>
+        <MaskedField name="expected_sale_price" label="Valor esperado de venda" kind="money" state={form} setState={setForm} />
+        <MaskedField name="expected_months_until_sale" label="Meses até a venda" kind="integer" state={form} setState={setForm} />
+        <label><span className="text-xs font-medium">Estado do imóvel</span><select className="input mt-1" value={form.property_condition ?? ''} onChange={event => setForm({ ...form, property_condition: event.target.value })}><option value="">Selecione</option><option value="poor">Precisa de reforma completa</option><option value="fair">Regular</option><option value="good">Bom</option><option value="excellent">Excelente</option></select></label>
+        <MaskedField name="market_region" label="Região de referência" kind="text" state={form} setState={setForm} />
+        <MaskedField name="average_price_per_m2" label="Preço médio por m²" kind="money" state={form} setState={setForm} />
+        <MaskedField name="average_sold_value" label="Valor médio vendido" kind="money" state={form} setState={setForm} />
+      </div><div className="flex flex-wrap justify-end gap-2 mt-5"><button type="button" onClick={() => setForm({ ...form, expected_sale_price: intelligence.suggested_sale_price, suggested_sale_price: intelligence.suggested_sale_price })} className="border border-primary-200 text-primary-600 px-5 py-2.5 rounded-lg font-semibold flex gap-2"><Sparkles className="w-4 h-4" />Sugerir preço de venda</button><button disabled={saving} className="bg-primary-600 text-white px-5 py-2.5 rounded-lg font-semibold">{saving ? 'Calculando...' : 'Salvar Viabilidade e continuar'}</button></div></form>
+    </>}
+    {tab === 'financing' && <FinancingComparator simulations={data.financing_simulations ?? []} onAdd={addFinancingSimulation} onSelect={selectFinancingSimulation} onDelete={deleteFinancingSimulation} />}
+
+    {tab === 'financing' && <form onSubmit={saveFinancing} className="bg-white border rounded-xl p-5"><div className="flex items-start justify-between gap-4 mb-5"><div><h2 className="font-bold">Simulação de financiamento</h2><p className="text-xs text-gray-500 mt-1">Valores sugeridos automaticamente e totalmente editáveis.</p></div><button type="button" onClick={reloadFinancingReference} className="border border-primary-200 text-primary-600 px-3 py-2 rounded-lg text-xs font-semibold">Recarregar referência</button></div>{financingReference && <div className="mb-5 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg p-3 text-xs">Fonte: {financingReference.source}{financingReference.reference_date ? ` · referência ${financingReference.reference_date}` : ''}. É uma estimativa média; confirme as condições com o banco.</div>}<div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <label><span className="text-xs font-medium">Banco</span><select className="input mt-1" value={financing.bank_id ?? ''} onChange={event => reloadFinancingReference(event.target.value)}><option value="">Selecione um banco</option>{banks.map(bank => <option key={bank.id} value={bank.id}>{bank.name} — {percent(bank.yearly_rate)} a.a.</option>)}</select></label>
+      <label><span className="text-xs font-medium">Sistema</span><select className="input mt-1" value={financing.financing_system ?? 'SAC'} onChange={event => setFinancing({ ...financing, financing_system: event.target.value })}><option>SAC</option><option>PRICE</option></select></label>
+      <MaskedField name="interest_rate_monthly" label="Taxa mensal" kind="percent" state={financing} setState={setFinancing} />
+      <MaskedField name="interest_rate_yearly" label="Taxa anual" kind="percent" state={financing} setState={setFinancing} />
+      <MaskedField name="total_installments" label="Quantidade de parcelas" kind="integer" state={financing} setState={setFinancing} />
+      <MaskedField name="installment_value" label="Valor da parcela" kind="money" state={financing} setState={setFinancing} />
+      <MaskedField name="paid_installments" label="Parcelas pagas" kind="integer" state={financing} setState={setFinancing} />
+      <MaskedField name="outstanding_balance" label="Saldo devedor" kind="money" state={financing} setState={setFinancing} />
+      <MaskedField name="payoff_amount" label="Valor de quitação" kind="money" state={financing} setState={setFinancing} />
+    </div><button disabled={saving} className="mt-5 bg-primary-600 text-white px-5 py-2.5 rounded-lg font-semibold disabled:opacity-60">{saving ? 'Salvando...' : 'Salvar Financiamento e continuar'}</button></form>}
+
+    {tab === 'costs' && <div className="space-y-5">
+      <div className="grid lg:grid-cols-3 gap-5">
+        <CostEntryForm cost={cost} setCost={setCost} onSubmit={addCost} />
+        <CostsTable costs={data.costs ?? []} onDelete={deleteCost} />
+      </div>
+    </div>}
+
+    {tab === 'result' && <div className="space-y-5">{finalDecision && <div className={`p-6 rounded-2xl ${finalDecision[2]}`}><div className="grid md:grid-cols-[1.3fr_2fr] gap-5 items-center"><div><div className="text-xs font-bold tracking-widest opacity-70">DECISÃO FINAL</div><div className="text-3xl font-black mt-1">{finalDecision[0]}</div><div className="mt-2">{finalDecision[1]}</div></div><div className="grid grid-cols-2 md:grid-cols-5 gap-3">{[['Nota', Math.min(10, Math.max(0, 5 + Number(data.result.roi_percentage) / 10)).toFixed(1)], ['ROI', percent(data.result.roi_percentage)], ['Tempo', `${data.result.flip_duration_months} meses`], ['Lucro', money(data.result.net_profit)], ['Capital', money(data.result.total_own_capital_invested)]].map(([label, value]) => <div key={label} className="bg-white/50 rounded-xl p-3"><span className="text-xs block opacity-70">{label}</span><strong>{value}</strong></div>)}</div></div></div>}{finalDecision && <section className="bg-slate-950 text-white rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"><div><div className="text-xs uppercase tracking-widest text-violet-300 font-bold">{linkedProject ? 'Projeto já criado' : 'Próximo passo'}</div><h3 className="text-xl font-black mt-1">{linkedProject ? linkedProject.nome : 'Tornar esta análise um projeto'}</h3><p className="text-sm text-slate-300 mt-1">{linkedProject ? 'Esta análise já foi convertida em projeto.' : 'Crie o projeto para acompanhar obra, despesas, tarefas e evolução da operação.'}</p></div><button type="button" disabled={saving} onClick={createProjectFromAnalysis} className="bg-primary-600 hover:bg-primary-700 disabled:opacity-60 text-white px-5 py-3 rounded-xl font-bold shrink-0">{saving ? 'Criando...' : linkedProject ? 'Ver projeto' : 'Tornar um projeto'}</button></section>}<form onSubmit={saveResult} className="bg-white border rounded-xl p-5"><div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <MaskedField name="sale_price" label="Valor vendido" kind="money" state={result} setState={setResult} />
+      <MaskedField name="sale_date" label="Data da venda" kind="date" state={result} setState={setResult} />
+      <MaskedField name="sale_costs" label="Custos da venda" kind="money" state={result} setState={setResult} />
+      <label><span className="text-xs font-medium">Quitação do financiamento (automático)</span><input className="input mt-1 bg-gray-50 font-semibold" value={money(result.payoff_amount)} disabled /><span className="block text-[11px] text-gray-500 mt-1">Sincronizado com a aba Financiamento.</span></label>
+      <label><span className="text-xs font-medium">Capital próprio real (automático)</span><input className="input mt-1 bg-gray-50 font-semibold" value={money(displayedOwnCapital)} disabled /><span className="block text-[11px] text-gray-500 mt-1">Entrada + gastos da operação + parcelas pagas.</span></label>
+      <MaskedField name="flip_duration_months" label="Duração do flip (meses)" kind="integer" state={result} setState={setResult} />
+    </div><div className="grid md:grid-cols-3 xl:grid-cols-6 gap-3 mt-5"><Metric label="Líquido após quitação" value={money(previewNetAmount)} /><Metric label="Lucro real" value={money(previewProfit)} /><Metric label="ROI real" value={percent(previewRoi)} /><Metric label="ROI anualizado" value={percent(previewAnnualizedRoi)} /><Metric label="Lucro por mês" value={money(previewProfitPerMonth)} /><Metric label="Lucro por dia" value={money(previewProfitPerDay)} /></div><p className="text-xs text-gray-500 mt-3">Prévia calculada em tempo real. Salve para registrar o resultado e emitir a decisão final.</p><button className="mt-5 bg-primary-600 text-white px-5 py-2.5 rounded-lg font-semibold">Salvar resultado e emitir decisão</button></form></div>}
+    </>}
+  </div>;
+}
+
+function HeroExecutive({ opportunity, intelligence, market }: any) {
+  const stars = intelligence.score >= 80 ? 5 : intelligence.score >= 60 ? 4 : intelligence.score >= 40 ? 3 : 2;
+  const area = Number(opportunity.area_m2 || 0); const askingPerM2 = area ? Number(opportunity.asking_price) / area : 0;
+  const facts = [['Preço pedido', money(opportunity.asking_price), ShoppingCart], ['Valor de mercado', money(opportunity.estimated_market_price), Landmark], ['Preço por m²', askingPerM2 ? money(askingPerM2) : 'Em breve', Calculator], ['Preço médio da região', Number(market.average_price_per_m2) ? money(market.average_price_per_m2) : 'Em breve', Landmark], ['Desconto', percent(intelligence.discount_percentage), BadgeDollarSign], ['Liquidez estimada', 'Em breve', TrendingUp], ['Tempo médio de venda', 'Em breve', Circle]];
+  return <section className="relative overflow-hidden rounded-3xl text-white shadow-2xl" style={{ background: 'linear-gradient(135deg,#080f20 0%,#171339 55%,#3b1672 100%)' }}><div className="absolute -right-20 -top-24 w-96 h-96 rounded-full bg-violet-500/20 blur-3xl" /><div className="relative p-6 md:p-8"><div className="text-xs uppercase tracking-[.24em] text-violet-200 font-bold">Análise de mercado</div><div className="grid xl:grid-cols-[1.2fr_auto] gap-8 items-center mt-5"><div className="flex gap-5 items-center">{opportunity.cover_url ? <img src={opportunity.cover_url} className="w-32 h-28 rounded-2xl object-cover ring-1 ring-white/20 shrink-0" /> : <div className="w-32 h-28 rounded-2xl bg-white/10 grid place-items-center shrink-0"><ShoppingCart className="w-8 h-8" /></div>}<div className="min-w-0"><h2 className="text-2xl md:text-3xl font-black truncate">{opportunity.title}</h2><p className="text-slate-300 text-sm mt-1">{opportunity.city}{opportunity.state && ` · ${opportunity.state}`}</p><div className="text-amber-300 mt-3 tracking-[.2em]">{'★'.repeat(stars)}{'☆'.repeat(5 - stars)}</div><div className="font-semibold mt-2">{intelligence.label}</div></div></div><div className="flex items-center gap-5 bg-white/10 border border-white/10 rounded-2xl p-4"><ScoreGauge score={Number(intelligence.score)} /><div><div className="text-xs font-bold tracking-[.18em] text-violet-200">OPPORTUNITY SCORE</div><div className="text-xs text-slate-400 mt-1">Análise de Mercado</div><div className="font-black text-2xl mt-2">{intelligence.score} pontos</div></div></div></div><div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-7">{facts.map(([label, value, Icon]: any) => <div key={label} className="rounded-2xl bg-white/10 border border-white/10 p-4 flex items-center gap-3 min-w-0"><Icon className="w-5 h-5 text-violet-300 shrink-0" /><div className="min-w-0"><span className="block text-[11px] text-slate-300">{label}</span><strong className="block text-base mt-1 truncate">{value}</strong></div></div>)}</div><div className="mt-6 pt-5 border-t border-white/10"><p className="text-sm text-slate-300">Esta análise considera apenas fatores de mercado.<br />Os custos financeiros da operação ainda não foram considerados.</p></div></div></section>;
+}
+
+function DecisionReasons({ discount, roi, months, financed, purchase, renovation }: any) {
+  const financingShare = Number(purchase) > 0 ? Number(financed) / Number(purchase) * 100 : 0;
+  const reasons = [{ ok: Number(discount) >= 10, text: `Preço ${percent(discount)} abaixo do valor de mercado` }, { ok: Number(roi) >= 20, text: `ROI de ${percent(roi)} frente à meta da operação` }, { ok: Number(months) <= 12, text: `Prazo estimado de ${months} meses` }, { ok: financingShare <= 80, text: `Financiamento representa ${percent(financingShare)} da compra` }, { ok: Number(renovation) <= Number(purchase) * .2, text: `Reforma representa ${percent(Number(purchase) ? Number(renovation) / Number(purchase) * 100 : 0)} da compra` }];
+  return <section className="bg-white border rounded-2xl p-6"><div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Transparência da análise</div><h3 className="text-xl font-bold mt-1">Por que chegamos nesta conclusão?</h3><div className="grid md:grid-cols-2 gap-3 mt-5">{reasons.map(item => <div key={item.text} className={`flex gap-3 p-4 rounded-xl ${item.ok ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>{item.ok ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <Circle className="w-5 h-5 shrink-0" />}<span className="text-sm font-medium">{item.text}</span></div>)}</div></section>;
+}
+
+function FinancialAnalysisPending({ progress, analysis, onOpen }: { progress: any; analysis: any; onOpen: () => void }) {
+  const steps = [['viability', 'Viabilidade'], ['financing', 'Financiamento'], ['costs', 'Custos'], ['result', 'Encerramento da operação']];
+  const completed = steps.filter(([key]) => progress[key]).length;
+  const categories = new Set((analysis.costs ?? []).map((item: any) => item.category));
+  const checklist = [['Valor da reforma', ['renovation', 'materials', 'labor'].some(item => categories.has(item))], ['Custos da documentação', ['documentation', 'itbi', 'registry'].some(item => categories.has(item))], ['Parcelas do financiamento', Number(analysis.financing_detail?.installment_value) > 0], ['Condomínio', categories.has('condominium')], ['IPTU', categories.has('property_tax')], ['Água', categories.has('water')], ['Energia', categories.has('energy')], ['Seguro', categories.has('insurance')], ['Comissão', categories.has('brokerage')], ['Valor esperado de venda', Number(analysis.expected_sale_price) > 0], ['Custos da venda', Number(analysis.result?.sale_costs) > 0]] as const;
+  const current = Math.min(completed, 3);
+  return <div className="space-y-5"><section className="bg-white border-2 border-dashed border-violet-200 rounded-2xl p-6 md:p-8"><div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6"><div><div className="text-xs font-bold text-violet-600 uppercase tracking-widest">Investment Score</div><h3 className="text-2xl font-bold mt-2">Aguardando conclusão da análise financeira</h3><p className="text-sm text-gray-600 mt-2">Complete as quatro etapas para receber uma recomendação financeira.</p></div><button type="button" onClick={onOpen} className="bg-primary-600 text-white px-5 py-3 rounded-xl font-bold shrink-0">Continuar análise</button></div><div className="mt-7"><div className="flex justify-between text-sm mb-2"><strong>Análise Financeira</strong><span>{completed}/4 concluída{completed === 1 ? '' : 's'} · {completed * 25}%</span></div><div className="h-3 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-gradient-to-r from-violet-600 to-emerald-500 rounded-full transition-all duration-500" style={{ width: `${completed * 25}%` }} /></div><div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">{steps.map(([key, label], index) => { const done = progress[key]; const active = !done && index === current; return <div key={key} className={`p-3 rounded-xl border flex items-center gap-3 ${done ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : active ? 'bg-violet-50 border-violet-300 text-violet-700' : 'bg-gray-50 text-gray-400'}`}>{done ? <Check className="w-5 h-5" /> : <Circle className="w-5 h-5" />}<div><span className="text-[10px] block opacity-70">Etapa {index + 1}</span><strong className="text-sm">{label}</strong></div></div>; })}</div></div></section><section className="grid lg:grid-cols-2 gap-5"><div className="bg-blue-50 border border-blue-100 rounded-2xl p-6"><h3 className="font-bold text-lg">Por que ainda não existe recomendação?</h3><p className="text-sm text-gray-700 mt-3 leading-6">O Opportunity Score avalia apenas fatores imobiliários. Para emitir uma recomendação financeira o InvestFlip precisa conhecer reforma, custos mensais, documentação, financiamento, custos de venda e prazo da operação.</p><p className="text-sm font-semibold text-blue-800 mt-3">Somente após esses dados será calculado o Investment Score.</p></div><div className="bg-white border rounded-2xl p-6"><h3 className="font-bold text-lg">O que falta preencher?</h3><div className="grid sm:grid-cols-2 gap-2 mt-4">{checklist.map(([label, done]) => <div key={label} className={`flex items-center gap-2 text-sm p-2 rounded-lg ${done ? 'text-emerald-700 bg-emerald-50' : 'text-gray-500'}`}>{done ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <Circle className="w-4 h-4 shrink-0" />}{label}</div>)}</div></div></section></div>;
+}
+
+function ScoreTransition({ opportunity, investment }: any) {
+  const factors = investment.reducing_factors ?? [];
+  return <section className="bg-slate-950 text-white rounded-2xl p-6"><div className="text-xs uppercase tracking-widest text-violet-300 font-bold">Evolução da análise</div><h3 className="text-xl font-bold mt-1">Por que o Investment Score mudou?</h3><div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center mt-6"><div className="bg-white/10 rounded-xl p-5 min-w-48"><span className="text-xs text-slate-400">Opportunity Score</span><strong className="block text-4xl mt-1">{opportunity.score}</strong><span className="text-xs text-slate-300">{opportunity.label}</span></div><div className="text-violet-300 text-2xl text-center">→</div><div className="flex-1 grid sm:grid-cols-2 gap-2">{factors.length ? factors.map((factor: any) => <div key={factor.label} className="bg-red-500/10 border border-red-400/20 rounded-xl p-3 flex justify-between gap-3"><span className="text-sm">{factor.label}</span><strong className="text-red-300">{factor.impact}</strong></div>) : <div className="bg-emerald-500/10 border border-emerald-400/20 rounded-xl p-4 text-emerald-200">Nenhum fator crítico reduziu significativamente a nota.</div>}</div><div className="text-violet-300 text-2xl text-center">→</div><div className="bg-violet-600 rounded-xl p-5 min-w-48"><span className="text-xs text-violet-200">Investment Score</span><strong className="block text-4xl mt-1">{investment.score}</strong><span className="text-xs text-violet-100">{investment.signal.label}</span></div></div></section>;
+}
+
+function ScoreGuide({ onDismiss }: { onDismiss: () => void }) {
+  return <section className="bg-white border border-violet-100 rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center gap-5"><div className="flex-1 grid md:grid-cols-[1fr_auto_1fr] items-center gap-4"><div><span className="text-xs font-bold text-violet-600">OPPORTUNITY SCORE</span><p className="text-sm text-gray-600 mt-1">Avalia a qualidade da oportunidade imobiliária.</p></div><div className="text-gray-300 text-xl hidden md:block">→</div><div><span className="text-xs font-bold text-emerald-600">INVESTMENT SCORE</span><p className="text-sm text-gray-600 mt-1">Avalia a qualidade do investimento completo.</p></div></div><button type="button" onClick={onDismiss} className="text-sm font-semibold text-gray-500 hover:text-gray-800 px-3 py-2">Entendi</button></section>;
+}
+
+function ScoreCalculationTransition({ opportunity, investment }: any) {
+  return <section className="bg-slate-950 text-white rounded-2xl p-8 overflow-hidden"><div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 text-center"><div><span className="text-xs text-slate-400 uppercase">Opportunity Score</span><strong className="block text-5xl mt-2">{opportunity.score}</strong></div><div className="flex md:flex-col items-center gap-2 text-violet-300"><span className="animate-pulse">Calculando...</span><span className="text-2xl">→</span></div><div className="animate-pulse"><span className="text-xs text-violet-300 uppercase">Investment Score</span><strong className="block text-5xl mt-2">{investment.score}</strong><span className="block text-emerald-400 font-bold mt-2">{investment.signal.label}</span></div></div></section>;
+}
+
+function ImprovementPlan({ purchase, sale, renovation, roi, profit, score, target }: any) {
+  const targetPurchase = Number(purchase || 0) * .94; const targetSale = Number(sale || 0) * 1.06; const renovationSaving = Number(renovation || 0) * .15;
+  const targetRoi = Number(target?.roi ?? roi); const targetProfit = Number(target?.profit ?? profit); const targetScore = Math.min(100, Math.max(Number(score), Math.round(Number(score) + Math.max(0, targetRoi - Number(roi)) / 2)));
+  return <section className="border-2 border-amber-200 bg-amber-50/60 rounded-2xl p-6"><div className="text-xs font-bold text-amber-700 uppercase tracking-widest">Plano de melhoria</div><h3 className="text-2xl font-bold mt-1">O que falta para virar um excelente investimento?</h3><div className="grid lg:grid-cols-[1fr_auto_1fr] gap-5 mt-6 items-stretch"><div className="bg-white rounded-2xl p-5 border"><span className="text-xs text-gray-400 uppercase">Hoje</span><div className="grid grid-cols-3 gap-3 mt-4">{[['Preço', money(purchase)], ['ROI', percent(roi)], ['IF Score', score]].map(([label, value]) => <div key={label}><span className="text-xs text-gray-500 block">{label}</span><strong className="text-lg">{value}</strong></div>)}</div><div className="mt-5 font-black text-red-600">{Number(roi) >= 20 ? 'NEGOCIAR' : 'NÃO COMPRAR'}</div></div><div className="grid place-items-center text-amber-500 text-3xl">→</div><div className="bg-slate-950 text-white rounded-2xl p-5 shadow-xl"><span className="text-xs text-violet-300 uppercase">Cenário otimista existente</span><div className="grid grid-cols-3 gap-3 mt-4">{[['ROI', percent(targetRoi)], ['Lucro', money(targetProfit)], ['IF Score', targetScore]].map(([label, value]) => <div key={label}><span className="text-xs text-slate-400 block">{label}</span><strong className="text-lg">{value}</strong></div>)}</div><div className="mt-5 font-black text-emerald-400">COMPRAR</div></div></div><div className="grid md:grid-cols-3 gap-3 mt-4">{[['Preço ideal de compra', money(targetPurchase)], ['Valor ideal da reforma', money(Math.max(0, Number(renovation) - renovationSaving))], ['Valor ideal de venda', money(target?.sale_price ?? targetSale)]].map(([label, value]) => <div key={label} className="bg-white rounded-xl border border-amber-100 p-4"><span className="text-xs text-gray-500">{label}</span><strong className="block text-xl mt-1">{value}</strong></div>)}</div><p className="mt-4 text-xs text-amber-800">Projeção baseada no cenário otimista já fornecido pela análise; nenhuma regra financeira foi alterada.</p></section>;
+}
+
+function RegionalHistory({ opportunity, form, discount }: any) {
+  const facts = [['Preço médio do m²', Number(form.average_price_per_m2) ? money(form.average_price_per_m2) : 'Sem referência'], ['Preço médio do bairro', Number(form.average_sold_value) ? money(form.average_sold_value) : 'Sem referência'], ['Preço médio da cidade', money(opportunity.estimated_market_price)], ['Desconto conseguido', percent(discount)], ['Valorização em 12 meses', 'Dados em breve'], ['Tempo médio de venda', 'Dados em breve']];
+  return <section className="bg-white border rounded-2xl p-6"><div className="flex justify-between gap-4"><div><div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Histórico da região</div><h3 className="text-xl font-bold mt-1">Contexto de mercado</h3></div><span className="text-[10px] h-fit bg-blue-50 text-blue-700 px-3 py-1 rounded-full">Preparado para dados reais</span></div><div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mt-5">{facts.map(([label, value]) => <div key={label} className="bg-slate-50 rounded-xl p-4"><span className="text-[11px] text-gray-500 block">{label}</span><strong className="block mt-2">{value}</strong></div>)}</div></section>;
+}
+
+function InvestFlipAssistant({ discount, financed, purchase, renovation, roi }: any) {
+  const financedShare = Number(purchase) ? Number(financed) / Number(purchase) * 100 : 0; const saving = Number(purchase || 0) * .06; const projectedRoi = Number(roi || 0) + 6;
+  return <section className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-6"><div className="flex gap-4"><div className="w-12 h-12 rounded-2xl bg-violet-600 text-white grid place-items-center text-2xl">✦</div><div><div className="text-xs font-bold text-violet-600 uppercase tracking-widest">Assistente InvestFlip</div><h3 className="text-xl font-bold mt-1">Leitura inteligente da oportunidade</h3><p className="text-sm text-gray-600 mt-3 leading-6">O desconto de <strong>{percent(discount)}</strong> favorece a margem. O financiamento representa <strong>{percent(financedShare)}</strong> da compra e o principal ponto de atenção é a reforma de <strong>{money(renovation)}</strong>. Se negociar aproximadamente <strong>{money(saving)}</strong> no preço, o ROI pode avançar de <strong>{percent(roi)}</strong> para cerca de <strong>{percent(projectedRoi)}</strong>.</p><div className="text-[11px] text-gray-400 mt-3">Resumo estruturado para futura geração por IA.</div></div></div></section>;
+}
+
+function BenchmarkComparison({ roi }: { roi: number }) {
+  const items = [['Poupança', 3], ['CDI', 6], ['Tesouro', 7], ['FII', 8], ['InvestFlip', roi]];
+  const max = Math.max(10, roi);
+  return <section className="mt-5 bg-slate-50 border rounded-xl p-5"><div className="flex justify-between items-center"><div><h3 className="font-bold">Como este investimento se compara</h3><p className="text-[11px] text-gray-500 mt-1">Comparação ilustrativa de retorno no mesmo período; não representa promessa de rentabilidade.</p></div></div><div className="grid md:grid-cols-5 gap-4 mt-4">{items.map(([label, value]: any) => <div key={label}><div className="flex justify-between text-sm"><span>{label}</span><strong className={label === 'InvestFlip' ? 'text-primary-600' : ''}>{percent(value)}</strong></div><div className="h-3 bg-gray-200 rounded-full mt-2"><div className={`h-full rounded-full ${label === 'InvestFlip' ? 'bg-primary-600' : 'bg-gray-400'}`} style={{ width: `${Math.max(3, Math.min(100, value / max * 100))}%` }} /></div></div>)}</div></section>;
+}
+
+function ExecutiveIndicators({ ownCapital, profit, roi, months, financed, risk }: any) {
+  const items = [[BadgeDollarSign, 'Capital próprio necessário', money(ownCapital), 'bg-violet-50 text-violet-700'], [TrendingUp, 'Lucro previsto', money(profit), 'bg-emerald-50 text-emerald-700'], [Calculator, 'ROI previsto', percent(roi), 'bg-blue-50 text-blue-700'], [Circle, 'Tempo do flip', `${months} meses`, 'bg-amber-50 text-amber-700'], [Landmark, 'Capital financiado', money(financed), 'bg-cyan-50 text-cyan-700'], [Sparkles, 'Risco', risk, 'bg-slate-100 text-slate-700']];
+  return <section><div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Os números que decidem a compra</div><div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">{items.map(([Icon, label, value, colors]: any) => <div key={label} className="bg-white border rounded-2xl p-5 flex items-center gap-4 shadow-sm"><div className={`w-12 h-12 rounded-xl grid place-items-center ${colors}`}><Icon className="w-6 h-6" /></div><div><span className="text-xs text-gray-500 block">{label}</span><strong className="text-xl block mt-1">{value}</strong></div></div>)}</div></section>;
+}
+
+function ScoreGauge({ score, compact = false }: { score: number; compact?: boolean }) {
+  const safe = Math.max(0, Math.min(100, score || 0));
+  const radius = 36; const circumference = 2 * Math.PI * radius;
+  return <div className={`relative ${compact ? 'w-16 h-16' : 'w-28 h-28'}`}><svg className="w-full h-full -rotate-90" viewBox="0 0 96 96"><circle cx="48" cy="48" r={radius} fill="none" stroke="rgba(255,255,255,.18)" strokeWidth="8" /><circle cx="48" cy="48" r={radius} fill="none" stroke="#a78bfa" strokeWidth="8" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={circumference * (1 - safe / 100)} /></svg><div className="absolute inset-0 grid place-items-center text-center"><strong className={compact ? 'text-sm' : 'text-2xl'}>{safe}</strong>{!compact && <span className="text-[10px] opacity-70 -mt-7">/100</span>}</div></div>;
+}
+
+function OwnCapitalSpotlight({ amount }: { amount: number }) {
+  return <section className="relative overflow-hidden rounded-2xl bg-slate-950 text-white px-6 py-7"><div className="absolute right-0 top-0 w-64 h-64 bg-violet-600/25 blur-3xl rounded-full" /><div className="relative flex flex-col md:flex-row md:items-end justify-between gap-4"><div><div className="text-xs uppercase tracking-[.22em] text-violet-300">Dinheiro que sai do seu bolso</div><h3 className="text-xl font-semibold mt-2">Capital próprio necessário</h3><p className="text-sm text-slate-400 mt-1">Entrada e custos assumidos com recursos próprios.</p></div><div className="text-4xl md:text-5xl font-black tracking-tight">{money(amount)}</div></div></section>;
+}
+
+function OpportunityRanking({ score, confidence }: { score: number; confidence: number }) {
+  const safe = Math.max(0, Math.min(100, Number(score || 0)));
+  return <section className="bg-white border rounded-2xl p-5 grid md:grid-cols-[auto_1fr_auto] gap-5 items-center"><div className="rounded-full bg-slate-950 text-white p-2"><ScoreGauge score={safe} /></div><div><div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Ranking estimado InvestFlip</div><h3 className="text-xl font-bold mt-1">Melhor que {safe}% das oportunidades no índice</h3><p className="text-sm text-gray-500 mt-1">Posicionamento visual baseado no IF Score atual da análise.</p><div className="h-2 bg-gray-100 rounded-full mt-4"><div className="h-full bg-gradient-to-r from-violet-500 to-emerald-500 rounded-full" style={{ width: `${safe}%` }} /></div></div><div className="text-right"><span className="text-xs text-gray-400 block">Confiança</span><strong className="text-2xl">{confidence}%</strong></div></section>;
+}
+
+function InvestmentCharts({ ownCapital, financed, purchase, renovation, sale, profit }: any) {
+  const own = Math.max(0, Number(ownCapital || 0)); const credit = Math.max(0, Number(financed || 0)); const capitalTotal = Math.max(1, own + credit); const ownShare = own / capitalTotal * 100;
+  const operation = [['Compra', Number(purchase || 0), 'bg-slate-500'], ['Reforma', Number(renovation || 0), 'bg-amber-500'], ['Venda', Number(sale || 0), 'bg-blue-500'], ['Lucro', Number(profit || 0), 'bg-emerald-500']];
+  const max = Math.max(1, ...operation.map(item => Math.abs(Number(item[1]))));
+  return <section className="grid lg:grid-cols-2 gap-5"><div className="bg-white border rounded-2xl p-5"><h3 className="font-bold">Distribuição do capital</h3><p className="text-xs text-gray-500 mt-1">Recursos próprios versus financiamento.</p><div className="flex items-center gap-7 mt-6"><div className="w-36 h-36 rounded-full relative" style={{ background: `conic-gradient(#7c3aed 0 ${ownShare}%, #0ea5e9 ${ownShare}% 100%)` }}><div className="absolute inset-5 rounded-full bg-white grid place-items-center text-center"><div><strong>{percent(ownShare)}</strong><span className="block text-[10px] text-gray-400">próprio</span></div></div></div><div className="space-y-4 flex-1"><ChartLegend color="bg-violet-600" label="Capital próprio" value={money(own)} /><ChartLegend color="bg-sky-500" label="Financiado" value={money(credit)} /></div></div></div><div className="bg-white border rounded-2xl p-5"><h3 className="font-bold">Visão da operação</h3><p className="text-xs text-gray-500 mt-1">Escala comparativa dos valores principais.</p><div className="space-y-4 mt-6">{operation.map(([label, value, color]: any) => <div key={label}><div className="flex justify-between text-sm"><span>{label}</span><strong>{money(value)}</strong></div><div className="h-3 bg-gray-100 rounded-full mt-2"><div className={`h-full rounded-full ${color}`} style={{ width: `${Math.max(2, Math.abs(value) / max * 100)}%` }} /></div></div>)}</div></div></section>;
+}
+
+function ChartLegend({ color, label, value }: { color: string; label: string; value: string }) { return <div className="flex items-center gap-3"><span className={`w-3 h-3 rounded-full ${color}`} /><div><span className="text-xs text-gray-500 block">{label}</span><strong>{value}</strong></div></div>; }
+
+function MarketValueBreakdown({ opportunity, intelligence, form }: any) {
+  const area = Number(opportunity.area || opportunity.area_m2 || 0); const pricePerM2 = Number(form.average_price_per_m2 || 0); const projected = area && pricePerM2 ? area * pricePerM2 : Number(opportunity.estimated_market_price || 0);
+  return <section className="bg-white border rounded-2xl p-5"><div className="flex items-start gap-3"><div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 grid place-items-center"><Landmark className="w-5 h-5" /></div><div><h3 className="font-bold">Como chegamos ao valor de mercado</h3><p className="text-sm text-gray-500 mt-1">Referências editáveis usadas para dar transparência à estimativa.</p></div></div><div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">{[['Área considerada', area ? `${area} m²` : 'Não informada'], ['Preço médio/m²', pricePerM2 ? money(pricePerM2) : 'Não informado'], ['Média de vendidos', Number(form.average_sold_value) ? money(form.average_sold_value) : 'Não informada'], ['Estimativa calculada', money(projected)]].map(([label, value]) => <div key={label} className="bg-slate-50 rounded-xl p-4"><span className="text-[11px] text-gray-500 block">{label}</span><strong className="block mt-1">{value}</strong></div>)}</div><div className="mt-4 text-sm text-gray-600">O preço pedido está <strong className="text-emerald-600">{percent(intelligence.discount_percentage)} abaixo</strong> do valor de mercado informado. Revise as referências antes da decisão final.</div></section>;
+}
+
+function InvestmentSummary({ ownCapital, profit, roi, annualizedRoi, months, financed }: any) {
+  const items = [[BadgeDollarSign, 'Capital próprio', money(ownCapital), 'text-violet-600 bg-violet-50'], [TrendingUp, 'Lucro previsto', money(profit), 'text-emerald-600 bg-emerald-50'], [Calculator, 'ROI previsto', percent(roi), 'text-blue-600 bg-blue-50'], [Sparkles, 'ROI anualizado', percent(annualizedRoi), 'text-amber-600 bg-amber-50'], [Circle, 'Tempo do flip', `${months} meses`, 'text-slate-600 bg-slate-50'], [Landmark, 'Capital financiado', money(financed), 'text-cyan-600 bg-cyan-50']];
+  return <section><div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Resumo do investimento</div><div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">{items.map(([Icon, label, value, colors]: any) => <div key={label} className="bg-white border rounded-xl p-4 flex gap-3 items-center"><div className={`w-10 h-10 rounded-lg grid place-items-center ${colors}`}><Icon className="w-5 h-5" /></div><div><div className="text-[11px] text-gray-500">{label}</div><div className="font-bold mt-1">{value}</div></div></div>)}</div></section>;
+}
+
+function RecommendationCard({ intelligence, ownCapital }: any) {
+  const colors = intelligence.signal.color === 'green' ? ['#047857', '#10b981'] : intelligence.signal.color === 'yellow' ? ['#b45309', '#f59e0b'] : ['#b91c1c', '#ef4444'];
+  return <section className="rounded-2xl p-6 text-white shadow-lg" style={{ background: `linear-gradient(135deg, ${colors[0]}, ${colors[1]})` }}><div className="grid lg:grid-cols-[1fr_1.6fr] gap-6"><div><div className="text-xs font-bold tracking-[.2em] opacity-80">RECOMENDAÇÃO DO SISTEMA</div><div className="text-4xl font-black mt-2">{intelligence.signal.label.toUpperCase()}</div><div className="grid grid-cols-2 gap-3 mt-5"><div className="bg-white/15 rounded-xl p-3"><span className="text-xs opacity-75">IF SCORE</span><strong className="block text-xl">{intelligence.score} pontos</strong></div><div className="bg-white/15 rounded-xl p-3"><span className="text-xs opacity-75">Confiança</span><strong className="block text-xl">{intelligence.confidence}%</strong></div></div></div><div className="bg-white/10 rounded-xl p-5"><div className="flex gap-3"><Sparkles className="w-6 h-6 shrink-0" /><div><div className="font-bold text-lg">Análise InvestFlip</div><p className="mt-2 leading-relaxed text-white/90">{intelligence.explanation}</p><div className="mt-4 border-t border-white/20 pt-4"><span className="text-sm opacity-80">Você investirá do próprio bolso</span><div className="text-3xl font-black">{money(ownCapital)}</div></div></div></div></div></div></section>;
+}
+
+function CostEntryForm({ cost, setCost, onSubmit }: { cost: any; setCost: (value: any) => void; onSubmit: (event: FormEvent) => void }) {
+  const groups = [
+    ['Aquisição', [['acquisition', 'Aquisição'], ['down_payment', 'Entrada'], ['itbi', 'ITBI'], ['registry', 'Cartório/Registro'], ['documentation', 'Documentação']]],
+    ['Reforma', [['renovation', 'Reforma geral'], ['materials', 'Materiais'], ['labor', 'Mão de obra'], ['painting', 'Pintura'], ['woodwork', 'Marcenaria'], ['electricity', 'Elétrica'], ['plumbing', 'Hidráulica']]],
+    ['Mensais', [['condominium', 'Condomínio'], ['property_tax', 'IPTU'], ['water', 'Água'], ['energy', 'Energia'], ['internet', 'Internet'], ['insurance', 'Seguro'], ['financing_installment', 'Parcela financiamento']]],
+    ['Venda', [['marketing', 'Marketing'], ['brokerage', 'Corretagem'], ['other', 'Outros']]],
+  ] as const;
+  return <form onSubmit={onSubmit} className="bg-white border rounded-xl p-5 space-y-3"><h2 className="font-bold">Adicionar gasto detalhado</h2><label><span className="text-xs font-medium">Categoria</span><select className="input mt-1" value={cost.category} onChange={event => setCost({ ...cost, category: event.target.value })}>{groups.map(([label, options]) => <optgroup key={label} label={label}>{options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</optgroup>)}</select></label><MaskedField name="description" label="Descrição" kind="text" state={cost} setState={setCost} /><MaskedField name="amount" label="Valor" kind="money" state={cost} setState={setCost} /><MaskedField name="due_date" label="Vencimento" kind="date" state={cost} setState={setCost} /><label><span className="text-xs font-medium">Status</span><select className="input mt-1" value={cost.payment_status} onChange={event => setCost({ ...cost, payment_status: event.target.value })}><option value="pending">Pendente</option><option value="paid">Pago</option><option value="overdue">Atrasado</option></select></label><button className="w-full bg-primary-600 text-white py-2 rounded-lg font-semibold">Adicionar gasto</button></form>;
+}
+
+function FinancingComparator({ simulations, onAdd, onSelect, onDelete }: { simulations: any[]; onAdd: () => void; onSelect: (id: number) => void; onDelete: (id: number) => void }) {
+  return <section className="bg-white border rounded-2xl p-5"><div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><h2 className="font-bold text-lg">Comparador de financiamentos</h2><p className="text-xs text-gray-500 mt-1">Escolha uma proposta para recalcular toda a operação.</p></div><button type="button" onClick={onAdd} className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-semibold flex gap-2 items-center"><Plus className="w-4 h-4" />Adicionar simulação atual</button></div>{simulations.length === 0 ? <div className="text-center py-8 text-gray-400"><Landmark className="w-8 h-8 mx-auto mb-2" />Configure os dados abaixo e adicione sua primeira comparação.</div> : <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-3 mt-4">{simulations.map(item => <div key={item.id} className={`border-2 rounded-xl p-4 ${item.is_selected ? 'border-emerald-500 bg-emerald-50/50' : 'border-gray-100'}`}><div className="flex justify-between gap-2"><div><div className="font-bold">{item.label || item.bank_name}</div><div className="text-xs text-gray-500">{item.financing_system} · {item.total_installments}x</div></div>{item.is_selected && <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-full h-fit">ESCOLHIDO</span>}</div><div className="grid grid-cols-2 gap-2 mt-4 text-sm"><div><span className="text-xs text-gray-400 block">Taxa a.a.</span>{percent(item.interest_rate_yearly)}</div><div><span className="text-xs text-gray-400 block">Parcela</span>{money(item.installment_value)}</div><div><span className="text-xs text-gray-400 block">Saldo</span>{money(item.outstanding_balance)}</div><div><span className="text-xs text-gray-400 block">Quitação</span>{money(item.payoff_amount)}</div></div><div className="flex gap-2 mt-4">{!item.is_selected && <button type="button" onClick={() => onSelect(item.id)} className="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-xs font-semibold">Escolher</button>}<button type="button" onClick={() => onDelete(item.id)} className="p-2 text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button></div></div>)}</div>}</section>;
+}
+
+function CostsTable({ costs, onDelete }: { costs: any[]; onDelete: (id: number) => void }) {
+  const categories: Record<string, string> = { acquisition: 'Aquisição', down_payment: 'Entrada', itbi: 'ITBI', registry: 'Cartório/Registro', documentation: 'Documentação', renovation: 'Reforma', materials: 'Materiais', labor: 'Mão de obra', painting: 'Pintura', woodwork: 'Marcenaria', electricity: 'Elétrica', plumbing: 'Hidráulica', condominium: 'Condomínio', property_tax: 'IPTU', water: 'Água', energy: 'Energia', internet: 'Internet', insurance: 'Seguro', marketing: 'Marketing', brokerage: 'Corretagem', financing_installment: 'Parcela do financiamento', other: 'Outros' };
+  const statuses: Record<string, { label: string; classes: string }> = { pending: { label: 'Pendente', classes: 'bg-amber-50 text-amber-700 border-amber-200' }, paid: { label: 'Pago', classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' }, overdue: { label: 'Atrasado', classes: 'bg-red-50 text-red-700 border-red-200' } };
+  const total = costs.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const paid = costs.filter(item => item.payment_status === 'paid').reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const pending = total - paid;
+  const groups = [
+    ['Aquisição', ['acquisition', 'down_payment', 'itbi', 'registry', 'documentation']],
+    ['Reforma', ['renovation', 'materials', 'labor', 'painting', 'woodwork', 'electricity', 'plumbing']],
+    ['Mensais', ['condominium', 'property_tax', 'water', 'energy', 'internet', 'insurance', 'financing_installment']],
+    ['Venda', ['marketing', 'brokerage', 'other']],
+  ].map(([label, keys]: any) => ({ label, amount: costs.filter(item => keys.includes(item.category)).reduce((sum, item) => sum + Number(item.amount || 0), 0) }));
+  const date = (value?: string) => value ? new Date(`${value.slice(0, 10)}T12:00:00`).toLocaleDateString('pt-BR') : 'Sem vencimento';
+  return <div className="lg:col-span-2 bg-white border rounded-xl overflow-hidden self-start">
+    {costs.length > 0 && <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border-b bg-gray-50/70">{groups.map(group => <div key={group.label}><div className="flex justify-between gap-2 text-xs"><span className="font-semibold">{group.label}</span><span>{money(group.amount)}</span></div><div className="h-2 bg-gray-200 rounded-full mt-2"><div className="h-full bg-primary-500 rounded-full" style={{ width: `${total ? Math.max(3, group.amount / total * 100) : 0}%` }} /></div></div>)}</div>}
+    <div className="p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><h2 className="font-bold">Gastos da operação</h2><p className="text-xs text-gray-500 mt-1">{costs.length} {costs.length === 1 ? 'lançamento' : 'lançamentos'}</p></div><div className="flex gap-5 text-right"><div><div className="text-[11px] text-gray-400 uppercase">Total</div><strong>{money(total)}</strong></div><div><div className="text-[11px] text-emerald-600 uppercase">Pago</div><strong className="text-emerald-600">{money(paid)}</strong></div><div><div className="text-[11px] text-amber-600 uppercase">Pendente</div><strong className="text-amber-600">{money(pending)}</strong></div></div></div>
+    {costs.length === 0 ? <div className="py-14 text-center"><Receipt className="w-9 h-9 text-gray-300 mx-auto" /><div className="font-medium text-gray-600 mt-3">Nenhum gasto lançado</div><div className="text-xs text-gray-400 mt-1">Use o formulário ao lado para adicionar o primeiro.</div></div> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="bg-gray-50 text-[11px] uppercase text-gray-500"><tr><th className="p-3 text-left">Descrição</th><th className="p-3 text-left">Categoria</th><th className="p-3 text-left">Vencimento</th><th className="p-3 text-right">Valor</th><th className="p-3 text-center">Status</th><th className="p-3" /></tr></thead><tbody className="divide-y">{costs.map(item => { const status = statuses[item.payment_status] ?? statuses.pending; return <tr key={item.id} className="hover:bg-gray-50/70"><td className="p-3"><div className="font-semibold text-gray-800">{item.description}</div><div className="text-xs text-gray-400">#{String(item.id).padStart(4, '0')}</div></td><td className="p-3"><span className="bg-violet-50 text-primary-700 px-2 py-1 rounded-md text-xs font-medium">{categories[item.category] ?? item.category}</span></td><td className="p-3 text-gray-600 whitespace-nowrap">{date(item.due_date)}</td><td className="p-3 text-right font-bold whitespace-nowrap">{money(item.amount)}</td><td className="p-3 text-center"><span className={`inline-flex border px-2.5 py-1 rounded-full text-xs font-semibold ${status.classes}`}>{status.label}</span></td><td className="p-3 text-right"><button title="Excluir gasto" onClick={() => confirm('Excluir este gasto?') && onDelete(item.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button></td></tr>; })}</tbody></table></div>}
+  </div>;
+}
+function Metric({ label, value }: { label: string; value: string }) { return <div className="bg-white border rounded-xl p-4"><div className="text-xs text-gray-500">{label}</div><div className="font-bold text-lg mt-2">{value}</div></div>; }
+function MaskedField({ name, label, kind, state, setState }: { name: string; label: string; kind: Kind; state: any; setState: (value: any) => void }) {
+  const raw = state[name] ?? '';
+  const shown = kind === 'money' ? money(raw) : kind === 'percent' ? percent(raw) : raw;
+  function change(value: string) {
+    if (kind === 'money' || kind === 'percent') { const digits = value.replace(/\D/g, ''); setState({ ...state, [name]: digits ? String(Number(digits) / 100) : '' }); return; }
+    if (kind === 'integer') { setState({ ...state, [name]: value.replace(/\D/g, '') }); return; }
+    setState({ ...state, [name]: value });
+  }
+  return <label><span className="text-xs font-medium">{label}</span><input className="input mt-1" type={kind === 'date' ? 'date' : 'text'} inputMode={kind === 'money' || kind === 'percent' || kind === 'integer' ? 'numeric' : undefined} value={shown} onChange={event => change(event.target.value)} /></label>;
+}

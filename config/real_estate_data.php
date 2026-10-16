@@ -1,0 +1,57 @@
+<?php
+
+return [
+    'itbi_sp' => [
+        'enabled' => env('ITBI_SP_ENABLED', false),
+        'source_url' => env('ITBI_SP_SOURCE_URL'),
+        'storage_disk' => env('ITBI_SP_STORAGE_DISK', 'local'),
+        'storage_path' => env('ITBI_SP_STORAGE_PATH', 'real-estate-data/itbi/sp/raw'),
+        'import_day' => (int) env('ITBI_SP_IMPORT_DAY', 5),
+        'provider' => 'prefeitura_sp_itbi',
+        'source_name' => 'Prefeitura de São Paulo - ITBI',
+    ],
+
+    'avm' => [
+        'transaction_value_field' => env('AVM_TRANSACTION_VALUE_FIELD', 'declared_transaction_value'),
+        'min_price_m2' => (float) env('AVM_MIN_PRICE_M2', 1000),
+        'max_price_m2' => (float) env('AVM_MAX_PRICE_M2', 100000),
+        'max_transaction_age_months' => (int) env('AVM_MAX_TRANSACTION_AGE_MONTHS', 24),
+        'min_building_transactions' => (int) env('AVM_MIN_BUILDING_TRANSACTIONS', 2),
+        'min_radius_transactions' => (int) env('AVM_MIN_RADIUS_TRANSACTIONS', 3),
+        'min_neighborhood_transactions' => (int) env('AVM_MIN_NEIGHBORHOOD_TRANSACTIONS', 5),
+    ],
+
+    'geocoding' => [
+        'google_enabled' => env('GOOGLE_GEOCODING_ENABLED', true),
+        'google_key' => env('GOOGLE_MAPS_API_KEY'),
+        'minimum_precision' => env('GEOCODING_MINIMUM_PRECISION', 'RANGE_INTERPOLATED'),
+    ],
+
+    'column_aliases' => [
+        'property_sql' => ['sql', 'numero do contribuinte', 'numero contribuinte', 'cadastro', 'n do cadastro', 'nº do cadastro', 'no do cadastro', 'setor quadra lote', 'contribuinte'],
+        'transaction_date' => ['data transacao', 'data da transacao', 'data de transacao', 'data do recolhimento', 'data', 'competencia'],
+        'declared_transaction_value' => ['valor transacao', 'valor da transacao', 'valor declarado', 'valor da transacao transmitida', 'valor transmitido', 'valor'],
+        'tax_base_value' => ['base calculo', 'base de calculo', 'base de calculo adotada', 'valor base', 'valor venal', 'valor venal de referencia'],
+        'property_type' => ['tipo imovel', 'tipo do imovel', 'tipo', 'uso'],
+        'transaction_nature' => ['natureza da transacao', 'natureza de transacao', 'natureza transacao'],
+        'street_type' => ['tipo logradouro', 'tp logradouro'],
+        'street_name' => ['logradouro', 'nome logradouro', 'nome do logradouro', 'endereco', 'rua'],
+        'street_number' => ['numero', 'num', 'n', 'numero do imovel'],
+        'address_complement' => ['complemento', 'compl'],
+        'address_reference' => ['referencia', 'referência'],
+        'neighborhood' => ['bairro'],
+        'district' => ['distrito'],
+        'city' => ['cidade', 'municipio'],
+        'state' => ['uf', 'estado'],
+        'zip_code' => ['cep'],
+        'financing_type' => ['tipo financiamento', 'tipo de financiamento'],
+        'registry_office' => ['cartorio', 'cartorio registro', 'cartorio de registro', 'cartorio de registro de imovel', 'registro de imoveis'],
+        'registry_registration' => ['matricula do imovel', 'matricula', 'matrícula'],
+        'land_area_m2' => ['area terreno', 'area do terreno', 'area terreno m2'],
+        'built_area_m2' => ['area construida', 'area construida m2', 'area edificada', 'area construida m2'],
+        'private_area_m2' => ['area privativa', 'area util', 'area util m2'],
+        'iptu_use_description' => ['descricao do uso iptu', 'descrição do uso iptu', 'descricao do uso (iptu)'],
+        'iptu_pattern_description' => ['descricao do padrao iptu', 'descrição do padrão iptu', 'descricao do padrao (iptu)'],
+        'calculation_area_m2' => ['area calculo', 'area de calculo', 'area considerada'],
+    ],
+];
