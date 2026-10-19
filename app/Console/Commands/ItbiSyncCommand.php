@@ -12,14 +12,18 @@ class ItbiSyncCommand extends Command
 
     public function handle(): int
     {
-        $this->call('itbi:discover');
+        if ($this->call('itbi:discover') !== self::SUCCESS) {
+            return self::FAILURE;
+        }
 
         $options = [];
-        if ($this->option('limit')) {
+        if ($this->option('limit') !== null) {
             $options['--limit'] = $this->option('limit');
         }
 
-        $this->call('itbi:import', $options);
+        if ($this->call('itbi:import', $options) !== self::SUCCESS) {
+            return self::FAILURE;
+        }
 
         $this->warn('Fases seguintes ainda serão implementadas: itbi:geocode, itbi:rebuild-statistics e avm:recalculate-opportunities.');
 

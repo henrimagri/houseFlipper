@@ -9,11 +9,17 @@ use Illuminate\Support\Str;
 
 class PropertyValuationService
 {
+    public const VERSION = 'comparables-v3';
+
     public function applyComparableMarketEstimates(Collection $items): Collection
     {
-        $items = collect($items)->values();
+        $items = collect($items)->values()->map(function (array $item, int $index) {
+            $item['_valuation_index'] = $index;
+
+            return $item;
+        });
         $comparables = $items
-            ->filter(fn (array $item) => (float) ($item['asking_price'] ?? 0) > 0 && (float) ($item['area_m2'] ?? 0) >= 20)
+            ->filter(fn (array $item) => is_finite((float) ($item['asking_price'] ?? 0)) && is_finite((float) ($item['area_m2'] ?? 0)) && (float) ($item['asking_price'] ?? 0) > 0 && (float) ($item['area_m2'] ?? 0) >= 20)
             ->map(function (array $item) {
                 $item['comparable_price_per_m2'] = (float) $item['asking_price'] / (float) $item['area_m2'];
 
@@ -21,32 +27,39 @@ class PropertyValuationService
             })
             ->values();
 
-        $globalMedian = $this->medianWithoutOutliers($comparables->pluck('comparable_price_per_m2')->all());
-
-        return $items->map(function (array $item) use ($comparables, $globalMedian) {
+        return $items->map(function (array $item) use ($comparables) {
             $area = (float) ($item['area_m2'] ?? 0);
             $askingPrice = (float) ($item['asking_price'] ?? 0);
             $bedrooms = (int) ($item['bedrooms'] ?? 0);
-            $city = Str::lower((string) ($item['city'] ?? ''));
-            $neighborhood = Str::lower((string) ($item['neighborhood'] ?? ''));
+            $city = $this->clean((string) ($item['city'] ?? ''));
+            $neighborhood = $this->clean((string) ($item['neighborhood'] ?? ''));
 
             $localComparables = $comparables
-                ->filter(function (array $comparable) use ($item, $city, $neighborhood, $bedrooms) {
-                    if (($comparable['id'] ?? null) === ($item['id'] ?? null)) {
+                ->filter(function (array $comparable) use ($item, $city, $bedrooms, $area) {
+                    if ($comparable['_valuation_index'] === $item['_valuation_index']
+                        || (! empty($item['id']) && ($comparable['id'] ?? null) === $item['id'])
+                        || (! empty($item['source_url']) && ($comparable['source_url'] ?? null) === $item['source_url'])) {
                         return false;
                     }
 
-                    $sameNeighborhood = $neighborhood !== '' && Str::lower((string) ($comparable['neighborhood'] ?? '')) === $neighborhood;
-                    $sameCity = $city !== '' && Str::lower((string) ($comparable['city'] ?? '')) === $city;
+                    $sameCity = $city !== '' && $this->clean((string) ($comparable['city'] ?? '')) === $city;
+                    $sameState = ! empty($item['state']) && strtoupper(trim((string) ($comparable['state'] ?? ''))) === strtoupper(trim($item['state']));
+                    $sameType = $this->propertyTypeFromItem($item) !== '' && $this->propertyTypeFromItem($comparable) === $this->propertyTypeFromItem($item);
+                    $similarArea = $area >= 20 && $comparable['area_m2'] >= $area * 0.65 && $comparable['area_m2'] <= $area * 1.45;
                     $sameBedrooms = $bedrooms === 0 || (int) ($comparable['bedrooms'] ?? 0) === 0 || abs((int) ($comparable['bedrooms'] ?? 0) - $bedrooms) <= 1;
 
-                    return ($sameNeighborhood || $sameCity) && $sameBedrooms;
+                    return $sameCity && $sameState && $sameType && $similarArea && $sameBedrooms && $comparable['comparable_price_per_m2'] > 1000 && $comparable['comparable_price_per_m2'] < 100000;
                 })
+                ->unique(fn (array $reference) => $reference['source_url'] ?? ($reference['id'] ?? $reference['_valuation_index']))
                 ->values();
 
+            $neighborhoodComparables = $this->filteredReferences($localComparables->filter(fn (array $reference) => $neighborhood !== '' && $this->clean((string) ($reference['neighborhood'] ?? '')) === $neighborhood), fn (array $reference) => $reference['comparable_price_per_m2']);
+            $neighborhoodTier = $neighborhoodComparables->count() >= 3;
+            $localComparables = $neighborhoodTier ? $neighborhoodComparables : $this->filteredReferences($localComparables, fn (array $reference) => $reference['comparable_price_per_m2']);
+
             $localComparablePrices = $localComparables->pluck('comparable_price_per_m2')->all();
-            $medianPricePerM2 = $this->medianWithoutOutliers($localComparablePrices) ?: $globalMedian;
-            $referenceComparables = count($localComparablePrices) > 0 ? $localComparables : $comparables;
+            $medianPricePerM2 = $this->median($localComparablePrices);
+            $referenceComparables = $localComparables;
             $referenceSources = $referenceComparables
                 ->pluck('source')
                 ->filter()
@@ -59,7 +72,7 @@ class PropertyValuationService
                 ->map(fn (RealEstateTransaction $transaction) => $this->transactionPricePerM2($transaction, $item))
                 ->filter(fn (float $value) => $value >= 1000 && $value <= 100000)
                 ->all();
-            $confirmedMedianPricePerM2 = $this->medianWithoutOutliers($transactionPrices);
+            $confirmedMedianPricePerM2 = $this->median($transactionPrices);
             $transactionCount = $transactionPack['transactions']->count();
             $activeListingsWeight = $transactionCount >= 3 ? 0.15 : ($transactionCount > 0 ? 0.35 : 1.0);
             $realSalesWeight = 1 - $activeListingsWeight;
@@ -68,15 +81,15 @@ class PropertyValuationService
                 $basePricePerM2 = $medianPricePerM2 > 0
                     ? ($confirmedMedianPricePerM2 * $realSalesWeight) + ($medianPricePerM2 * $activeListingsWeight)
                     : $confirmedMedianPricePerM2;
-                $adjustedPricePerM2 = $this->adjustedPricePerM2($basePricePerM2, $item, $referenceComparables, $transactionCount);
+                $adjustedPricePerM2 = $this->adjustedPricePerM2($basePricePerM2, $item, $referenceComparables);
                 $estimatedMarketPrice = $adjustedPricePerM2 * $area;
                 $medianPricePerM2 = $adjustedPricePerM2;
                 $method = $transactionPack['method'];
             } elseif ($area > 0 && $medianPricePerM2 > 0) {
-                $adjustedPricePerM2 = $this->adjustedPricePerM2($medianPricePerM2, $item, $referenceComparables, 0);
+                $adjustedPricePerM2 = $this->adjustedPricePerM2($medianPricePerM2, $item, $referenceComparables);
                 $estimatedMarketPrice = $adjustedPricePerM2 * $area;
                 $medianPricePerM2 = $adjustedPricePerM2;
-                $method = $neighborhood !== '' && count($localComparablePrices) >= 3 ? 'comparables_neighborhood_median_m2' : 'comparables_region_median_m2';
+                $method = $neighborhoodTier ? 'comparables_neighborhood_median_m2' : 'comparables_region_median_m2';
             } else {
                 $estimatedMarketPrice = $this->estimateMarketPrice($askingPrice, $area, $item['title'] ?? '');
                 $method = 'fallback_heuristic';
@@ -84,6 +97,12 @@ class PropertyValuationService
 
             $discount = $estimatedMarketPrice > 0 ? max(0, ($estimatedMarketPrice - $askingPrice) / $estimatedMarketPrice * 100) : 0;
             $confidence = $this->confidence($referenceComparables->count(), $transactionCount, $item);
+            if ($method === 'fallback_heuristic') {
+                $confidence = min(40, $confidence);
+            }
+            if (in_array($method, ['itbi_city_median_m2', 'comparables_region_median_m2'], true)) {
+                $confidence = min(65, $confidence);
+            }
             $rangeFactor = $confidence >= 85 ? 0.06 : ($confidence >= 70 ? 0.09 : 0.13);
 
             $item['estimated_market_price'] = round($estimatedMarketPrice, 2);
@@ -96,36 +115,40 @@ class PropertyValuationService
             $item['market_reference_sources'] = $transactionCount > 0 ? array_values(array_unique(['ITBI importado', ...$referenceSources])) : $referenceSources;
             $item['confirmed_transactions_count'] = $transactionCount;
             $item['confidence_percentage'] = $confidence;
+            $item['confidence_basis'] = 'heuristic_evidence_quality';
+            $item['valuation_version'] = self::VERSION;
+            $item['transaction_reference_window_months'] = $this->transactionWindowMonths();
             $item['valuation_explanation'] = $this->valuationExplanation($item, $transactionPack, $referenceComparables->count(), $confirmedMedianPricePerM2, $medianPricePerM2, $rangeFactor);
             $item['score'] = min($this->score($discount, $area, $bedrooms, $askingPrice), $confidence < 50 ? 74 : 100);
+            if ($method === 'fallback_heuristic') {
+                $item['score'] = min(49, $item['score']);
+            }
             $item['signal'] = $item['score'] >= 80 ? 'Boa oportunidade' : ($item['score'] >= 65 ? 'Negociar' : 'Atenção');
+
+            unset($item['_valuation_index']);
 
             return $item;
         });
     }
 
-    private function medianWithoutOutliers(array $values): float
+    private function filteredReferences(Collection $references, callable $price): Collection
     {
-        $values = collect($values)
-            ->map(fn ($value) => (float) $value)
-            ->filter(fn (float $value) => $value > 1000 && $value < 100000)
-            ->sort()
-            ->values();
+        $references = $references->filter(function ($reference) use ($price) {
+            $value = (float) $price($reference);
 
-        if ($values->isEmpty()) {
-            return 0;
-        }
-
+            return is_finite($value) && $value > 1000 && $value < 100000;
+        })->values();
+        $values = $references->map(fn ($reference) => (float) $price($reference))->sort()->values();
         if ($values->count() >= 5) {
             $q1 = $this->percentile($values->all(), 25);
             $q3 = $this->percentile($values->all(), 75);
             $iqr = $q3 - $q1;
             $min = $q1 - 1.5 * $iqr;
             $max = $q3 + 1.5 * $iqr;
-            $values = $values->filter(fn (float $value) => $value >= $min && $value <= $max)->values();
+            $references = $references->filter(fn ($reference) => $price($reference) >= $min && $price($reference) <= $max)->values();
         }
 
-        return $this->median($values->all());
+        return $references;
     }
 
     private function median(array $values): float
@@ -191,7 +214,14 @@ class PropertyValuationService
     {
         $building = $this->transactionsBaseQuery($item);
         $this->applyBuildingFilter($building, $item);
-        $buildingTransactions = $building->limit(30)->get();
+        $identity = $this->buildingIdentity($item);
+        $buildingTransactions = $building->limit(200)->get()->filter(function (RealEstateTransaction $transaction) use ($identity) {
+            $reference = $this->buildingIdentity(['street_name' => $transaction->street_name, 'street_number' => $transaction->street_number, 'street_type' => $transaction->street_type]);
+
+            return $identity && $reference && $identity['street'] === $reference['street'] && $identity['number'] === $reference['number']
+                && (! $identity['type'] || ! $reference['type'] || $identity['type'] === $reference['type']);
+        })->take(30)->values();
+        $buildingTransactions = $this->filteredReferences($buildingTransactions, fn ($transaction) => $this->transactionPricePerM2($transaction, $item));
 
         if ($buildingTransactions->count() >= 3) {
             return [
@@ -201,7 +231,7 @@ class PropertyValuationService
             ];
         }
 
-        $radius500 = $this->transactionsByRadius($item, 500);
+        $radius500 = $this->filteredReferences($this->transactionsByRadius($item, 500), fn ($transaction) => $this->transactionPricePerM2($transaction, $item));
         if ($radius500->count() >= 3) {
             return [
                 'method' => 'itbi_radius_500m_median_m2',
@@ -210,7 +240,7 @@ class PropertyValuationService
             ];
         }
 
-        $radius900 = $this->transactionsByRadius($item, 900);
+        $radius900 = $this->filteredReferences($this->transactionsByRadius($item, 900), fn ($transaction) => $this->transactionPricePerM2($transaction, $item));
         if ($radius900->count() >= 3) {
             return [
                 'method' => 'itbi_radius_900m_median_m2',
@@ -221,7 +251,7 @@ class PropertyValuationService
 
         $neighborhood = $this->transactionsBaseQuery($item);
         $this->applyNeighborhoodFilter($neighborhood, $item);
-        $neighborhoodTransactions = $neighborhood->limit(80)->get();
+        $neighborhoodTransactions = $this->filteredReferences($neighborhood->limit(80)->get(), fn ($transaction) => $this->transactionPricePerM2($transaction, $item));
 
         if ($neighborhoodTransactions->isNotEmpty()) {
             return [
@@ -237,7 +267,7 @@ class PropertyValuationService
         return [
             'method' => 'itbi_city_median_m2',
             'tier' => 'Mesma cidade',
-            'transactions' => $city->limit(80)->get(),
+            'transactions' => $this->filteredReferences($city->limit(80)->get(), fn ($transaction) => $this->transactionPricePerM2($transaction, $item)),
         ];
     }
 
@@ -246,6 +276,8 @@ class PropertyValuationService
         $area = (float) ($item['area_m2'] ?? 0);
 
         $query = RealEstateTransaction::query()
+            ->whereDate('transaction_date', '>=', now()->subMonthsNoOverflow($this->transactionWindowMonths())->toDateString())
+            ->whereDate('transaction_date', '<=', now()->toDateString())
             ->where(function (Builder $query) {
                 $query->whereNotNull('declared_transaction_value')
                     ->orWhereNotNull('tax_base_value');
@@ -263,8 +295,16 @@ class PropertyValuationService
             ->latest('transaction_date');
 
         $this->applyTransactionPropertyTypeFilter($query, $item);
+        $this->applyCityFilter($query, $item);
+        $state = strtoupper(trim((string) ($item['state'] ?? '')));
+        $state !== '' ? $query->whereRaw('UPPER(state) = ?', [$state]) : $query->whereRaw('1 = 0');
 
         return $query;
+    }
+
+    private function transactionWindowMonths(): int
+    {
+        return max(1, min(120, (int) config('real_estate_data.avm.max_transaction_age_months', 24)));
     }
 
     private function applyTransactionPropertyTypeFilter(Builder $query, array $item): void
@@ -386,81 +426,129 @@ class PropertyValuationService
 
     private function applyBuildingFilter(Builder $query, array $item): void
     {
-        $rawAddress = (string) ($item['address'] ?? '');
-        $address = $this->cleanAddress($rawAddress);
-        $hasStreetSignal = preg_match('/\d/', $rawAddress) || Str::contains(Str::lower($rawAddress), ['rua', 'avenida', 'av.', 'alameda', 'travessa', 'r. ']);
-
-        if ($address === '' || ! $hasStreetSignal) {
+        $identity = $this->buildingIdentity($item);
+        if (! $identity) {
             $query->whereRaw('1 = 0');
 
             return;
         }
+        $aliases = array_map(fn ($prefix) => trim($prefix.' '.$identity['street']), ['', 'rua', 'r', 'r.', 'avenida', 'av', 'av.', 'alameda', 'travessa', 'estrada', 'praca']);
+        $query->whereRaw('LOWER(TRIM(street_number)) = ?', [$identity['number']])
+            ->whereRaw($this->locationExpression('street_name').' IN ('.implode(',', array_fill(0, count($aliases), '?')).')', $aliases);
+    }
 
-        $words = collect(explode(' ', $address))
-            ->filter(fn (string $word) => strlen($word) >= 4 && ! is_numeric($word))
-            ->take(4)
-            ->values();
-
-        if ($words->isEmpty()) {
-            $query->whereRaw('1 = 0');
-
-            return;
+    private function buildingIdentity(array $item): ?array
+    {
+        $street = trim((string) ($item['street_name'] ?? ''));
+        $number = trim((string) ($item['street_number'] ?? ''));
+        if ($street === '' && preg_match('/^(.+?),\s*(\d+[a-z]?)\b/iu', (string) ($item['address'] ?? ''), $parts)) {
+            $street = $parts[1];
+            $number = $parts[2];
         }
+        if ($street === '' || ! preg_match('/^\d+[a-z]?$/i', $number)) {
+            return null;
+        }
+        $street = $this->clean($street);
+        $type = $this->clean((string) ($item['street_type'] ?? ''));
+        if (preg_match('/^(rua|r\.?|avenida|av\.?|alameda|travessa|estrada|praca)\s+/u', $street, $parts)) {
+            $type = $parts[1];
+            $street = trim(substr($street, strlen($parts[0])));
+        }
+        $type = match (rtrim($type, '.')) {
+            'r', 'rua' => 'rua', 'av', 'avenida' => 'avenida', default => rtrim($type, '.')
+        };
 
-        $query->where(function (Builder $query) use ($words) {
-            foreach ($words as $word) {
-                $query->whereRaw('LOWER(normalized_address) LIKE ?', ['%'.$word.'%']);
-            }
-        });
+        return $street !== '' ? ['street' => $street, 'number' => strtolower($number), 'type' => $type] : null;
     }
 
     private function applyNeighborhoodFilter(Builder $query, array $item): void
     {
         $neighborhood = $this->clean((string) ($item['neighborhood'] ?? ''));
         if ($neighborhood === '') {
-            $this->applyCityFilter($query, $item);
+            $query->whereRaw('1 = 0');
 
             return;
         }
 
-        $query->where(function (Builder $query) use ($neighborhood) {
-            $query->whereRaw('LOWER(neighborhood) = ?', [$neighborhood])
-                ->orWhereRaw('LOWER(neighborhood) LIKE ?', ['%'.$neighborhood.'%']);
-        });
+        $query->whereRaw($this->locationExpression('neighborhood').' = ?', [$neighborhood]);
     }
 
     private function applyCityFilter(Builder $query, array $item): void
     {
         $city = $this->clean((string) ($item['city'] ?? ''));
         if ($city === '') {
+            $query->whereRaw('1 = 0');
+
             return;
         }
 
-        $query->whereRaw('LOWER(city) LIKE ?', ['%'.$city.'%']);
+        $query->whereRaw($this->locationExpression('city').' = ?', [$city]);
+    }
+
+    private function locationExpression(string $column): string
+    {
+        $expression = $column;
+        foreach (['a' => 'áàâãä', 'e' => 'éèêë', 'i' => 'íìîï', 'o' => 'óòôõö', 'u' => 'úùûü', 'c' => 'ç'] as $plain => $accented) {
+            foreach (mb_str_split($accented.mb_strtoupper($accented)) as $character) {
+                $expression = "REPLACE({$expression}, '{$character}', '{$plain}')";
+            }
+        }
+
+        return 'LOWER(TRIM('.$expression.'))';
     }
 
     private function transactionsByRadius(array $item, int $radiusMeters): Collection
     {
-        $lat = (float) ($item['latitude'] ?? $item['lat'] ?? 0);
-        $lng = (float) ($item['longitude'] ?? $item['lng'] ?? 0);
-
-        if ($lat === 0.0 || $lng === 0.0) {
+        $rawLat = $item['latitude'] ?? $item['lat'] ?? null;
+        $rawLng = $item['longitude'] ?? $item['lng'] ?? null;
+        if (! is_numeric($rawLat) || ! is_numeric($rawLng)) {
             return collect();
         }
-
+        $lat = (float) $rawLat;
+        $lng = (float) $rawLng;
+        if (! is_finite($lat) || ! is_finite($lng) || abs($lat) > 90 || abs($lng) > 180) {
+            return collect();
+        }
         $radiusKm = $radiusMeters / 1000;
-
-        return $this->transactionsBaseQuery($item)
+        $latDelta = rad2deg($radiusKm / 6371);
+        $lngDelta = abs($lat) + $latDelta >= 90 ? 180 : rad2deg(asin(min(1, sin($radiusKm / 6371) / max(0.00000001, abs(cos(deg2rad($lat)))))));
+        $query = $this->transactionsBaseQuery($item)->reorder()
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->selectRaw('real_estate_transactions.*, (6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude)))) as distance_km', [$lat, $lng, $lat])
-            ->having('distance_km', '<=', $radiusKm)
-            ->orderBy('distance_km')
-            ->limit(80)
-            ->get();
+            ->whereBetween('latitude', [max(-90, $lat - $latDelta), min(90, $lat + $latDelta)]);
+        if ($lng - $lngDelta < -180) {
+            $query->where(fn (Builder $q) => $q->where('longitude', '>=', $lng - $lngDelta + 360)->orWhere('longitude', '<=', $lng + $lngDelta));
+        } elseif ($lng + $lngDelta > 180) {
+            $query->where(fn (Builder $q) => $q->where('longitude', '>=', $lng - $lngDelta)->orWhere('longitude', '<=', $lng + $lngDelta - 360));
+        } else {
+            $query->whereBetween('longitude', [$lng - $lngDelta, $lng + $lngDelta]);
+        }
+
+        $nearest = new \SplPriorityQueue;
+        $nearest->setExtractFlags(\SplPriorityQueue::EXTR_DATA);
+        foreach ($query->lazyById(250) as $transaction) {
+            $referencePrice = $this->transactionPricePerM2($transaction, $item);
+            if (! is_finite($referencePrice) || $referencePrice <= 1000 || $referencePrice >= 100000) {
+                continue;
+            }
+            $referenceLat = (float) $transaction->latitude;
+            $referenceLng = (float) $transaction->longitude;
+            $a = sin(deg2rad($referenceLat - $lat) / 2) ** 2 + cos(deg2rad($lat)) * cos(deg2rad($referenceLat)) * sin(deg2rad($referenceLng - $lng) / 2) ** 2;
+            $distance = 2 * 6371 * asin(sqrt(max(0, min(1, $a))));
+            if ($distance > $radiusKm) {
+                continue;
+            }
+            $transaction->setAttribute('distance_km', $distance);
+            $nearest->insert($transaction, [$distance, -$transaction->transaction_date->getTimestamp(), -$transaction->id]);
+            if ($nearest->count() > 80) {
+                $nearest->extract();
+            }
+        }
+
+        return collect(iterator_to_array($nearest, false))->sortBy('distance_km')->values();
     }
 
-    private function adjustedPricePerM2(float $basePricePerM2, array $item, Collection $referenceComparables, int $transactionCount): float
+    private function adjustedPricePerM2(float $basePricePerM2, array $item, Collection $referenceComparables): float
     {
         $adjustment = 1.0;
         $parking = (int) ($item['parking_spaces'] ?? 0);
@@ -477,9 +565,6 @@ class PropertyValuationService
             $adjustment += max(-0.05, min(0.05, ($bedrooms - $medianBedrooms) * 0.025));
         }
 
-        $liquiditySignal = min(0.03, (($transactionCount + $referenceComparables->count()) / 80) * 0.03);
-        $adjustment += $liquiditySignal;
-
         return $basePricePerM2 * max(0.85, min(1.15, $adjustment));
     }
 
@@ -488,15 +573,16 @@ class PropertyValuationService
         return [
             'steps' => [
                 ['label' => 'Vendas reais', 'value' => $transactionPack['transactions']->count().' transações — '.$transactionPack['tier']],
+                ['label' => 'Período das transações', 'value' => 'Últimos '.$this->transactionWindowMonths().' meses; datas futuras e ausentes excluídas'],
                 ['label' => 'Anúncios ativos semelhantes', 'value' => $listedComparableCount.' anúncios usados como apoio'],
                 ['label' => 'Ajuste por m²', 'value' => $finalPricePerM2 > 0 ? 'Preço final: R$ '.number_format($finalPricePerM2, 2, ',', '.').'/m²' : 'Sem área suficiente'],
                 ['label' => 'Ajuste por vagas', 'value' => isset($item['parking_spaces']) ? ((int) $item['parking_spaces']).' vaga(s) considerada(s)' : 'Sem dado de vaga'],
                 ['label' => 'Ajuste por quartos', 'value' => isset($item['bedrooms']) ? ((int) $item['bedrooms']).' quarto(s) considerado(s)' : 'Sem dado de quartos'],
                 ['label' => 'Idade do prédio', 'value' => 'Não informada; sem ajuste aplicado'],
                 ['label' => 'Andar', 'value' => 'Não informado; sem ajuste aplicado'],
-                ['label' => 'Liquidez do bairro', 'value' => 'Ajustada pela quantidade de vendas/anúncios encontrados'],
+                ['label' => 'Cobertura da base', 'value' => 'Quantidade de referências informa cobertura; não mede tempo de venda nem aumenta o preço'],
                 ['label' => 'Tendência FIPEZAP', 'value' => 'Pendente de integração; sem ajuste aplicado'],
-                ['label' => 'Intervalo de confiança', 'value' => '±'.number_format($rangeFactor * 100, 1, ',', '.').'%'],
+                ['label' => 'Faixa de sensibilidade', 'value' => '±'.number_format($rangeFactor * 100, 1, ',', '.').'% — regra de cenário, sem calibração estatística'],
             ],
             'confirmed_median_price_m2' => $confirmedMedianPricePerM2 ? round($confirmedMedianPricePerM2, 2) : null,
         ];

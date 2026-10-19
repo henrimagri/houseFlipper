@@ -1,4 +1,5 @@
-import { MoreVertical } from 'lucide-react';
+import { Eye } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface Projeto {
   id: string;
@@ -7,32 +8,25 @@ interface Projeto {
   cidade: string;
   investido: number;
   estimado: number;
-  roi: number;
+  roi: number | null;
   status: string;
   statusColor: string;
 }
 
-const projetos: Projeto[] = [
-  { id: '1', nome: 'Casa Jardim Paulista', numero: '#2024-001', cidade: 'São Paulo, SP', investido: 135000, estimado: 235000, roi: 32.1, status: 'Em Reforma', statusColor: 'bg-blue-100 text-blue-700' },
-  { id: '2', nome: 'Sobrado Vila Madalena', numero: '#2024-002', cidade: 'São Paulo, SP', investido: 280000, estimado: 485000, roi: 29.8, status: 'Elétrica', statusColor: 'bg-yellow-100 text-yellow-700' },
-  { id: '3', nome: 'Casa Campo Belo', numero: '#2024-003', cidade: 'São Paulo, SP', investido: 175000, estimado: 290000, roi: 26.3, status: 'Acabamento', statusColor: 'bg-emerald-100 text-emerald-700' },
-  { id: '4', nome: 'Casa Interlagos', numero: '#2024-004', cidade: 'São Paulo, SP', investido: 210000, estimado: 360000, roi: 28.6, status: 'Em Reforma', statusColor: 'bg-blue-100 text-blue-700' },
-  { id: '5', nome: 'Sobrado Moema', numero: '#2024-005', cidade: 'São Paulo, SP', investido: 320000, estimado: 550000, roi: 30.2, status: 'Demolição', statusColor: 'bg-rose-100 text-rose-700' },
-];
 
 const fmtBRL = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-export default function ProjetosTable() {
+export default function ProjetosTable({ projetos }: { projetos: Projeto[] }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-5 shadow-xs">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-gray-900">Projetos em Andamento</h3>
-        <a href="/projetos" className="text-xs font-medium text-primary-600 hover:underline">Ver todas</a>
+        <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">Projetos em Andamento</h3>
+        <a href="/projetos" className="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline">Ver todas</a>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-xs text-gray-500 border-b border-gray-100">
+            <tr className="text-left text-xs text-gray-500 dark:text-slate-400 border-b border-gray-100 dark:border-slate-800">
               <th className="py-3 font-medium">Projeto</th>
               <th className="py-3 font-medium">Localização</th>
               <th className="py-3 font-medium">Investido</th>
@@ -44,27 +38,27 @@ export default function ProjetosTable() {
           </thead>
           <tbody>
             {projetos.map((p) => (
-              <tr key={p.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+              <tr key={p.id} className="border-b border-gray-50 dark:border-slate-800 last:border-0 hover:bg-gray-50/50 dark:hover:bg-slate-800">
                 <td className="py-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-lg">🏠</div>
+                    <div className="w-10 h-10 rounded-lg bg-linear-to-br from-amber-100 to-amber-200 flex items-center justify-center text-lg">🏠</div>
                     <div>
-                      <div className="font-semibold text-gray-900 text-sm">{p.nome}</div>
-                      <div className="text-xs text-gray-500">Projeto {p.numero}</div>
+                      <div className="font-semibold text-gray-900 dark:text-slate-100 text-sm">{p.nome}</div>
+                      <div className="text-xs text-gray-500 dark:text-slate-400">Projeto {p.numero}</div>
                     </div>
                   </div>
                 </td>
-                <td className="py-3 text-gray-700">{p.cidade}</td>
-                <td className="py-3 text-gray-900 font-medium">{fmtBRL(p.investido)}</td>
-                <td className="py-3 text-gray-900 font-medium">{fmtBRL(p.estimado)}</td>
-                <td className="py-3 text-emerald-600 font-semibold">{p.roi.toFixed(1).replace('.', ',')}%</td>
+                <td className="py-3 text-gray-700 dark:text-slate-200">{p.cidade}</td>
+                <td className="py-3 text-gray-900 dark:text-slate-100 font-medium">{fmtBRL(p.investido)}</td>
+                <td className="py-3 text-gray-900 dark:text-slate-100 font-medium">{fmtBRL(p.estimado)}</td>
+                <td className="py-3 text-emerald-600 dark:text-emerald-400 font-semibold">{p.roi === null ? '—' : `${p.roi.toFixed(1).replace('.', ',')}%`}</td>
                 <td className="py-3">
                   <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${p.statusColor}`}>{p.status}</span>
                 </td>
                 <td className="py-3">
-                  <button className="text-gray-400 hover:text-gray-700">
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
+                  <Link to={`/projetos?projeto=${p.id}`} aria-label={`Abrir projeto ${p.nome}`} className="inline-flex rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-slate-800 dark:hover:text-slate-100">
+                    <Eye className="w-4 h-4" />
+                  </Link>
                 </td>
               </tr>
             ))}

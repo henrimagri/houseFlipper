@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,8 +13,10 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
+    protected $attributes = ['ativo_flg' => true, 'deletado_flg' => false];
+
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
@@ -34,6 +38,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'requires_email_verification' => 'boolean',
+            'registration_profile' => 'array',
             'password' => 'hashed',
             'ativo_flg' => 'boolean',
             'deletado_flg' => 'boolean',
@@ -48,5 +54,10 @@ class User extends Authenticatable
     public function opportunities(): HasMany
     {
         return $this->hasMany(Opportunity::class);
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPasswordEmail((string) $token));
     }
 }

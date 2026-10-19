@@ -24,7 +24,6 @@ class Tarefa extends BaseModel
         'status',
         'custo_estimado',
         'custo_real',
-        'deletado_flg',
     ];
 
     protected $casts = [

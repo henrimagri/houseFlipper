@@ -1,8 +1,10 @@
 *.log
+*.private
 .DS_Store
 .env
 .env.*
 !.env.example
+!.env.production.example
 .phpactor.json
 .phpunit.result.cache
 /.codex

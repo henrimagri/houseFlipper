@@ -3,7 +3,15 @@
 namespace App\Providers;
 
 use App\Contracts\ItbiDatasetProviderInterface;
+use App\Models\User;
 use App\Services\RealEstateData\SaoPauloItbiDatasetProvider;
+use App\Services\ResendTransportFactory;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,6 +29,43 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        if ($caBundle = config('services.http.ca_bundle')) {
+            Http::globalOptions(['verify' => $caBundle]);
+        }
+        Mail::extend('resend', fn (array $config) => app(ResendTransportFactory::class)->make($config));
+        RateLimiter::for('verification', fn (Request $request) => [
+            Limit::perMinute(1)->by('verify-user:'.$request->user()->id),
+            Limit::perHour(5)->by('verify-hour:'.$request->user()->id),
+            Limit::perHour(10)->by('verify-ip:'.$request->ip()),
+        ]);
+        RateLimiter::for('market-data', fn (Request $request) => [
+            Limit::perMinute(6)->by('market-user:'.$request->user()->id),
+            Limit::perMinute(12)->by('market-ip:'.$request->ip()),
+        ]);
+        RateLimiter::for('itbi-upload', fn (Request $request) => Limit::perMinute(2)->by('itbi-user:'.$request->user()->id));
+        RateLimiter::for('document-upload', fn (Request $request) => [
+            Limit::perMinute(10)->by('document-user:'.$request->user()->id),
+            Limit::perMinute(20)->by('document-ip:'.$request->ip()),
+        ]);
+        RateLimiter::for('visualization-upload', fn (Request $request) => [
+            Limit::perMinute(6)->by('visualization-user:'.$request->user()->id),
+            Limit::perMinute(12)->by('visualization-ip:'.$request->ip()),
+        ]);
+        Gate::define('import-itbi', fn (User $user) => $user->getAllPermissions()->contains('name', 'itbi.import'));
+        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?: $request->ip()));
+        RateLimiter::for('login', fn (Request $request) => [
+            Limit::perMinute(10)->by('login-ip:'.$request->ip()),
+            Limit::perMinute(5)->by('login-account:'.hash('sha256', mb_strtolower(is_string($request->input('email')) ? $request->input('email') : '').':'.$request->ip())),
+            Limit::perHour(30)->by('login-account-global:'.hash('sha256', mb_strtolower(trim(is_string($request->input('email')) ? $request->input('email') : '')))),
+        ]);
+        RateLimiter::for('register', fn (Request $request) => Limit::perHour(10)->by($request->ip()));
+        RateLimiter::for('password-reset-request', fn (Request $request) => [
+            Limit::perHour(10)->by('password-forgot-ip:'.$request->ip()),
+            Limit::perHour(3)->by('password-forgot-account:'.hash('sha256', mb_strtolower(is_string($request->input('email')) ? $request->input('email') : ''))),
+        ]);
+        RateLimiter::for('password-reset', fn (Request $request) => [
+            Limit::perMinute(10)->by('password-reset-ip:'.$request->ip()),
+            Limit::perMinute(5)->by('password-reset-account:'.hash('sha256', mb_strtolower(is_string($request->input('email')) ? $request->input('email') : ''))),
+        ]);
     }
 }

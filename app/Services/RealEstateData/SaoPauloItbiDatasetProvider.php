@@ -3,11 +3,14 @@
 namespace App\Services\RealEstateData;
 
 use App\Contracts\ItbiDatasetProviderInterface;
-use Illuminate\Support\Facades\Http;
+use GuzzleHttp\Psr7\Uri;
+use GuzzleHttp\Psr7\UriResolver;
 use Illuminate\Support\Str;
 
 class SaoPauloItbiDatasetProvider implements ItbiDatasetProviderInterface
 {
+    public function __construct(private readonly ItbiRemoteFileClient $client) {}
+
     public function providerKey(): string
     {
         return config('real_estate_data.itbi_sp.provider', 'prefeitura_sp_itbi');
@@ -24,16 +27,14 @@ class SaoPauloItbiDatasetProvider implements ItbiDatasetProviderInterface
             throw new \RuntimeException('Configure ITBI_SP_SOURCE_URL com a página oficial da Prefeitura de São Paulo.');
         }
 
-        $response = Http::timeout(25)
-            ->accept('text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
-            ->withUserAgent('InvestFlip/1.0 (+itbi-sp-discovery)')
-            ->get($sourceUrl);
+        $finalUrl = null;
+        $response = $this->client->get($sourceUrl, 25, (int) config('real_estate_data.itbi_sp.max_discovery_bytes', 2 * 1024 * 1024), $finalUrl);
 
         if (! $response->successful()) {
             throw new \RuntimeException('Falha ao acessar fonte ITBI SP: HTTP '.$response->status());
         }
 
-        return $this->extractDatasets($response->body(), $sourceUrl);
+        return $this->extractDatasets($response->body(), $finalUrl ?? $sourceUrl);
     }
 
     /**
@@ -65,25 +66,7 @@ class SaoPauloItbiDatasetProvider implements ItbiDatasetProviderInterface
 
     private function absoluteUrl(string $url, string $baseUrl): string
     {
-        if (Str::startsWith($url, ['http://', 'https://'])) {
-            return $url;
-        }
-
-        $base = parse_url($baseUrl);
-        $scheme = $base['scheme'] ?? 'https';
-        $host = $base['host'] ?? '';
-
-        if (Str::startsWith($url, '//')) {
-            return $scheme.':'.$url;
-        }
-
-        if (Str::startsWith($url, '/')) {
-            return $scheme.'://'.$host.$url;
-        }
-
-        $path = isset($base['path']) ? Str::beforeLast($base['path'], '/') : '';
-
-        return $scheme.'://'.$host.$path.'/'.$url;
+        return (string) UriResolver::resolve(new Uri($baseUrl), new Uri($url));
     }
 
     private function referencePeriodFrom(string $filename): ?string

@@ -23,7 +23,7 @@ class WorkBudgetCategorySeeder extends Seeder
             DB::table('work_budgets')->updateOrInsert(
                 [
                     'work_id' => 0, // 0 = modelo/padrão, não vinculado a obra real
-                    'category' => $cat
+                    'category' => $cat,
                 ],
                 [
                     'estimated_cost' => 0.00,

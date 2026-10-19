@@ -28,8 +28,8 @@ class InvestmentScoreService
             + ($costRatio <= .2 ? 10 : ($costRatio <= .35 ? 6 : 2))
             + ((float) $result->net_amount_received_after_payoff > $capital ? 10 : 0)
         )));
-        $signal = $roi >= 20 ? ['color' => 'green', 'label' => 'Comprar'] : ($roi >= 10 ? ['color' => 'yellow', 'label' => 'Negociar'] : ['color' => 'red', 'label' => 'Não comprar']);
-        $confidence = min(98, 82 + ($analysis->costs()->count() >= 3 ? 8 : 3) + ($months > 0 ? 5 : 0));
+        $signal = $roi >= 20 ? ['color' => 'green', 'label' => 'Acima da meta'] : ($roi >= 10 ? ['color' => 'yellow', 'label' => 'Faixa de atenção'] : ['color' => 'red', 'label' => 'Abaixo da meta']);
+        $dataCompleteness = min(100, 80 + ($analysis->costs()->count() >= 3 ? 15 : 5) + ($months > 0 ? 5 : 0));
         $reductions = collect([
             $costRatio > .2 ? ['label' => 'Custos e reforma elevados', 'impact' => -12] : null,
             $financedRatio > .8 ? ['label' => 'Financiamento elevado', 'impact' => -8] : null,
@@ -39,9 +39,10 @@ class InvestmentScoreService
         ])->filter()->values()->all();
 
         return [
-            'score' => $score, 'confidence' => $confidence, 'signal' => $signal,
+            'score' => $score, 'data_completeness' => $dataCompleteness, 'signal' => $signal,
+            'method' => 'rules_based_financial_calculation',
             'roi' => round($roi, 2), 'net_profit' => round($profit, 2),
-            'explanation' => sprintf('O ROI líquido da operação é de %.1f%%. Considerando financiamento, custos da operação e venda, a recomendação financeira é %s.', $roi, mb_strtoupper($signal['label'])),
+            'explanation' => sprintf('O ROI líquido calculado é de %.1f%%. Considerando financiamento, custos da operação e venda, o resultado ficou na faixa %s das regras configuradas.', $roi, mb_strtolower($signal['label'])),
             'reducing_factors' => $reductions,
         ];
     }

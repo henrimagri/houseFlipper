@@ -48,6 +48,25 @@ class ItbiSpreadsheetParserService
             throw new \RuntimeException('Não foi possível abrir CSV.');
         }
 
+        $prefix = fread($handle, 3);
+        $encoding = null;
+        $offset = 0;
+        if (str_starts_with($prefix, "\xEF\xBB\xBF")) {
+            $offset = 3;
+        } elseif (str_starts_with($prefix, "\xFF\xFE")) {
+            $encoding = 'UTF-16LE';
+            $offset = 2;
+        } elseif (str_starts_with($prefix, "\xFE\xFF")) {
+            $encoding = 'UTF-16BE';
+            $offset = 2;
+        }
+        fseek($handle, $offset);
+        if ($encoding !== null && stream_filter_append($handle, "convert.iconv.$encoding/UTF-8", STREAM_FILTER_READ) === false) {
+            fclose($handle);
+
+            throw new \RuntimeException('Não foi possível converter a codificação do CSV.');
+        }
+
         $firstLine = fgets($handle);
         if ($firstLine === false) {
             fclose($handle);
@@ -56,7 +75,7 @@ class ItbiSpreadsheetParserService
         }
 
         $delimiter = substr_count($firstLine, ';') >= substr_count($firstLine, ',') ? ';' : ',';
-        rewind($handle);
+        fseek($handle, $offset);
 
         $headers = null;
         while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
@@ -64,6 +83,7 @@ class ItbiSpreadsheetParserService
 
             if ($headers === null) {
                 $headers = $this->normalizeHeaders($row);
+
                 continue;
             }
 
@@ -88,24 +108,27 @@ class ItbiSpreadsheetParserService
         }
 
         $sharedStrings = $this->sharedStrings($zip);
-        $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $sheetXml = $this->readXmlEntry($zip, 'xl/worksheets/sheet1.xml');
         $zip->close();
 
         if (! $sheetXml) {
             throw new \RuntimeException('XLSX sem sheet1.xml.');
         }
 
-        $xml = simplexml_load_string($sheetXml);
+        $xml = simplexml_load_string($sheetXml, \SimpleXMLElement::class, LIBXML_NONET);
         if ($xml === false) {
             throw new \RuntimeException('XLSX inválido.');
         }
 
+        $namespaces = $xml->getNamespaces(true);
+        $worksheet = isset($namespaces['']) ? $xml->children($namespaces['']) : $xml;
         $headers = null;
-        foreach ($xml->sheetData->row as $rowNode) {
+        foreach ($worksheet->sheetData->row as $rowNode) {
             $row = $this->xlsxRowValues($rowNode, $sharedStrings);
 
             if ($headers === null) {
                 $headers = $this->normalizeHeaders($row);
+
                 continue;
             }
 
@@ -119,26 +142,22 @@ class ItbiSpreadsheetParserService
 
     private function sharedStrings(ZipArchive $zip): array
     {
-        $xml = $zip->getFromName('xl/sharedStrings.xml');
+        $xml = $this->readXmlEntry($zip, 'xl/sharedStrings.xml');
         if (! $xml) {
             return [];
         }
 
-        $strings = simplexml_load_string($xml);
-        if ($strings === false) {
+        $document = new \DOMDocument;
+        if (! $document->loadXML($xml, LIBXML_NONET)) {
             return [];
         }
 
+        $xpath = new \DOMXPath($document);
         $values = [];
-        foreach ($strings->si as $item) {
-            if (isset($item->t)) {
-                $values[] = (string) $item->t;
-                continue;
-            }
-
+        foreach ($xpath->query('/*[local-name()="sst"]/*[local-name()="si"]') ?: [] as $item) {
             $text = '';
-            foreach ($item->r ?? [] as $run) {
-                $text .= (string) $run->t;
+            foreach ($xpath->query('.//*[local-name()="t"]', $item) ?: [] as $textNode) {
+                $text .= $textNode->textContent;
             }
             $values[] = $text;
         }
@@ -148,13 +167,24 @@ class ItbiSpreadsheetParserService
 
     private function xlsxRowValues(\SimpleXMLElement $rowNode, array $sharedStrings): array
     {
+        $namespaces = $rowNode->getNamespaces(true);
+        $row = isset($namespaces['']) ? $rowNode->children($namespaces['']) : $rowNode;
         $values = [];
-        foreach ($rowNode->c as $cell) {
-            $reference = (string) ($cell['r'] ?? '');
+        foreach ($row->c as $cell) {
+            $cellChildren = isset($namespaces['']) ? $cell->children($namespaces['']) : $cell;
+            $attributes = $cell->attributes();
+            $reference = (string) ($attributes['r'] ?? '');
             $index = $this->columnIndex($reference);
-            $type = (string) ($cell['t'] ?? '');
-            $raw = (string) ($cell->v ?? '');
+            $type = (string) ($attributes['t'] ?? '');
+            $raw = (string) ($cellChildren->v ?? '');
             $value = $type === 's' ? ($sharedStrings[(int) $raw] ?? '') : $raw;
+            if ($type === 'inlineStr') {
+                $value = (string) ($cellChildren->is->t ?? '');
+                foreach ($cellChildren->is->r ?? [] as $run) {
+                    $runChildren = isset($namespaces['']) ? $run->children($namespaces['']) : $run;
+                    $value .= (string) $runChildren->t;
+                }
+            }
             $values[$index] = trim($value);
         }
 
@@ -177,7 +207,7 @@ class ItbiSpreadsheetParserService
             throw new \RuntimeException('Não foi possível abrir ODS.');
         }
 
-        $contentXml = $zip->getFromName('content.xml');
+        $contentXml = $this->readXmlEntry($zip, 'content.xml');
         $zip->close();
 
         if (! $contentXml) {
@@ -185,7 +215,7 @@ class ItbiSpreadsheetParserService
         }
 
         libxml_use_internal_errors(true);
-        $xml = simplexml_load_string($contentXml);
+        $xml = simplexml_load_string($contentXml, \SimpleXMLElement::class, LIBXML_NONET);
         if ($xml === false) {
             $error = collect(libxml_get_errors())->first();
             libxml_clear_errors();
@@ -216,12 +246,10 @@ class ItbiSpreadsheetParserService
         }
 
         $headers = null;
+        $expandedCells = 0;
+        $maxExpandedCells = max(1, (int) config('real_estate_data.itbi_sp.max_ods_expanded_cells', 2000000));
         foreach ($firstTable->children($tableNamespace)->{'table-row'} as $rowNode) {
             $repeatRows = $this->odsRepeatedCount($rowNode, 'number-rows-repeated');
-            if ($repeatRows > 1 && $headers !== null) {
-                continue;
-            }
-
             $row = $this->odsRowValues($rowNode, $namespaces);
             if ($this->isBlankRow($row)) {
                 continue;
@@ -229,10 +257,20 @@ class ItbiSpreadsheetParserService
 
             if ($headers === null) {
                 $headers = $this->normalizeHeaders($row);
+
                 continue;
             }
 
-            yield $this->combine($headers, $row);
+            if ($repeatRows > 10000) {
+                throw new \RuntimeException('ODS excede o limite de repetição de linhas com dados.');
+            }
+            $expandedCells += $repeatRows * count($row);
+            if ($expandedCells > $maxExpandedCells) {
+                throw new \RuntimeException('ODS excede o limite total de células expandidas. Divida a planilha ou use CSV.');
+            }
+            for ($i = 0; $i < $repeatRows; $i++) {
+                yield $this->combine($headers, $row);
+            }
         }
     }
 
@@ -288,6 +326,9 @@ class ItbiSpreadsheetParserService
         $index = 0;
         foreach (str_split($letters) as $letter) {
             $index = $index * 26 + (ord($letter) - 64);
+            if ($index > 16384) {
+                throw new \RuntimeException('Coluna XLSX fora dos limites da planilha.');
+            }
         }
 
         return max(0, $index - 1);
@@ -295,11 +336,38 @@ class ItbiSpreadsheetParserService
 
     private function normalizeHeaders(array $headers): array
     {
-        return array_map(fn ($header) => Str::of((string) $header)->lower()->ascii()->replaceMatches('/[^a-z0-9]+/', '_')->trim('_')->toString(), $headers);
+        $normalized = array_map(fn ($header) => Str::of(ltrim((string) $header, "\xEF\xBB\xBF"))->lower()->ascii()->replaceMatches('/[^a-z0-9]+/', '_')->trim('_')->toString(), $headers);
+        $named = array_filter($normalized, fn ($header) => $header !== '');
+        if (count($named) !== count(array_unique($named))) {
+            throw new \RuntimeException('Cabeçalho duplicado após normalização. Use nomes distintos para cada coluna.');
+        }
+
+        return $normalized;
+    }
+
+    private function readXmlEntry(ZipArchive $zip, string $name): string|false
+    {
+        $stat = $zip->statName($name);
+        if (! $stat) {
+            return false;
+        }
+        $limit = (int) config('real_estate_data.itbi_sp.max_xml_bytes', 32 * 1024 * 1024);
+        if ($stat['size'] > $limit) {
+            throw new \RuntimeException('Conteúdo XML da planilha excede o limite seguro. Divida a planilha ou use CSV.');
+        }
+        $xml = $zip->getFromName($name);
+        if ($xml !== false && preg_match('/<!DOCTYPE|<!ENTITY/i', $xml)) {
+            throw new \RuntimeException('Declarações DTD não são permitidas em planilhas.');
+        }
+
+        return $xml;
     }
 
     private function combine(array $headers, array $row): array
     {
+        if (! $this->isBlankRow(array_slice($row, count($headers)))) {
+            throw new \RuntimeException('A linha contém dados em colunas sem cabeçalho. Corrija a estrutura da planilha.');
+        }
         $row = array_pad($row, count($headers), null);
 
         return array_combine($headers, array_slice($row, 0, count($headers))) ?: [];

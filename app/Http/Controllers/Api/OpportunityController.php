@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Enums\OpportunitySource;
 use App\Enums\OpportunityStatus;
 use App\Enums\PropertyType;
+use App\Exceptions\OpportunityPhotoStorageException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\OpportunityIndexRequest;
 use App\Http\Requests\StoreOpportunityRequest;
 use App\Http\Requests\UpdateOpportunityRequest;
 use App\Http\Resources\OpportunityResource;
@@ -13,18 +15,20 @@ use App\Models\Opportunity;
 use App\Services\OpportunityService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class OpportunityController extends Controller
 {
     public function __construct(private readonly OpportunityService $service) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(OpportunityIndexRequest $request): JsonResponse
     {
+        $filters = $request->validated();
         $query = $request->user()->opportunities()->with('coverPhoto');
-        $query->when($request->filled('search'), fn ($q) => $q->where(fn ($sub) => $sub->where('title', 'like', '%'.$request->search.'%')->orWhere('address', 'like', '%'.$request->search.'%')));
+        $query->when($request->filled('search'), fn ($q) => $q->where(fn ($sub) => $sub->where('title', 'like', '%'.$filters['search'].'%')->orWhere('address', 'like', '%'.$filters['search'].'%')));
         foreach (['status', 'city', 'neighborhood', 'property_type', 'source'] as $filter) {
-            $query->when($request->filled($filter), fn ($q) => $q->where($filter, $request->input($filter)));
+            $query->when($request->filled($filter), fn ($q) => $q->where($filter, $filters[$filter]));
         }
         $query->when($request->filled('favorite'), fn ($q) => $q->where('is_favorite', $request->boolean('favorite')));
         $query->when($request->filled('archived'), fn ($q) => $q->where('is_archived', $request->boolean('archived')), fn ($q) => $q->where('is_archived', false));
@@ -38,7 +42,7 @@ class OpportunityController extends Controller
             'favorites' => (clone $base)->where('is_favorite', true)->count(),
             'discarded' => (clone $base)->where('status', OpportunityStatus::Discarded)->count(),
         ];
-        $paginator = $query->latest()->paginate(min($request->integer('per_page', 10), 50));
+        $paginator = $query->latest()->paginate($filters['per_page'] ?? 10);
 
         return response()->json([
             'data' => OpportunityResource::collection($paginator->items()),
@@ -70,7 +74,16 @@ class OpportunityController extends Controller
     public function destroy(Opportunity $opportunity): JsonResponse
     {
         $this->authorize('delete', $opportunity);
-        $opportunity->delete();
+        try {
+            $this->service->delete($opportunity);
+        } catch (OpportunityPhotoStorageException $exception) {
+            Log::warning('Falha ao remover fotos públicas ao excluir oportunidade', [
+                'opportunity_id' => $opportunity->id,
+                'exception_type' => $exception::class,
+            ]);
+
+            return response()->json(['message' => 'Não foi possível remover as fotos públicas. Tente novamente.'], 503);
+        }
 
         return response()->json(['message' => 'Oportunidade excluída.']);
     }

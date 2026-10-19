@@ -13,7 +13,6 @@ class PropriedadeEndereco extends BaseModel
 
     protected $fillable = [
         'tenant_id',
-        'propriedade_id',
         'cep',
         'logradouro',
         'numero',
@@ -24,7 +23,6 @@ class PropriedadeEndereco extends BaseModel
         'pais',
         'latitude',
         'longitude',
-        'deletado_flg',
     ];
 
     protected $casts = [

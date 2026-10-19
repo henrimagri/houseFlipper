@@ -25,6 +25,6 @@ class FinancingDetailRequest extends FormRequest
 
     public function rules(): array
     {
-        return ['label' => ['nullable', 'string', 'max:120'], 'bank_name' => ['nullable', 'string', 'max:120'], 'financing_system' => ['nullable', 'in:SAC,PRICE'], 'interest_rate_monthly' => ['nullable', 'numeric', 'min:0'], 'interest_rate_yearly' => ['nullable', 'numeric', 'min:0'], 'total_installments' => ['nullable', 'integer', 'min:0'], 'installment_value' => ['nullable', 'numeric', 'min:0'], 'paid_installments' => ['nullable', 'integer', 'min:0'], 'outstanding_balance' => ['nullable', 'numeric', 'min:0'], 'payoff_amount' => ['nullable', 'numeric', 'min:0']];
+        return ['label' => ['nullable', 'string', 'max:120'], 'bank_name' => ['nullable', 'string', 'max:120'], 'financing_system' => ['nullable', 'in:SAC,PRICE'], 'interest_rate_monthly' => ['nullable', 'numeric', 'min:0', 'max:100'], 'interest_rate_yearly' => ['nullable', 'numeric', 'min:0', 'max:1000'], 'total_installments' => ['nullable', 'integer', 'min:0', 'max:600'], 'installment_value' => ['nullable', 'numeric', 'min:0', 'max:999999999999'], 'paid_installments' => ['nullable', 'integer', 'min:0', 'lte:total_installments', 'max:600'], 'outstanding_balance' => ['nullable', 'numeric', 'min:0', 'max:999999999999'], 'payoff_amount' => ['nullable', 'numeric', 'min:0', 'max:999999999999']];
     }
 }

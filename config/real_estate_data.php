@@ -4,11 +4,15 @@ return [
     'itbi_sp' => [
         'enabled' => env('ITBI_SP_ENABLED', false),
         'source_url' => env('ITBI_SP_SOURCE_URL'),
+        'allowed_download_hosts' => array_values(array_filter(array_map('trim', explode(',', env('ITBI_ALLOWED_DOWNLOAD_HOSTS', ''))))),
+        'max_download_bytes' => (int) env('ITBI_MAX_DOWNLOAD_BYTES', 256000 * 1024),
+        'max_discovery_bytes' => (int) env('ITBI_MAX_DISCOVERY_BYTES', 2 * 1024 * 1024),
         'storage_disk' => env('ITBI_SP_STORAGE_DISK', 'local'),
         'storage_path' => env('ITBI_SP_STORAGE_PATH', 'real-estate-data/itbi/sp/raw'),
         'import_day' => (int) env('ITBI_SP_IMPORT_DAY', 5),
         'provider' => 'prefeitura_sp_itbi',
         'source_name' => 'Prefeitura de São Paulo - ITBI',
+        'max_ods_expanded_cells' => (int) env('ITBI_MAX_ODS_EXPANDED_CELLS', 2000000),
     ],
 
     'avm' => [

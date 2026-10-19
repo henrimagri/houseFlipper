@@ -2,14 +2,62 @@
 
 namespace App\Services\MarketData\Concerns;
 
+use App\Support\ExternalUrlPolicy;
+use Illuminate\Http\Client\Response;
+use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
+
 trait NormalizesTransactions
 {
+    private const MAX_PROVIDER_RESPONSE_BYTES = 2_097_152;
+
+    protected function guardedHttpOptions(): array
+    {
+        return [
+            'allow_redirects' => false,
+            'decode_content' => false,
+            'on_headers' => function (ResponseInterface $response): void {
+                $length = trim($response->getHeaderLine('Content-Length'));
+                if ($length !== '' && ctype_digit($length) && (int) $length > self::MAX_PROVIDER_RESPONSE_BYTES) {
+                    throw new RuntimeException('Resposta externa excede o limite permitido.');
+                }
+            },
+            'progress' => function (int $downloadTotal, int $downloadedBytes): void {
+                if ($downloadTotal > self::MAX_PROVIDER_RESPONSE_BYTES || $downloadedBytes > self::MAX_PROVIDER_RESPONSE_BYTES) {
+                    throw new RuntimeException('Resposta externa excede o limite permitido.');
+                }
+            },
+        ];
+    }
+
+    protected function assertPublicHttpsEndpoint(mixed $endpoint): string
+    {
+        $endpoint = trim((string) $endpoint);
+        if (! ExternalUrlPolicy::allows($endpoint)) {
+            throw new RuntimeException('Endpoint externo não permitido.');
+        }
+
+        return $endpoint;
+    }
+
+    protected function assertGuardedResponseSize(Response $response): void
+    {
+        if (strlen($response->body()) > self::MAX_PROVIDER_RESPONSE_BYTES) {
+            throw new RuntimeException('Resposta externa excede o limite permitido.');
+        }
+    }
+
     protected function normalizeTransaction(array $row, string $source, string $type = 'confirmed_transaction'): ?array
     {
-        $price = $this->numberFrom($row, ['price', 'valor', 'valor_venda', 'valor_transacao', 'valor_itbi', 'base_calculo', 'vl_transacao']);
-        $area = $this->numberFrom($row, ['area_m2', 'area', 'area_util', 'area_construida', 'area_privativa']);
+        foreach ($row as $value) {
+            if (! is_scalar($value) && $value !== null) {
+                return null;
+            }
+        }
+        $price = $this->numberFrom($row, ['price', 'valor', 'valor_venda', 'valor_transacao', 'valor_itbi', 'base_calculo', 'vl_transacao', 'valor_de_transacao', 'valor_da_transacao', 'valor_venal', 'valor_venal_de_referencia', 'vl_itbi', 'valor_transacao_rs']);
+        $area = $this->numberFrom($row, ['area_m2', 'area', 'area_util', 'area_construida', 'area_privativa', 'area_construida_m2', 'area_privativa_m2', 'area_util_m2', 'area_calculada', 'area_de_calculo']);
 
-        if ($price <= 0) {
+        if ($price <= 0 || ! is_finite($price) || ! is_finite($area)) {
             return null;
         }
 
@@ -19,7 +67,7 @@ trait NormalizesTransactions
             'source_reference' => $row['id'] ?? $row['codigo'] ?? $row['sql'] ?? $row['matricula'] ?? null,
             'title' => $row['title'] ?? $row['titulo'] ?? 'Venda real registrada',
             'address' => $row['address'] ?? $row['endereco'] ?? $row['logradouro'] ?? $row['endereco_aproximado'] ?? null,
-            'neighborhood' => $row['neighborhood'] ?? $row['bairro'] ?? null,
+            'neighborhood' => $row['neighborhood'] ?? $row['bairro'] ?? $row['nm_bairro'] ?? $row['nome_bairro'] ?? null,
             'city' => $row['city'] ?? $row['cidade'] ?? null,
             'transaction_date' => $row['transaction_date'] ?? $row['data_venda'] ?? $row['data_transacao'] ?? $row['data'] ?? null,
             'price' => round($price, 2),

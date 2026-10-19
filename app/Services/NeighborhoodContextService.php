@@ -2,13 +2,21 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
+use App\Support\ExternalUrlPolicy;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
 
 class NeighborhoodContextService
 {
     private const RADIUS_METERS = 4000;
+
+    private const MAX_EXTERNAL_RESPONSE_BYTES = 2_097_152;
 
     public function analyze(array $subject): array
     {
@@ -33,13 +41,14 @@ class NeighborhoodContextService
     private function fromGoogle(string $query, string $key): array
     {
         try {
-            $geocode = Http::timeout(5)
+            $geocode = $this->guardedHttp()->timeout(5)
                 ->acceptJson()
-                ->get('https://maps.googleapis.com/maps/api/geocode/json', [
+                ->get($this->assertPublicHttpsEndpoint('https://maps.googleapis.com/maps/api/geocode/json'), [
                     'address' => $query,
                     'region' => 'br',
                     'key' => $key,
                 ]);
+            $this->assertResponseSize($geocode);
 
             if (! $geocode->successful() || $geocode->json('status') !== 'OK') {
                 $message = $geocode->json('error_message') ?: 'Google Maps não retornou coordenadas para o bairro/endereço pesquisado.';
@@ -63,15 +72,16 @@ class NeighborhoodContextService
             foreach ($categories as $keyName => $category) {
                 $places = collect();
                 foreach ($category['types'] as $type) {
-                    $response = Http::timeout(5)
+                    $response = $this->guardedHttp()->timeout(5)
                         ->acceptJson()
-                        ->get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', [
+                        ->get($this->assertPublicHttpsEndpoint('https://maps.googleapis.com/maps/api/place/nearbysearch/json'), [
                             'location' => $lat.','.$lng,
                             'radius' => self::RADIUS_METERS,
                             'type' => $type,
                             'key' => $key,
                             'language' => 'pt-BR',
                         ]);
+                    $this->assertResponseSize($response);
 
                     if ($response->successful()) {
                         $places = $places->merge($response->json('results', []));
@@ -100,7 +110,7 @@ class NeighborhoodContextService
 
             return $this->connected('google_places', 'Google Maps/Places', $query, $lat, $lng, $groups);
         } catch (\Throwable $exception) {
-            return $this->unavailable('google_places', $exception->getMessage());
+            return $this->unavailable('google_places', 'Serviço externo indisponível.');
         }
     }
 
@@ -139,7 +149,6 @@ class NeighborhoodContextService
                 ];
             })->values()->all();
 
-            $groups = $this->fillMissingGroups($groups, $query, $lat, $lng);
             $total = collect($groups)->sum(fn (array $group) => (int) ($group['count'] ?? 0));
             if ($total === 0) {
                 $groups = $this->fetchNominatimNearbyGroups($query, $lat, $lng);
@@ -154,30 +163,6 @@ class NeighborhoodContextService
                     return $connected;
                 }
 
-                $groups = $this->knownPlacesFallback($query, $lat, $lng);
-                $total = collect($groups)->sum(fn (array $group) => (int) ($group['count'] ?? 0));
-
-                if ($total > 0) {
-                    $connected = $this->connected('local_places', 'Base local estimada', $query, $lat, $lng, $groups);
-                    $connected['message'] = 'Entorno carregado por base local estimada porque os serviços públicos de mapa não responderam nesta tentativa.';
-                    $connected['fallback_source'] = 'local_places_fallback';
-                    $this->putCachedContext($cacheKey, $connected);
-
-                    return $connected;
-                }
-
-                $groups = $this->estimatedUrbanProfileFallback($query);
-                $total = collect($groups)->sum(fn (array $group) => (int) ($group['count'] ?? 0));
-
-                if ($total > 0) {
-                    $connected = $this->connected('estimated_urban_profile', 'Perfil urbano estimado', $query, $lat, $lng, $groups);
-                    $connected['message'] = 'Entorno estimado por perfil urbano da região porque os serviços públicos de mapa não retornaram pontos nesta tentativa.';
-                    $connected['fallback_source'] = 'estimated_urban_profile';
-                    $this->putCachedContext($cacheKey, $connected);
-
-                    return $connected;
-                }
-
                 $cached = $this->getCachedContext($cacheKey);
                 if (is_array($cached) && collect($cached['groups'] ?? [])->sum(fn (array $group) => (int) ($group['count'] ?? 0)) > 0) {
                     $cached['message'] = 'Contexto do entorno recuperado da última coleta válida. O servidor Overpass oscilou nesta tentativa.';
@@ -186,15 +171,14 @@ class NeighborhoodContextService
                     return $cached;
                 }
 
-                return [
-                    ...$this->connected('local_coordinates', 'Coordenada estimada', $query, $lat, $lng, $groups),
-                    'status' => 'connected',
-                    'message' => 'Coordenada do bairro carregada. Os serviços públicos de pontos próximos não responderam nesta tentativa.',
+                return array_merge($this->unavailable(
+                    'openstreetmap',
+                    'A localização foi identificada, mas nenhuma fonte respondeu com pontos próximos verificáveis nesta tentativa.'
+                ), [
                     'query' => $query,
                     'lat' => $lat,
                     'lng' => $lng,
-                    'fallback_source' => 'local_coordinate_fallback',
-                ];
+                ]);
             }
 
             $connected = $this->connected('openstreetmap', 'OpenStreetMap', $query, $lat, $lng, $groups);
@@ -202,7 +186,7 @@ class NeighborhoodContextService
 
             return $connected;
         } catch (\Throwable $exception) {
-            return $this->unavailable('openstreetmap', $exception->getMessage());
+            return $this->unavailable('openstreetmap', 'Serviço externo indisponível.');
         }
     }
 
@@ -215,16 +199,17 @@ class NeighborhoodContextService
             }
 
             try {
-                $geocode = Http::timeout(5)
+                $geocode = $this->guardedHttp()->timeout(5)
                     ->acceptJson()
                     ->withUserAgent('InvestFlip/1.0 contato@investflip.local')
-                    ->get(config('services.openstreetmap.nominatim_endpoint'), [
+                    ->get($this->assertPublicHttpsEndpoint(config('services.openstreetmap.nominatim_endpoint')), [
                         'q' => $query,
                         'format' => 'json',
                         'limit' => 1,
                         'countrycodes' => 'br',
                         'addressdetails' => 1,
                     ]);
+                $this->assertResponseSize($geocode);
 
                 if ($geocode->successful() && ! empty($geocode->json())) {
                     return [$query, $geocode->json('0')];
@@ -265,174 +250,6 @@ class NeighborhoodContextService
         }
 
         return null;
-    }
-
-    private function knownPlacesFallback(string $query, float $originLat, float $originLng): array
-    {
-        $text = Str::of($query)->lower()->ascii()->replaceMatches('/[^a-z0-9]+/', ' ')->squish()->toString();
-
-        $placesByArea = [
-            'moema sao paulo' => [
-                ['name' => 'Estação Eucaliptos', 'type' => 'metrô', 'category' => 'transport', 'lat' => -23.6093, 'lng' => -46.6689],
-                ['name' => 'Estação Moema', 'type' => 'metrô', 'category' => 'transport', 'lat' => -23.6038, 'lng' => -46.6619],
-                ['name' => 'Shopping Ibirapuera', 'type' => 'shopping', 'category' => 'shopping', 'lat' => -23.6098, 'lng' => -46.6662],
-                ['name' => 'Pão de Açúcar Moema', 'type' => 'supermercado', 'category' => 'shopping', 'lat' => -23.6035, 'lng' => -46.6674],
-                ['name' => 'Droga Raia Moema', 'type' => 'farmácia', 'category' => 'health', 'lat' => -23.6037, 'lng' => -46.6654],
-                ['name' => 'Drogaria São Paulo Moema', 'type' => 'farmácia', 'category' => 'health', 'lat' => -23.6020, 'lng' => -46.6618],
-                ['name' => 'Hospital Alvorada', 'type' => 'hospital', 'category' => 'health', 'lat' => -23.5986, 'lng' => -46.6682],
-                ['name' => 'Colégio Móbile', 'type' => 'escola', 'category' => 'education', 'lat' => -23.6065, 'lng' => -46.6664],
-                ['name' => 'Escola Gaivota', 'type' => 'escola', 'category' => 'education', 'lat' => -23.6040, 'lng' => -46.6695],
-                ['name' => 'Parque Ibirapuera', 'type' => 'parque', 'category' => 'leisure', 'lat' => -23.5874, 'lng' => -46.6576],
-                ['name' => 'Clube Atlético Monte Líbano', 'type' => 'clube', 'category' => 'leisure', 'lat' => -23.5985, 'lng' => -46.6591],
-            ],
-            'perdizes sao paulo' => [
-                ['name' => 'Estação Sumaré', 'type' => 'metrô', 'category' => 'transport', 'lat' => -23.5508, 'lng' => -46.6777],
-                ['name' => 'PUC-SP Monte Alegre', 'type' => 'universidade', 'category' => 'education', 'lat' => -23.5378, 'lng' => -46.6735],
-                ['name' => 'Hospital São Camilo Pompeia', 'type' => 'hospital', 'category' => 'health', 'lat' => -23.5313, 'lng' => -46.6816],
-                ['name' => 'Bourbon Shopping São Paulo', 'type' => 'shopping', 'category' => 'shopping', 'lat' => -23.5268, 'lng' => -46.6806],
-                ['name' => 'Parque da Água Branca', 'type' => 'parque', 'category' => 'leisure', 'lat' => -23.5308, 'lng' => -46.6692],
-            ],
-            'pinheiros sao paulo' => [
-                ['name' => 'Estação Faria Lima', 'type' => 'metrô', 'category' => 'transport', 'lat' => -23.5673, 'lng' => -46.6938],
-                ['name' => 'Estação Pinheiros', 'type' => 'metrô/trem', 'category' => 'transport', 'lat' => -23.5660, 'lng' => -46.7012],
-                ['name' => 'Hospital Sancta Maggiore Pinheiros', 'type' => 'hospital', 'category' => 'health', 'lat' => -23.5616, 'lng' => -46.6946],
-                ['name' => 'Mercado Municipal de Pinheiros', 'type' => 'mercado', 'category' => 'shopping', 'lat' => -23.5671, 'lng' => -46.6958],
-                ['name' => 'Instituto Tomie Ohtake', 'type' => 'cultura', 'category' => 'leisure', 'lat' => -23.5612, 'lng' => -46.6979],
-            ],
-            'itapevi sp' => [
-                ['name' => 'Estação Itapevi', 'type' => 'trem', 'category' => 'transport', 'lat' => -23.5469, 'lng' => -46.9336],
-                ['name' => 'Terminal de Ônibus de Itapevi', 'type' => 'terminal de ônibus', 'category' => 'transport', 'lat' => -23.5472, 'lng' => -46.9346],
-                ['name' => 'Pronto-Socorro Central de Itapevi', 'type' => 'saúde', 'category' => 'health', 'lat' => -23.5475, 'lng' => -46.9315],
-                ['name' => 'Hospital Geral de Itapevi', 'type' => 'hospital', 'category' => 'health', 'lat' => -23.5611, 'lng' => -46.9486],
-                ['name' => 'Drogasil Itapevi Centro', 'type' => 'farmácia', 'category' => 'health', 'lat' => -23.5485, 'lng' => -46.9335],
-                ['name' => 'Supermercado Lopes Itapevi', 'type' => 'supermercado', 'category' => 'shopping', 'lat' => -23.5483, 'lng' => -46.9354],
-                ['name' => 'Assaí Atacadista Itapevi', 'type' => 'atacadista', 'category' => 'shopping', 'lat' => -23.5515, 'lng' => -46.9445],
-                ['name' => 'Shopping Itapevi Center', 'type' => 'comércio', 'category' => 'shopping', 'lat' => -23.5481, 'lng' => -46.9340],
-                ['name' => 'Escola Estadual Prof. Dimarães Antonio Sandei', 'type' => 'escola', 'category' => 'education', 'lat' => -23.5480, 'lng' => -46.9319],
-                ['name' => 'ETEC Itapevi', 'type' => 'escola técnica', 'category' => 'education', 'lat' => -23.5489, 'lng' => -46.9398],
-                ['name' => 'Parque da Cidade de Itapevi', 'type' => 'parque', 'category' => 'leisure', 'lat' => -23.5541, 'lng' => -46.9270],
-                ['name' => 'Ginásio de Esportes de Itapevi', 'type' => 'esporte', 'category' => 'leisure', 'lat' => -23.5467, 'lng' => -46.9350],
-            ],
-        ];
-
-        $places = collect($placesByArea)
-            ->first(fn (array $places, string $needle) => Str::contains($text, $needle));
-
-        if (! $places) {
-            return [];
-        }
-
-        return $this->emptyLocationGroups()
-            ->map(function (array $group) use ($places, $originLat, $originLng) {
-                $groupPlaces = collect($places)
-                    ->filter(fn (array $place) => $place['category'] === $group['key'])
-                    ->map(fn (array $place) => [
-                        'name' => $place['name'],
-                        'type' => $place['type'],
-                        'category' => $place['category'],
-                        'distance_m' => $this->distanceMeters($originLat, $originLng, (float) $place['lat'], (float) $place['lng']),
-                        'rating' => null,
-                    ])
-                    ->filter(fn (array $place) => (int) $place['distance_m'] <= self::RADIUS_METERS)
-                    ->sortBy('distance_m')
-                    ->values();
-
-                return [
-                    'key' => $group['key'],
-                    'label' => $group['label'],
-                    'count' => $groupPlaces->count(),
-                    'places' => $groupPlaces->take(5)->values()->all(),
-                ];
-            })
-            ->values()
-            ->all();
-    }
-
-    private function fillMissingGroups(array $groups, string $query, float $lat, float $lng): array
-    {
-        $missingKeys = collect($groups)
-            ->filter(fn (array $group) => (int) ($group['count'] ?? 0) === 0)
-            ->pluck('key')
-            ->all();
-
-        if ($missingKeys === []) {
-            return $groups;
-        }
-
-        $fallbackGroups = $this->knownPlacesFallback($query, $lat, $lng);
-        if (collect($fallbackGroups)->sum(fn (array $group) => (int) ($group['count'] ?? 0)) === 0) {
-            $fallbackGroups = $this->estimatedUrbanProfileFallback($query);
-        }
-
-        $fallbackByKey = collect($fallbackGroups)->keyBy('key');
-
-        return collect($groups)
-            ->map(function (array $group) use ($missingKeys, $fallbackByKey) {
-                if (! in_array($group['key'], $missingKeys, true)) {
-                    return $group;
-                }
-
-                $fallback = $fallbackByKey->get($group['key']);
-                if (! $fallback || (int) ($fallback['count'] ?? 0) === 0) {
-                    return $group;
-                }
-
-                $fallback['label'] = $group['label'];
-                $fallback['filled_from_fallback'] = true;
-
-                return $fallback;
-            })
-            ->values()
-            ->all();
-    }
-
-    private function estimatedUrbanProfileFallback(string $query): array
-    {
-        $area = trim((string) Str::of($query)->before(',')->toString()) ?: 'região';
-        $profiles = [
-            'transport' => [
-                ['name' => 'Terminal/estação de transporte da região', 'type' => 'transporte público', 'distance_m' => 900],
-                ['name' => 'Corredor de ônibus da região', 'type' => 'ônibus', 'distance_m' => 1200],
-            ],
-            'education' => [
-                ['name' => 'Escolas próximas de '.$area, 'type' => 'educação', 'distance_m' => 700],
-                ['name' => 'Creches e colégios da região', 'type' => 'educação', 'distance_m' => 1300],
-            ],
-            'health' => [
-                ['name' => 'Farmácias próximas de '.$area, 'type' => 'farmácia', 'distance_m' => 500],
-                ['name' => 'Unidade de saúde da região', 'type' => 'saúde', 'distance_m' => 1500],
-            ],
-            'shopping' => [
-                ['name' => 'Mercados e comércio local de '.$area, 'type' => 'comércio', 'distance_m' => 450],
-                ['name' => 'Serviços e lojas de bairro', 'type' => 'comércio', 'distance_m' => 900],
-            ],
-            'leisure' => [
-                ['name' => 'Praças e áreas de lazer da região', 'type' => 'lazer', 'distance_m' => 1000],
-            ],
-        ];
-
-        return $this->emptyLocationGroups()
-            ->map(function (array $group) use ($profiles) {
-                $places = collect($profiles[$group['key']] ?? [])
-                    ->map(fn (array $place) => [
-                        'name' => $place['name'],
-                        'type' => $place['type'],
-                        'category' => $group['key'],
-                        'distance_m' => $place['distance_m'],
-                        'rating' => null,
-                        'estimated' => true,
-                    ])
-                    ->values();
-
-                return [
-                    'key' => $group['key'],
-                    'label' => $group['label'],
-                    'count' => $places->count(),
-                    'places' => $places->all(),
-                ];
-            })
-            ->values()
-            ->all();
     }
 
     private function getCachedContext(string $cacheKey): ?array
@@ -510,7 +327,7 @@ class NeighborhoodContextService
         return null;
     }
 
-    private function emptyLocationGroups(): \Illuminate\Support\Collection
+    private function emptyLocationGroups(): Collection
     {
         return collect([
             ['key' => 'transport', 'label' => 'Transporte'],
@@ -541,16 +358,17 @@ class NeighborhoodContextService
                     }
 
                     try {
-                        $response = Http::timeout(4)
+                        $response = $this->guardedHttp()->timeout(4)
                             ->acceptJson()
                             ->withUserAgent('InvestFlip/1.0 contato@investflip.local')
-                            ->get(config('services.openstreetmap.nominatim_endpoint'), [
+                            ->get($this->assertPublicHttpsEndpoint(config('services.openstreetmap.nominatim_endpoint')), [
                                 'q' => $term.' perto de '.$query,
                                 'format' => 'json',
                                 'limit' => 6,
                                 'countrycodes' => 'br',
                                 'addressdetails' => 1,
                             ]);
+                        $this->assertResponseSize($response);
 
                         if (! $response->successful()) {
                             continue;
@@ -651,7 +469,7 @@ out center tags 80;
 QUERY;
     }
 
-    private function fetchOverpassElements(float $lat, float $lng): \Illuminate\Support\Collection
+    private function fetchOverpassElements(float $lat, float $lng): Collection
     {
         $query = $this->overpassQuery($lat, $lng);
         $endpoints = collect([
@@ -664,11 +482,12 @@ QUERY;
 
         foreach ($endpoints as $endpoint) {
             try {
-                $response = Http::timeout(6)
+                $response = $this->guardedHttp()->timeout(6)
                     ->acceptJson()
                     ->withUserAgent('InvestFlip/1.0 contato@investflip.local')
                     ->asForm()
-                    ->post($endpoint, ['data' => $query]);
+                    ->post($this->assertPublicHttpsEndpoint($endpoint), ['data' => $query]);
+                $this->assertResponseSize($response);
 
                 if ($response->successful() && is_array($response->json('elements'))) {
                     $elements = collect($response->json('elements', []));
@@ -689,6 +508,42 @@ QUERY;
         $normalizedQuery = Str::of($query)->lower()->ascii()->replaceMatches('/[^a-z0-9]+/', '-')->trim('-')->limit(80, '')->toString();
 
         return 'neighborhood-context:'.round($lat, 3).':'.round($lng, 3).':'.$normalizedQuery;
+    }
+
+    private function guardedHttp(): PendingRequest
+    {
+        return Http::withHeaders(['Accept-Encoding' => 'identity'])->withOptions([
+            'allow_redirects' => false,
+            'decode_content' => false,
+            'on_headers' => function (ResponseInterface $response): void {
+                $length = trim($response->getHeaderLine('Content-Length'));
+                if ($length !== '' && ctype_digit($length) && (int) $length > self::MAX_EXTERNAL_RESPONSE_BYTES) {
+                    throw new RuntimeException('Resposta externa excede o limite permitido.');
+                }
+            },
+            'progress' => function (int $downloadTotal, int $downloadedBytes): void {
+                if ($downloadTotal > self::MAX_EXTERNAL_RESPONSE_BYTES || $downloadedBytes > self::MAX_EXTERNAL_RESPONSE_BYTES) {
+                    throw new RuntimeException('Resposta externa excede o limite permitido.');
+                }
+            },
+        ]);
+    }
+
+    private function assertPublicHttpsEndpoint(mixed $endpoint): string
+    {
+        $endpoint = trim((string) $endpoint);
+        if (! ExternalUrlPolicy::allows($endpoint)) {
+            throw new RuntimeException('Endpoint externo não permitido.');
+        }
+
+        return $endpoint;
+    }
+
+    private function assertResponseSize(Response $response): void
+    {
+        if (strlen($response->body()) > self::MAX_EXTERNAL_RESPONSE_BYTES) {
+            throw new RuntimeException('Resposta externa excede o limite permitido.');
+        }
     }
 
     private function queryCandidatesFrom(array $subject): array

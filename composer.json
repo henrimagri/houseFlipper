@@ -10,6 +10,7 @@
         "laravel/framework": "^13.7",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
+        "resend/resend-php": "^1.0",
         "spatie/laravel-data": "^4.23",
         "spatie/laravel-medialibrary": "^11.22",
         "spatie/laravel-permission": "^7.4"
@@ -46,14 +47,14 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd\" \"php -d upload_max_filesize=256M -d post_max_size=256M -d memory_limit=512M -d max_execution_time=300 -S 127.0.0.1:8000 -t public server.php\" \"npm --prefix frontend run dev -- --host 127.0.0.1\" --names=server,vite --kill-others"
+            "npx concurrently -c \"#93c5fd,#c4b5fd\" \"php -d expose_php=0 -d upload_max_filesize=256M -d post_max_size=256M -d memory_limit=512M -d max_execution_time=300 -S 127.0.0.1:8000 -t public server.php\" \"npm --prefix frontend run dev -- --host 127.0.0.1\" --names=server,vite --kill-others"
         ],
         "dev:full": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php -d upload_max_filesize=256M -d post_max_size=256M -d memory_limit=512M -d max_execution_time=300 -S 127.0.0.1:8000 -t public server.php\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan pail --timeout=0\" \"npm --prefix frontend run dev -- --host 127.0.0.1\" --names=server,queue,logs,vite --kill-others"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php -d expose_php=0 -d upload_max_filesize=256M -d post_max_size=256M -d memory_limit=512M -d max_execution_time=300 -S 127.0.0.1:8000 -t public server.php\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan pail --timeout=0\" \"npm --prefix frontend run dev -- --host 127.0.0.1\" --names=server,queue,logs,vite --kill-others"
         ],
         "serve:large-uploads": [
-            "php -d upload_max_filesize=256M -d post_max_size=256M -d memory_limit=512M -d max_execution_time=300 -S 127.0.0.1:8000 -t public server.php"
+            "php -d expose_php=0 -d upload_max_filesize=256M -d post_max_size=256M -d memory_limit=512M -d max_execution_time=300 -S 127.0.0.1:8000 -t public server.php"
         ],
         "test": [
             "@php artisan config:clear --ansi @no_additional_args",

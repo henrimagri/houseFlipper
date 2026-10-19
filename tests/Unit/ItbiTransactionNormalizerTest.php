@@ -53,4 +53,38 @@ class ItbiTransactionNormalizerTest extends TestCase
         $this->assertSame('land_area_m2', $normalized['calculation_area_source']);
         $this->assertSame(2000.0, $normalized['price_m2']);
     }
+
+    public function test_rejects_values_that_exceed_the_transaction_schema(): void
+    {
+        $normalizer = app(ItbiTransactionNormalizerService::class);
+        $cases = [
+            [['Valor da Transacao' => '10000000000000'], 'declared_transaction_value'],
+            [['Area Util' => '10000000000'], 'private_area_m2'],
+            [['Estado' => 'SAO PAULO'], 'state'],
+            [['CEP' => '1234567890123'], 'zip_code'],
+            [['Tipo do Imovel' => str_repeat('x', 81)], 'property_type'],
+            [[
+                'Logradouro' => str_repeat('A', 180),
+                'Bairro' => str_repeat('B', 120),
+            ], 'normalized_address'],
+            [[
+                'Valor da Transacao' => '9999999999999,99',
+                'Area Util' => '0,01',
+            ], 'price_m2'],
+            [['Descricao do uso IPTU' => str_repeat('ç', 32768)], 'iptu_use_description'],
+        ];
+
+        foreach ($cases as [$row, $field]) {
+            try {
+                $normalizer->normalize($row, 2, 'Audit');
+                $this->fail("{$field} deveria ter sido recusado.");
+            } catch (\UnexpectedValueException $exception) {
+                $this->assertStringContainsString($field, $exception->getMessage());
+            }
+        }
+
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('source_name');
+        $normalizer->normalize(['Valor da Transacao' => '1'], 2, str_repeat('S', 161));
+    }
 }

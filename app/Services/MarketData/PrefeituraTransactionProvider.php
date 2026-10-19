@@ -29,17 +29,24 @@ class PrefeituraTransactionProvider implements PropertyTransactionProviderInterf
             if ($this->isSaoPaulo($subject)) {
                 return $this->result(
                     'no_dataset',
-                    'Sem endpoint municipal configurado. Use PREFEITURA_TRANSACOES_API_URL para complementar a planilha ITBI importada.',
+                    'Endpoint municipal próprio não configurado. A busca pública usa o CKAN da Prefeitura de São Paulo e a planilha ITBI importada.',
                     []
                 );
             }
 
-            return $this->result('unconfigured', 'Defina PREFEITURA_TRANSACOES_API_URL para consultar a base municipal.', []);
+            return $this->result(
+                'no_dataset',
+                'Sem endpoint próprio de prefeitura. A análise usa catálogos CKAN públicos (dados.gov.br e portais municipais) quando disponíveis.',
+                []
+            );
         }
 
         try {
+            $endpoint = $this->assertPublicHttpsEndpoint($endpoint);
             $request = Http::acceptJson()
                 ->timeout(12)
+                ->withHeaders(['Accept-Encoding' => 'identity'])
+                ->withOptions($this->guardedHttpOptions())
                 ->withUserAgent('InvestFlip/1.0 (+market-data)');
             if ($token = config('services.prefeituras.token')) {
                 $request = $request->withToken($token);
@@ -52,8 +59,9 @@ class PrefeituraTransactionProvider implements PropertyTransactionProviderInterf
                 'address' => $subject['address'] ?? null,
                 'limit' => 50,
             ]);
+            $this->assertGuardedResponseSize($response);
         } catch (\Throwable $exception) {
-            return $this->result('error', $exception->getMessage(), []);
+            return $this->result('error', 'Serviço externo indisponível.', []);
         }
 
         if (! $response->successful()) {
@@ -62,6 +70,7 @@ class PrefeituraTransactionProvider implements PropertyTransactionProviderInterf
 
         $rows = $response->json('data', $response->json('records', $response->json('transactions', [])));
         $transactions = collect(is_array($rows) ? $rows : [])
+            ->filter(fn ($row) => is_array($row))
             ->map(fn (array $row) => $this->normalizeTransaction($row, $this->label()))
             ->filter()
             ->values()
@@ -87,12 +96,16 @@ class PrefeituraTransactionProvider implements PropertyTransactionProviderInterf
 
         foreach ($terms as $term) {
             try {
+                $catalog = $this->assertPublicHttpsEndpoint($catalog);
                 $response = Http::timeout(12)
                     ->acceptJson()
+                    ->withHeaders(['Accept-Encoding' => 'identity'])
+                    ->withOptions($this->guardedHttpOptions())
                     ->withUserAgent('Mozilla/5.0 InvestFlip/1.0')
                     ->get($catalog, ['q' => $term, 'rows' => 10]);
+                $this->assertGuardedResponseSize($response);
             } catch (\Throwable $exception) {
-                return $this->result('error', $exception->getMessage(), []);
+                return $this->result('error', 'Serviço externo indisponível.', []);
             }
 
             if (! $response->successful()) {

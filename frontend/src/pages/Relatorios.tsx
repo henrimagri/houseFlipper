@@ -1,426 +1,228 @@
-import { useState } from 'react';
-import {
-  CalendarDays,
-  Filter,
-  Download,
-  TrendingUp,
-  DollarSign,
-  BarChart2,
-  CheckCircle2,
-  Tag,
-  ChevronDown,
-  MoreHorizontal,
-  PlusCircle,
-  Settings2,
-} from 'lucide-react';
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-} from 'recharts';
+import { useEffect, useRef, useState } from 'react';
+import { BarChart2, Building2, CheckCircle2, ChevronLeft, ChevronRight, Download, Loader2, RefreshCw, TrendingUp, Wallet } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import api from '@/lib/api';
+import { PaginatedCollection } from '@/lib/paginatedCollection';
+import { createLedgerReportCsv, createSummaryReportCsv, ledgerTypeLabel } from '@/lib/reportExport';
 
-const fmtBrl = (v: number, comCentavos = true) =>
-  v.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: comCentavos ? 2 : 0,
-    maximumFractionDigits: comCentavos ? 2 : 0,
-  });
-
-const fmtKshort = (v: number) => `R$ ${(v / 1000).toFixed(0)}k`;
-
-const meses = ['Jan/24', 'Fev/24', 'Mar/24', 'Abr/24', 'Mai/24', 'Jun/24', 'Jul/24', 'Ago/24', 'Set/24', 'Out/24', 'Nov/24', 'Dez/24'];
-
-const serieFCL = meses.map((m, i) => {
-  const fat = [120000, 145000, 165000, 180000, 240000, 230000, 280000, 360000, 320000, 380000, 410000, 405000][i];
-  const cus = [80000, 105000, 115000, 130000, 160000, 175000, 200000, 240000, 220000, 250000, 270000, 260000][i];
-  return { mes: m, Faturamento: fat, Custos: cus, 'Lucro Líquido': fat - cus };
-});
-
-const lucroPorMes = meses.map((m, i) => ({
-  mes: m,
-  valor: [38000, 42000, 48000, 52000, 78000, 65000, 88000, 145000, 100000, 130000, 142000, 110000][i],
-}));
-
-const composicaoCustos = [
-  { nome: 'Custos de Reforma', valor: 987450, pct: 59.0, cor: '#10b981' },
-  { nome: 'Compra de Imóveis', valor: 412500, pct: 24.6, cor: '#f59e0b' },
-  { nome: 'Custos Operacionais', valor: 154320, pct: 9.2, cor: '#3b82f6' },
-  { nome: 'Impostos e Taxas', valor: 78800, pct: 4.7, cor: '#f43f5e' },
-  { nome: 'Outros Custos', valor: 42000, pct: 2.5, cor: '#a855f7' },
-];
-
-const projetos = [
-  { nome: 'Casa Jardim Paulista', cod: '#2024-001', status: 'Concluído', investido: 235000, faturamento: 420000, lucro: 185000, roi: 34.2, margem: 44.0 },
-  { nome: 'Sobrado Vila Madalena', cod: '#2024-002', status: 'Concluído', investido: 485000, faturamento: 895000, lucro: 310000, roi: 29.8, margem: 34.6 },
-  { nome: 'Casa Campo Belo', cod: '#2024-003', status: 'Em andamento', investido: 290000, faturamento: 520000, lucro: 120000, roi: 20.7, margem: 23.1 },
-  { nome: 'Casa Interlagos', cod: '#2024-004', status: 'Em andamento', investido: 360000, faturamento: 640000, lucro: 190000, roi: 26.4, margem: 29.7 },
-  { nome: 'Sobrado Moema', cod: '#2024-005', status: 'Planejado', investido: 550000, faturamento: 920000, lucro: 210000, roi: 21.3, margem: 22.8 },
-];
-
-const statusCls = (s: string) => {
-  if (s === 'Concluído') return 'bg-emerald-100 text-emerald-700';
-  if (s === 'Em andamento') return 'bg-blue-100 text-blue-700';
-  return 'bg-amber-100 text-amber-700';
+type Dashboard = {
+  kpis: {
+    active_projects: number; total_projects: number; realized_profit: number; sales_revenue: number;
+    sold_properties: number; realized_roi: number; total_invested: number;
+  };
+  performance: Array<{ mes: string; investimento: number; faturamento: number; lucro: number }>;
+  composition: Array<{ name: string; valor: number; color: string }>;
+  projects: Array<{ id: string; nome: string; numero: string; cidade: string; investido: number; estimado: number; status: string; roi: number | null }>;
 };
 
-type TabId = 'visao' | 'financeiro' | 'obras' | 'imoveis' | 'despesas' | 'fornecedores' | 'lucro' | 'impostos';
+type LedgerEntry = { id: string; date: string; type: string; description: string; project: string | null; amount: number };
+type Ledger = {
+  data: LedgerEntry[];
+  meta: { current_page: number; last_page: number; per_page: number; total: number };
+  totals: { inflows: number; outflows: number; balance: number };
+};
+type Project = { id: number; nome: string };
 
-const tabs: { id: TabId; label: string }[] = [
-  { id: 'visao', label: 'Visão Geral' },
-  { id: 'financeiro', label: 'Financeiro' },
-  { id: 'obras', label: 'Obras' },
-  { id: 'imoveis', label: 'Imóveis' },
-  { id: 'despesas', label: 'Despesas' },
-  { id: 'fornecedores', label: 'Fornecedores' },
-  { id: 'lucro', label: 'Lucro e ROI' },
-  { id: 'impostos', label: 'Impostos' },
-];
+const PAGE_SIZE = 25;
+const money = (value: number) => Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const shortMoney = (value: number) => `R$ ${(Number(value || 0) / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 0 })} mil`;
+const stamp = () => new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date());
 
 export default function Relatorios() {
-  const [tab, setTab] = useState<TabId>('visao');
+  const projectLoader = useRef(new PaginatedCollection<Project>());
+  const ledgerController = useRef<AbortController | undefined>(undefined);
+  const [data, setData] = useState<Dashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [ledger, setLedger] = useState<Ledger | null>(null);
+  const [ledgerLoading, setLedgerLoading] = useState(true);
+  const [ledgerError, setLedgerError] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [projectId, setProjectId] = useState('');
+  const [page, setPage] = useState(1);
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
+  function ledgerParams(nextPage: number, perPage = PAGE_SIZE) {
+    return {
+      page: nextPage,
+      per_page: perPage,
+      ...(startDate ? { data_inicio: startDate } : {}),
+      ...(endDate ? { data_fim: endDate } : {}),
+      ...(projectId ? { projeto_id: Number(projectId) } : {}),
+    };
+  }
+
+  async function loadDashboard() {
+    setLoading(true); setError('');
+    try { setData((await api.get('/dashboard')).data); }
+    catch (exception: any) { setError(exception.response?.data?.message ?? 'Não foi possível carregar o relatório.'); setData(null); }
+    finally { setLoading(false); }
+  }
+
+  async function loadLedger() {
+    ledgerController.current?.abort();
+    const controller = new AbortController();
+    ledgerController.current = controller;
+    setLedgerLoading(true); setLedgerError('');
+    try {
+      const response = await api.get('/reports/ledger', { params: ledgerParams(page), signal: controller.signal });
+      if (!controller.signal.aborted) setLedger(response.data);
+    } catch (exception: any) {
+      if (controller.signal.aborted) return;
+      setLedger(null);
+      setLedgerError(exception.response?.data?.message ?? (Object.values(exception.response?.data?.errors ?? {}).flat().join(' ') || 'Não foi possível carregar a trilha contábil.'));
+    } finally {
+      if (!controller.signal.aborted) setLedgerLoading(false);
+    }
+  }
+
+  useEffect(() => { loadDashboard(); }, []);
+  useEffect(() => {
+    projectLoader.current.load(async (nextPage, perPage, signal) => {
+      const response = await api.get('/projetos', { params: { page: nextPage, per_page: perPage }, signal });
+      return response.data;
+    }).then(items => { if (items) setProjects(items); }).catch(() => {});
+    return () => { projectLoader.current.cancel(); ledgerController.current?.abort(); };
+  }, []);
+  useEffect(() => { loadLedger(); return () => ledgerController.current?.abort(); }, [page, startDate, endDate, projectId]);
+
+  function exportReport() {
+    if (!data) return;
+    const csv = createSummaryReportCsv({
+      generatedAt: stamp(),
+      totalInvested: data.kpis.total_invested,
+      salesRevenue: data.kpis.sales_revenue,
+      realizedProfit: data.kpis.realized_profit,
+      realizedRoi: data.kpis.realized_roi,
+      totalProjects: data.kpis.total_projects,
+      soldProperties: data.kpis.sold_properties,
+    });
+    downloadCsv(csv, `relatorio-resumo-${new Date().toISOString().slice(0, 10)}.csv`);
+  }
+
+  async function exportLedger() {
+    setExporting(true); setLedgerError('');
+    try {
+      const entries: LedgerEntry[] = [];
+      let nextPage = 1;
+      let lastPage = 1;
+      let totals = { inflows: 0, outflows: 0, balance: 0 };
+      do {
+        const response = await api.get('/reports/ledger', { params: ledgerParams(nextPage, 100) });
+        if (!Array.isArray(response.data.data) || !Number.isSafeInteger(response.data.meta?.last_page)) {
+          throw new Error('Resposta de paginação inválida.');
+        }
+        entries.push(...response.data.data);
+        totals = response.data.totals;
+        lastPage = response.data.meta.last_page;
+        nextPage += 1;
+      } while (nextPage <= lastPage);
+      const selected = projects.find(item => String(item.id) === projectId);
+      downloadCsv(createLedgerReportCsv({
+        generatedAt: stamp(),
+        dataInicio: startDate || 'Todo o histórico',
+        dataFim: endDate || 'Todo o histórico',
+        projeto: selected?.nome || (projectId ? `Projeto #${projectId}` : 'Todos os projetos'),
+        inflows: totals.inflows,
+        outflows: totals.outflows,
+        balance: totals.balance,
+        entries,
+      }), `relatorio-trilha-${new Date().toISOString().slice(0, 10)}.csv`);
+    } catch (exception: any) {
+      setLedgerError(exception.response?.data?.message ?? exception.message ?? 'Não foi possível exportar a trilha filtrada.');
+    } finally { setExporting(false); }
+  }
+
+  function changeFilter(setter: (value: string) => void, value: string) {
+    setter(value);
+    setPage(1);
+  }
+
+  if (loading) return <div className="min-h-[50vh] grid place-items-center text-slate-500 dark:text-slate-400"><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto text-primary-600" /><p className="mt-3">Calculando indicadores reais...</p></div></div>;
+  if (!data) return <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-8 text-center text-red-700 dark:text-red-300"><p>{error || 'Relatório indisponível.'}</p><button type="button" onClick={loadDashboard} className="mt-4 font-semibold inline-flex items-center gap-2"><RefreshCw className="h-4 w-4" />Tentar novamente</button></div>;
+
+  const compositionTotal = data.composition.reduce((sum, item) => sum + Number(item.valor || 0), 0);
+  const lastPage = Math.max(1, ledger?.meta.last_page ?? 1);
+  return <div className="space-y-6">
+    <header className="flex items-start justify-between gap-4 flex-wrap"><div><h1 className="text-2xl font-semibold">Relatórios</h1><p className="text-sm text-slate-500 dark:text-slate-400">Indicadores acumulados da conta e trilha contábil filtrável pelos mesmos registros persistidos.</p></div><div className="flex gap-2 flex-wrap"><button type="button" onClick={() => { loadDashboard(); loadLedger(); }} className="border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-semibold inline-flex items-center gap-2"><RefreshCw className="h-4 w-4" />Atualizar</button><button type="button" onClick={exportReport} className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg px-4 py-2 text-sm font-semibold inline-flex items-center gap-2"><Download className="h-4 w-4" />Exportar resumo</button></div></header>
+    {error && <div role="alert" className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-4 text-sm text-amber-700 dark:text-amber-300">{error}</div>}
+    <p className="text-xs text-slate-500 dark:text-slate-400">O painel permanece acumulado. A trilha abaixo usa o período e o projeto selecionados; vendas consideram estados fechada e escriturada.</p>
+    <section aria-label="Indicadores financeiros" className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+      <Metric icon={Wallet} label="Total investido" value={money(data.kpis.total_invested)} />
+      <Metric icon={TrendingUp} label="Faturamento de vendas" value={money(data.kpis.sales_revenue)} />
+      <Metric icon={BarChart2} label="Lucro realizado" value={money(data.kpis.realized_profit)} />
+      <Metric icon={CheckCircle2} label="ROI realizado" value={`${Number(data.kpis.realized_roi || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`} />
+      <Metric icon={Building2} label="Projetos cadastrados" value={String(data.kpis.total_projects)} />
+      <Metric icon={Building2} label="Projetos em andamento" value={String(data.kpis.active_projects)} />
+      <Metric icon={CheckCircle2} label="Imóveis vendidos" value={String(data.kpis.sold_properties)} />
+    </section>
+
+    <div className="grid xl:grid-cols-[minmax(0,1fr)_420px] gap-5">
+      <ChartCard title="Investimento, faturamento e lucro — últimos seis meses">
+        <ResponsiveContainer width="100%" height="100%"><LineChart data={data.performance} margin={{ top: 8, right: 15, left: 5, bottom: 5 }}><CartesianGrid stroke="#cbd5e1" strokeOpacity={0.3} strokeDasharray="3 3" vertical={false} /><XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#94a3b8' }} /><YAxis tickFormatter={shortMoney} tick={{ fontSize: 11, fill: '#94a3b8' }} width={70} /><Tooltip formatter={(value: number) => money(value)} /><Legend /><Line type="monotone" dataKey="investimento" name="Investimento" stroke="#ef4444" strokeWidth={2} /><Line type="monotone" dataKey="faturamento" name="Faturamento" stroke="#10b981" strokeWidth={2} /><Line type="monotone" dataKey="lucro" name="Lucro" stroke="#7c3aed" strokeWidth={2} /></LineChart></ResponsiveContainer>
+      </ChartCard>
+      <ChartCard title="Composição acumulada do investimento">
+        {compositionTotal > 0 ? <div className="grid grid-cols-[180px_1fr] items-center h-full"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={data.composition} dataKey="valor" nameKey="name" innerRadius={45} outerRadius={75} stroke="none">{data.composition.map(item => <Cell key={item.name} fill={item.color} />)}</Pie><Tooltip formatter={(value: number) => money(value)} /></PieChart></ResponsiveContainer><div className="space-y-3 text-xs">{data.composition.map(item => <div key={item.name}><div className="flex justify-between gap-3"><span className="text-slate-500 dark:text-slate-400">{item.name}</span><strong>{money(item.valor)}</strong></div><div className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded mt-1"><div className="h-full rounded" style={{ width: `${compositionTotal ? item.valor / compositionTotal * 100 : 0}%`, backgroundColor: item.color }} /></div></div>)}</div></div> : <Empty message="Nenhum investimento registrado." />}
+      </ChartCard>
+    </div>
+
+    <ChartCard title="Lucro realizado por mês"><ResponsiveContainer width="100%" height="100%"><BarChart data={data.performance}><CartesianGrid stroke="#cbd5e1" strokeOpacity={0.3} strokeDasharray="3 3" vertical={false} /><XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#94a3b8' }} /><YAxis tickFormatter={shortMoney} tick={{ fontSize: 11, fill: '#94a3b8' }} width={70} /><Tooltip formatter={(value: number) => money(value)} /><Bar dataKey="lucro" name="Lucro" fill="#7c3aed" radius={[5, 5, 0, 0]} /></BarChart></ResponsiveContainer></ChartCard>
+
+    <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden"><div className="p-5 border-b border-slate-200 dark:border-slate-800"><h2 className="font-bold">Projetos em andamento mais recentes</h2><p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Até cinco projetos retornados pelo painel financeiro, sem filtro da trilha.</p></div>{data.projects.length ? <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="bg-slate-50 dark:bg-slate-950 text-left text-xs uppercase text-slate-500 dark:text-slate-400"><th className="px-5 py-3">Projeto</th><th className="px-3 py-3">Cidade</th><th className="px-3 py-3">Custo da obra</th><th className="px-3 py-3">Venda alvo</th><th className="px-3 py-3">ROI projetado</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{data.projects.map(project => <tr key={project.id}><td className="px-5 py-3"><strong>{project.nome}</strong><span className="block text-xs text-slate-500 dark:text-slate-400">{project.numero}</span></td><td className="px-3 py-3">{project.cidade}</td><td className="px-3 py-3">{money(project.investido)}</td><td className="px-3 py-3">{money(project.estimado)}</td><td className="px-3 py-3">{project.roi === null ? 'Indisponível' : `${Number(project.roi).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`}</td></tr>)}</tbody></table></div> : <Empty message="Nenhum projeto em andamento." />}</section>
+
+    <section className="space-y-4" aria-label="Trilha contábil">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Relatórios</h1>
-          <p className="text-sm text-slate-500">
-            Acompanhe o desempenho dos seus projetos e obras
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="inline-flex items-center gap-2 text-sm text-slate-700 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 bg-white">
-            <CalendarDays className="h-4 w-4 text-slate-400" /> 01/01/2024 - 31/12/2024
-          </button>
-          <button className="inline-flex items-center gap-2 text-sm text-slate-700 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 bg-white">
-            <Filter className="h-4 w-4" /> Filtros
-          </button>
-          <button className="inline-flex items-center gap-2 text-sm text-white px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700">
-            <Download className="h-4 w-4" /> Exportar relatório
-          </button>
-        </div>
+        <div><h2 className="text-lg font-semibold">Trilha contábil</h2><p className="text-sm text-slate-500 dark:text-slate-400">Aquisições, despesas não canceladas e vendas finais da conta, no período e projeto escolhidos.</p></div>
+        <button type="button" onClick={exportLedger} disabled={exporting || !ledger?.meta.total} className="border border-slate-300 dark:border-slate-700 rounded-lg px-4 py-2 text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-50"><Download className="h-4 w-4" />{exporting ? 'Exportando...' : 'Exportar trilha filtrada'}</button>
       </div>
-
-      {/* Tabs */}
-      <div className="border-b border-slate-200 flex gap-6 overflow-x-auto">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`text-sm pb-3 -mb-px border-b-2 whitespace-nowrap ${
-              tab === t.id
-                ? 'border-primary-600 text-primary-700 font-medium'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-4 grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
+        <label className="text-xs text-slate-500 dark:text-slate-400">Projeto<select className="input mt-1" value={projectId} onChange={event => changeFilter(setProjectId, event.target.value)}><option value="">Todos</option>{projects.map(project => <option key={project.id} value={project.id}>{project.nome}</option>)}</select></label>
+        <label className="text-xs text-slate-500 dark:text-slate-400">De<input className="input mt-1" type="date" value={startDate} max={endDate || undefined} onChange={event => changeFilter(setStartDate, event.target.value)} /></label>
+        <label className="text-xs text-slate-500 dark:text-slate-400">Até<input className="input mt-1" type="date" value={endDate} min={startDate || undefined} onChange={event => changeFilter(setEndDate, event.target.value)} /></label>
+        <p className="text-xs text-slate-500 dark:text-slate-400 self-end">Totais e CSV usam o mesmo conjunto filtrado, não apenas a página visível.</p>
       </div>
-
-      {tab !== 'visao' ? (
-        <div className="bg-white rounded-xl border border-slate-200 p-10 text-center text-sm text-slate-500">
-          Conteúdo desta aba em breve.
-        </div>
-      ) : (
-        <>
-          {/* KPIs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            <KpiRel label="Faturamento (Vendas)" valor={<span className="text-emerald-600">{fmtBrl(2317450)}</span>} delta="↑ 28,6% vs período anterior" icon={TrendingUp} cor="emerald" />
-            <KpiRel label="Lucro Líquido" valor={<span className="text-emerald-600">{fmtBrl(642380)}</span>} delta="↑ 35,4% vs período anterior" icon={DollarSign} cor="primary" />
-            <KpiRel label="ROI Médio" valor={<span className="text-primary-600">28,4%</span>} delta="↑ 4,7 p.p. vs período anterior" icon={BarChart2} cor="primary" />
-            <KpiRel label="Projetos Concluídos" valor={<span className="text-amber-600">12</span>} delta="↑ 20% vs período anterior" icon={CheckCircle2} cor="amber" />
-            <KpiRel label="Ticket Médio de Venda" valor={<span className="text-slate-900">{fmtBrl(193120.83)}</span>} delta="↑ 12,1% vs período anterior" icon={Tag} cor="blue" />
+      {ledgerError && <div role="alert" className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700 dark:text-red-300 flex justify-between gap-3"><span>{ledgerError}</span><button type="button" onClick={loadLedger} className="font-bold underline">Tentar novamente</button></div>}
+      <div className="grid sm:grid-cols-3 gap-3">
+        <Metric icon={TrendingUp} label="Entradas filtradas" value={money(ledger?.totals.inflows ?? 0)} />
+        <Metric icon={Wallet} label="Saídas filtradas" value={money(ledger?.totals.outflows ?? 0)} />
+        <Metric icon={BarChart2} label="Saldo filtrado" value={money(ledger?.totals.balance ?? 0)} />
+      </div>
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+        {ledgerLoading ? <div className="p-10 text-center text-sm text-slate-500 dark:text-slate-400"><Loader2 className="h-6 w-6 animate-spin mx-auto text-primary-600" /><p className="mt-3">Carregando trilha contábil...</p></div> : <>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead><tr className="bg-slate-50 dark:bg-slate-950 text-left text-xs uppercase text-slate-500 dark:text-slate-400"><th className="px-5 py-3">Data</th><th className="px-3 py-3">Tipo</th><th className="px-3 py-3">Descrição</th><th className="px-3 py-3">Projeto</th><th className="px-3 py-3 text-right">Valor</th></tr></thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">{ledger?.data.map(entry => <tr key={entry.id}><td className="px-5 py-3 whitespace-nowrap">{formatDate(entry.date)}</td><td className="px-3 py-3">{ledgerTypeLabel(entry.type)}</td><td className="px-3 py-3 font-medium">{entry.description}</td><td className="px-3 py-3">{entry.project || 'Sem projeto'}</td><td className={`px-3 py-3 text-right whitespace-nowrap font-semibold ${entry.amount < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{money(entry.amount)}</td></tr>)}</tbody>
+            </table>
+            {!ledger?.data.length && <Empty message="Nenhum lançamento no período e projeto selecionados." />}
           </div>
-
-          {/* Linha + Donut */}
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_460px] gap-5">
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-slate-900">Faturamento, Custos e Lucro Líquido</h3>
-                <SelectFalso titulo="Mensal" pequeno />
-              </div>
-              <div className="flex items-center gap-5 text-xs text-slate-500 mb-2">
-                <Legenda cor="#10b981" label="Faturamento" />
-                <Legenda cor="#ef4444" label="Custos" />
-                <Legenda cor="#3b82f6" label="Lucro Líquido" />
-              </div>
-              <div className="h-72">
-                <ResponsiveContainer>
-                  <LineChart data={serieFCL} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                    <CartesianGrid stroke="#eef2f7" strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={fmtKshort} width={56} />
-                    <Tooltip formatter={(v: number) => fmtBrl(v)} />
-                    <Legend wrapperStyle={{ display: 'none' }} />
-                    <Line type="monotone" dataKey="Faturamento" stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: '#10b981' }} />
-                    <Line type="monotone" dataKey="Custos" stroke="#ef4444" strokeWidth={2} dot={{ r: 3, fill: '#ef4444' }} />
-                    <Line type="monotone" dataKey="Lucro Líquido" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3, fill: '#3b82f6' }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-slate-900">Composição dos Custos</h3>
-                <SelectFalso titulo="Todos os projetos" pequeno />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] items-center gap-4">
-                <div className="relative h-44">
-                  <ResponsiveContainer>
-                    <PieChart>
-                      <Pie data={composicaoCustos} dataKey="valor" innerRadius={55} outerRadius={80} paddingAngle={1} stroke="none">
-                        {composicaoCustos.map((c) => (
-                          <Cell key={c.nome} fill={c.cor} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="absolute inset-0 grid place-items-center pointer-events-none">
-                    <div className="text-center">
-                      <div className="text-base font-bold text-slate-900">R$ 1.675.070,00</div>
-                      <div className="text-[10px] text-slate-500">Total de Custos</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {composicaoCustos.map((c) => (
-                    <div key={c.nome} className="flex items-center gap-2 text-xs">
-                      <span className="h-2 w-2 rounded-full" style={{ background: c.cor }} />
-                      <span className="text-slate-600 flex-1 truncate">{c.nome}</span>
-                      <span className="text-slate-900 font-medium whitespace-nowrap">{fmtBrl(c.valor)}</span>
-                      <span className="text-slate-400 w-12 text-right">{c.pct.toString().replace('.', ',')}%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+            <span>{ledger?.meta.total ? `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, ledger.meta.total)} de ${ledger.meta.total}` : '0 resultados'}</span>
+            <div className="flex items-center gap-2">
+              <button type="button" aria-label="Página anterior" disabled={page <= 1} onClick={() => setPage(value => value - 1)} className="p-2 rounded-lg border disabled:opacity-40"><ChevronLeft className="h-4 w-4" /></button>
+              <span>Página {page} de {lastPage}</span>
+              <button type="button" aria-label="Próxima página" disabled={page >= lastPage} onClick={() => setPage(value => value + 1)} className="p-2 rounded-lg border disabled:opacity-40"><ChevronRight className="h-4 w-4" /></button>
             </div>
           </div>
-
-          {/* Tabela + Barras/Resumo */}
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_460px] gap-5">
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Desempenho dos Projetos</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-xs uppercase tracking-wide text-slate-500">
-                      <th className="text-left py-2 font-medium">Projeto / Imóvel</th>
-                      <th className="text-left py-2 font-medium">Status</th>
-                      <th className="text-left py-2 font-medium">Investido</th>
-                      <th className="text-left py-2 font-medium">Faturamento</th>
-                      <th className="text-left py-2 font-medium">Lucro Líquido</th>
-                      <th className="text-left py-2 font-medium">ROI</th>
-                      <th className="text-left py-2 font-medium">Margem de Lucro</th>
-                      <th />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {projetos.map((p) => (
-                      <tr key={p.cod} className="hover:bg-slate-50">
-                        <td className="py-3 pr-3">
-                          <div className="flex items-center gap-3">
-                            <div className="h-9 w-12 rounded-md bg-gradient-to-br from-slate-200 to-slate-300 grid place-items-center text-slate-500 shrink-0">
-                              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-                                <path d="M12 3 2 12h3v8h6v-6h2v6h6v-8h3z" />
-                              </svg>
-                            </div>
-                            <div>
-                              <div className="font-medium text-slate-900">{p.nome}</div>
-                              <div className="text-[11px] text-slate-500">{p.cod}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 pr-3">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusCls(p.status)}`}>
-                            {p.status}
-                          </span>
-                        </td>
-                        <td className="py-3 pr-3 text-slate-700">{fmtBrl(p.investido)}</td>
-                        <td className="py-3 pr-3 text-slate-700">{fmtBrl(p.faturamento)}</td>
-                        <td className="py-3 pr-3 text-emerald-600 font-medium">{fmtBrl(p.lucro)}</td>
-                        <td className="py-3 pr-3 text-emerald-600 font-medium">
-                          {p.roi.toString().replace('.', ',')}%
-                        </td>
-                        <td className="py-3 pr-3 text-slate-700">
-                          {p.margem.toString().replace('.', ',')}%
-                        </td>
-                        <td className="py-3 text-slate-400">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <button className="mt-4 text-sm text-primary-600 font-medium hover:text-primary-700">
-                Ver relatório completo de projetos →
-              </button>
-            </div>
-
-            <div className="space-y-5">
-              <div className="bg-white rounded-xl border border-slate-200 p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-slate-900">Lucro Líquido por Mês</h3>
-                  <SelectFalso titulo="Mensal" pequeno />
-                </div>
-                <div className="h-44">
-                  <ResponsiveContainer>
-                    <BarChart data={lucroPorMes} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-                      <CartesianGrid stroke="#eef2f7" strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} interval={0} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={fmtKshort} width={50} />
-                      <Tooltip formatter={(v: number) => fmtBrl(v)} />
-                      <Bar dataKey="valor" fill="#7c3aed" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl border border-slate-200 p-5">
-                <h3 className="text-sm font-semibold text-slate-900 mb-4">Resumo Financeiro do Período</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-4 items-center">
-                  <div className="space-y-2 text-sm">
-                    <LinhaResumo label="Faturamento (Vendas)" valor={fmtBrl(2317450)} cor="text-emerald-600" />
-                    <LinhaResumo label="(-) Custos Totais" valor={fmtBrl(1675070)} cor="text-red-600" />
-                    <LinhaResumo label="(=) Lucro Bruto" valor={fmtBrl(642380)} cor="text-emerald-600 font-semibold" />
-                    <LinhaResumo label="(-) Despesas Operacionais" valor={fmtBrl(98250)} cor="text-red-600" />
-                    <div className="border-t border-slate-100 pt-2">
-                      <LinhaResumo label="(=) Lucro Líquido" valor={fmtBrl(544130)} cor="text-emerald-600 font-semibold" />
-                    </div>
-                  </div>
-                  <RingMargem pct={23.5} />
-                </div>
-                <button className="mt-4 text-sm text-primary-600 font-medium hover:text-primary-700">
-                  Ver relatório financeiro completo →
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Card relatórios personalizados */}
-          <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary-50 text-primary-600 grid place-items-center">
-                <Settings2 className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-slate-900">Relatórios personalizados</div>
-                <div className="text-xs text-slate-500">
-                  Crie relatórios personalizados com os indicadores que realmente importam para o seu negócio.
-                </div>
-              </div>
-            </div>
-            <button className="inline-flex items-center gap-2 text-sm text-slate-700 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 bg-white">
-              <PlusCircle className="h-4 w-4" /> Criar novo relatório
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function KpiRel({
-  label,
-  valor,
-  delta,
-  icon: Icon,
-  cor,
-}: {
-  label: string;
-  valor: React.ReactNode;
-  delta: string;
-  icon: typeof TrendingUp;
-  cor: 'primary' | 'emerald' | 'amber' | 'blue';
-}) {
-  const map = {
-    primary: 'bg-primary-50 text-primary-600',
-    emerald: 'bg-emerald-50 text-emerald-600',
-    amber: 'bg-amber-50 text-amber-600',
-    blue: 'bg-blue-50 text-blue-600',
-  } as const;
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 p-4">
-      <div className="flex items-start justify-between gap-2">
-        <div className="text-xs text-slate-500">{label}</div>
-        <div className={`h-7 w-7 rounded-lg grid place-items-center ${map[cor]}`}>
-          <Icon className="h-3.5 w-3.5" />
-        </div>
+        </>}
       </div>
-      <div className="mt-2 text-xl font-bold">{valor}</div>
-      <div className="text-[11px] text-emerald-600 mt-1">{delta}</div>
-    </div>
-  );
+    </section>
+  </div>;
 }
 
-function SelectFalso({ titulo, pequeno }: { titulo: string; pequeno?: boolean }) {
-  return (
-    <button
-      className={`inline-flex items-center gap-2 ${
-        pequeno ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm'
-      } rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100`}
-    >
-      <span>{titulo}</span>
-      <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-    </button>
-  );
+function downloadCsv(csv: string, filename: string) {
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
-
-function Legenda({ cor, label }: { cor: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="h-2 w-2 rounded-full" style={{ background: cor }} />
-      {label}
-    </span>
-  );
+function formatDate(value: string) {
+  return new Date(`${value}T00:00:00`).toLocaleDateString('pt-BR');
 }
-
-function LinhaResumo({ label, valor, cor }: { label: string; valor: string; cor?: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-slate-500">{label}</span>
-      <span className={`text-sm ${cor ?? 'text-slate-900'}`}>{valor}</span>
-    </div>
-  );
-}
-
-function RingMargem({ pct }: { pct: number }) {
-  const dash = (pct / 100) * 251.2; // 2*pi*40
-  return (
-    <div className="relative h-28 w-28 mx-auto">
-      <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
-        <circle cx="50" cy="50" r="40" fill="none" stroke="#eef2f7" strokeWidth="10" />
-        <circle
-          cx="50"
-          cy="50"
-          r="40"
-          fill="none"
-          stroke="#7c3aed"
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={`${dash} 251.2`}
-        />
-      </svg>
-      <div className="absolute inset-0 grid place-items-center text-center">
-        <div>
-          <div className="text-lg font-bold text-slate-900">{pct.toString().replace('.', ',')}%</div>
-          <div className="text-[10px] text-slate-500">Margem Líquida</div>
-        </div>
-      </div>
-    </div>
-  );
-}
+function Metric({ icon: Icon, label, value }: { icon: typeof Wallet; label: string; value: string }) { return <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex items-center gap-3"><span className="p-3 rounded-xl bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400"><Icon className="h-5 w-5" /></span><div className="min-w-0"><span className="text-xs text-slate-500 dark:text-slate-400">{label}</span><strong className="block text-lg truncate">{value}</strong></div></div>; }
+function ChartCard({ title, children }: { title: string; children: React.ReactNode }) { return <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-5"><h2 className="font-bold text-sm mb-4">{title}</h2><div className="h-72">{children}</div></section>; }
+function Empty({ message }: { message: string }) { return <div className="p-10 text-center text-sm text-slate-500 dark:text-slate-400">{message}</div>; }

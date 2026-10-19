@@ -1,20 +1,72 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
 
-html, body, #root {
-  height: 100%;
-  font-family: 'Inter', system-ui, sans-serif;
-  background-color: #f6f7fb;
-  color: #1f2937;
+@theme {
+  --color-primary-50: #f3f1ff;
+  --color-primary-100: #ebe5ff;
+  --color-primary-200: #d9ceff;
+  --color-primary-300: #bea6ff;
+  --color-primary-400: #9f75ff;
+  --color-primary-500: #843dff;
+  --color-primary-600: #7916ff;
+  --color-primary-700: #6b04fd;
+  --color-primary-800: #5a03d5;
+  --color-primary-900: #4b05ad;
+  --color-primary-950: #2c0076;
+
+  --font-sans: Inter, system-ui, sans-serif;
 }
 
-* {
-  box-sizing: border-box;
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
 }
 
-@layer components {
-  .input {
-    @apply w-full px-3 py-2 text-sm rounded-lg bg-white border border-slate-200 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-200 focus:border-primary-400;
+@utility input {
+  @apply w-full px-3 py-2 text-sm rounded-lg bg-white border border-slate-200 text-slate-700 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-primary-200 focus:border-primary-400;
+  @variant dark {
+    @apply bg-slate-900 border-slate-700 text-slate-200 placeholder-slate-500 focus:ring-primary-800;
+  }
+}
+
+@layer utilities {
+  html.dark, .dark body, .dark #root {
+    background-color: #020617;
+    color: #e2e8f0;
+  }
+  .dark *, .dark ::after, .dark ::before { border-color: #334155; }
+  .dark .recharts-cartesian-axis-tick-value { fill: #94a3b8; }
+  .dark .recharts-cartesian-grid line { stroke: #334155; }
+  .dark .recharts-default-tooltip { background-color: #0f172a !important; border-color: #334155 !important; }
+  .dark .recharts-tooltip-label { color: #e2e8f0; }
+}
+
+@layer utilities {
+  html,
+  body,
+  #root {
+    height: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: #f6f7fb;
+    color: #1f2937;
+  }
+
+  * {
+    box-sizing: border-box;
   }
 }

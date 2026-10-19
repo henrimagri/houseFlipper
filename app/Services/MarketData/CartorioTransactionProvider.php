@@ -25,11 +25,18 @@ class CartorioTransactionProvider implements PropertyTransactionProviderInterfac
         $endpoint = config('services.cartorios.endpoint');
 
         if (! $endpoint) {
-            return $this->unconfigured('Defina CARTORIOS_API_URL e, se necessário, CARTORIOS_API_TOKEN.');
+            return $this->result(
+                'no_dataset',
+                'Não existe API pública nacional de cartórios. As transmissões entram pela base de ITBI em dados abertos ou pela planilha importada.',
+                []
+            );
         }
 
         try {
-            $request = Http::acceptJson()->timeout(12);
+            $endpoint = $this->assertPublicHttpsEndpoint($endpoint);
+            $request = Http::acceptJson()->timeout(12)
+                ->withHeaders(['Accept-Encoding' => 'identity'])
+                ->withOptions($this->guardedHttpOptions());
             if ($token = config('services.cartorios.token')) {
                 $request = $request->withToken($token);
             }
@@ -42,8 +49,9 @@ class CartorioTransactionProvider implements PropertyTransactionProviderInterfac
                 'area_m2' => $subject['area_m2'] ?? null,
                 'bedrooms' => $subject['bedrooms'] ?? null,
             ]);
+            $this->assertGuardedResponseSize($response);
         } catch (\Throwable $exception) {
-            return $this->error($exception->getMessage());
+            return $this->error('Serviço externo indisponível.');
         }
 
         if (! $response->successful()) {
@@ -52,17 +60,13 @@ class CartorioTransactionProvider implements PropertyTransactionProviderInterfac
 
         $rows = $response->json('data', $response->json('transactions', $response->json()));
         $transactions = collect(is_array($rows) ? $rows : [])
+            ->filter(fn ($row) => is_array($row))
             ->map(fn (array $row) => $this->normalizeTransaction($row, $this->label()))
             ->filter()
             ->values()
             ->all();
 
         return $this->result('connected', 'Provider de cartório consultado.', $transactions);
-    }
-
-    private function unconfigured(string $message): array
-    {
-        return $this->result('unconfigured', $message, []);
     }
 
     private function error(string $message): array

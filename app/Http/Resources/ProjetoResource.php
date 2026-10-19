@@ -22,8 +22,8 @@ class ProjetoResource extends JsonResource
             'data_termino_prevista' => $this->data_termino_prevista?->toDateString(),
             'data_termino_real' => $this->data_termino_real?->toDateString(),
             'status' => $this->status,
-            'etapas' => $this->whenLoaded('etapas'),
-            'tarefas' => $this->whenLoaded('tarefas'),
+            'etapas' => $this->whenLoaded('etapas', fn () => ProjetoEtapaResource::collection($this->etapas)),
+            'tarefas' => $this->whenLoaded('tarefas', fn () => TarefaResource::collection($this->tarefas)),
         ];
     }
 }

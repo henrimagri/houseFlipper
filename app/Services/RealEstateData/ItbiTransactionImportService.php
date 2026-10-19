@@ -20,17 +20,24 @@ class ItbiTransactionImportService
             throw new \RuntimeException('Lote sem arquivo baixado.');
         }
 
-        $batch->update([
-            'status' => 'processing',
-            'processing_started_at' => now(),
-            'processing_finished_at' => null,
-            'error_message' => null,
-            'total_rows' => 0,
-            'imported_rows' => 0,
-            'updated_rows' => 0,
-            'skipped_rows' => 0,
-            'failed_rows' => 0,
-        ]);
+        $claimed = ItbiImportBatch::query()
+            ->whereKey($batch->id)
+            ->where('status', '!=', 'processing')
+            ->update([
+                'status' => 'processing',
+                'processing_started_at' => now(),
+                'processing_finished_at' => null,
+                'error_message' => null,
+                'total_rows' => 0,
+                'imported_rows' => 0,
+                'updated_rows' => 0,
+                'skipped_rows' => 0,
+                'failed_rows' => 0,
+            ]);
+        if ($claimed !== 1) {
+            throw new \RuntimeException('Este lote já está sendo processado.');
+        }
+        $batch->refresh();
 
         $stats = [
             'total_rows' => 0,
@@ -54,6 +61,7 @@ class ItbiTransactionImportService
 
                     if (! $data['transaction_date'] && ! $data['declared_transaction_value'] && ! $data['tax_base_value']) {
                         $stats['skipped_rows']++;
+
                         continue;
                     }
 
@@ -62,7 +70,7 @@ class ItbiTransactionImportService
                             'source_type' => $data['source_type'],
                             'source_name' => $data['source_name'],
                             'source_reference' => $data['source_reference'],
-                        ])->first();
+                        ])->lockForUpdate()->first();
 
                         if ($transaction) {
                             $transaction->update($data);
@@ -79,9 +87,13 @@ class ItbiTransactionImportService
                     Log::warning('Falha ao importar linha ITBI', [
                         'batch_id' => $batch->id,
                         'row' => $index + 2,
-                        'error' => $exception->getMessage(),
+                        'exception_type' => $exception::class,
                     ]);
                 }
+            }
+
+            if ($stats['imported_rows'] + $stats['updated_rows'] === 0) {
+                throw new \RuntimeException('Nenhuma transação válida foi encontrada no arquivo.');
             }
 
             $batch->update([
@@ -90,14 +102,21 @@ class ItbiTransactionImportService
                 'processing_finished_at' => now(),
             ]);
         } catch (\Throwable $exception) {
+            $publicMessage = 'Falha ao processar o lote ITBI.';
+
             $batch->update([
                 ...$stats,
                 'status' => 'failed',
-                'error_message' => $exception->getMessage(),
+                'error_message' => $publicMessage,
                 'processing_finished_at' => now(),
             ]);
 
-            throw $exception;
+            Log::error('Falha ao processar lote ITBI', [
+                'batch_id' => $batch->id,
+                'exception_type' => $exception::class,
+            ]);
+
+            throw new \RuntimeException($publicMessage, 0, $exception);
         }
 
         return $batch->refresh();

@@ -1,7 +1,10 @@
-import { ArrowLeft, Building2, CheckCircle2, ExternalLink, Info, Landmark, MapPin, PlugZap, ShieldAlert, Sparkles, Star, Tag } from 'lucide-react';
+import { ArrowLeft, Box, Building2, CheckCircle2, ExternalLink, Info, Landmark, MapPin, PlugZap, ShieldAlert, Sparkles, Star, Tag } from 'lucide-react';
 import * as React from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import ListingLayoutViewer from '@/components/ListingLayoutViewer';
 import api from '@/lib/api';
+import { writeJson } from '@/lib/browserStore';
+import { safeExternalHttpsUrl } from '@/lib/externalUrl';
 
 type MarketItem = {
   id: string;
@@ -94,49 +97,93 @@ type LocationContext = {
   groups: LocationGroup[];
 };
 
+type EconomicIndicator = {
+  key: string;
+  label: string;
+  unit: string;
+  value: number | null;
+  date?: string | null;
+  origin?: string | null;
+};
+
+type EconomicIndicators = {
+  status: string;
+  source: string;
+  message: string;
+  items: EconomicIndicator[];
+};
+
 const money = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const percent = (value: number) => `${value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+
+function marketAnalysisSubject(item: MarketItem) {
+  return {
+    title: item.title,
+    address: item.address,
+    neighborhood: item.neighborhood,
+    city: item.city,
+    state: item.state,
+    area_m2: item.area_m2,
+    bedrooms: item.bedrooms,
+    bathrooms: item.bathrooms,
+    parking_spaces: item.parking_spaces,
+    asking_price: item.asking_price,
+    property_type: item.property_type,
+  };
+}
 
 export default function AnaliseMercadoOportunidade() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const context = readContext(id);
-
-  if (!context) {
-    return <div className="bg-white border rounded-3xl p-10 text-center">
-      <ShieldAlert className="w-12 h-12 mx-auto text-amber-500" />
-      <h1 className="text-2xl font-black mt-4">Análise não encontrada</h1>
-      <p className="text-gray-500 mt-2">Volte para a IA Inteligente e clique novamente em uma oportunidade. Essa análise temporária fica salva apenas nesta sessão.</p>
-      <Link to="/ia-inteligente" className="inline-flex mt-5 bg-primary-600 text-white px-5 py-3 rounded-xl font-bold">Voltar para IA Inteligente</Link>
-    </div>;
-  }
-
-  const item = context.selected;
-  const [externalMarket, setExternalMarket] = React.useState<{ providers: ProviderStatus[]; transactions: ConfirmedTransaction[] } | null>(null);
+  const location = useLocation();
+  const context = React.useMemo(() => {
+    if (id && isMarketContext(location.state, id)) {
+      writeJson(`market-analysis:${id}`, location.state);
+      return location.state as MarketContext;
+    }
+    return readContext(id);
+  }, [id, location.state]);
+  const selectedItem = context?.selected ?? null;
+  const [externalMarket, setExternalMarket] = React.useState<{ providers: ProviderStatus[]; transactions: ConfirmedTransaction[]; economic_indicators?: EconomicIndicators | null } | null>(null);
   const [locationContext, setLocationContext] = React.useState<LocationContext | null | undefined>(undefined);
-  const [externalLoading, setExternalLoading] = React.useState(true);
+  const [externalLoading, setExternalLoading] = React.useState(Boolean(selectedItem));
 
   React.useEffect(() => {
+    if (!selectedItem) {
+      setExternalMarket(null);
+      setExternalLoading(false);
+      return;
+    }
+
     let active = true;
     setExternalLoading(true);
-    api.post('/property-market-analysis', { selected: item })
+    api.post('/property-market-analysis', { selected: marketAnalysisSubject(selectedItem) })
       .then(response => {
-        if (active) setExternalMarket({ providers: response.data.providers ?? [], transactions: response.data.transactions ?? [] });
+        if (active) setExternalMarket({
+          providers: response.data.providers ?? [],
+          transactions: response.data.transactions ?? [],
+          economic_indicators: response.data.economic_indicators ?? null,
+        });
       })
       .catch(() => {
-        if (active) setExternalMarket({ providers: [], transactions: [] });
+        if (active) setExternalMarket({ providers: [], transactions: [], economic_indicators: null });
       })
       .finally(() => {
         if (active) setExternalLoading(false);
       });
 
     return () => { active = false; };
-  }, [item.id]);
+  }, [selectedItem?.id]);
 
   React.useEffect(() => {
+    if (!selectedItem) {
+      setLocationContext(undefined);
+      return;
+    }
+
     let active = true;
     setLocationContext(undefined);
-    api.post('/neighborhood-context', { selected: item })
+    api.post('/neighborhood-context', { selected: selectedItem })
       .then(response => {
         if (active) setLocationContext(response.data ?? null);
       })
@@ -145,7 +192,19 @@ export default function AnaliseMercadoOportunidade() {
       });
 
     return () => { active = false; };
-  }, [item.id]);
+  }, [selectedItem?.id]);
+
+  if (!context) {
+    return <div className="bg-white dark:bg-slate-900 border rounded-3xl p-10 text-center">
+      <ShieldAlert className="w-12 h-12 mx-auto text-amber-500" />
+      <h1 className="text-2xl font-black mt-4">Análise não encontrada</h1>
+      <p className="text-gray-500 dark:text-slate-400 mt-2">Volte para a IA Inteligente e abra novamente a oportunidade. O radar e esta análise ficam salvos neste navegador.</p>
+      <Link to="/ia-inteligente" className="inline-flex mt-5 bg-primary-600 text-white px-5 py-3 rounded-xl font-bold">Voltar para IA Inteligente</Link>
+    </div>;
+  }
+
+  const item = context.selected;
+  const sourceUrl = safeExternalHttpsUrl(item.source_url);
 
   const listedComparables = context.comparables
     .filter(comparable => comparable.id !== item.id && Number(comparable.asking_price || 0) > 0)
@@ -196,25 +255,25 @@ export default function AnaliseMercadoOportunidade() {
   ].filter(Boolean) as Array<{ title: string; value: string }>;
 
   return <div className="space-y-5">
-    <button type="button" onClick={() => navigate('/ia-inteligente')} className="text-primary-600 font-bold inline-flex items-center gap-2"><ArrowLeft className="w-4 h-4" />Voltar ao radar</button>
+    <button type="button" onClick={() => navigate('/ia-inteligente')} className="text-primary-600 dark:text-primary-400 font-bold inline-flex items-center gap-2"><ArrowLeft className="w-4 h-4" />Voltar ao radar</button>
 
-    <section className="bg-white border rounded-3xl shadow-sm overflow-hidden">
+    <section className="bg-white dark:bg-slate-900 border rounded-3xl shadow-xs overflow-hidden">
       <div className="p-5 grid xl:grid-cols-[1fr_170px] gap-5 items-center">
         <div className="flex gap-5 min-w-0">
-          <SafeImage src={item.thumbnail} alt={item.title} className="w-40 h-28 rounded-2xl object-cover bg-slate-100" fallbackClassName="w-40 h-28 rounded-2xl" />
+          <SafeImage src={item.thumbnail} alt={item.title} className="w-40 h-28 rounded-2xl object-cover bg-slate-100 dark:bg-slate-800" fallbackClassName="w-40 h-28 rounded-2xl" />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-black truncate">{item.title}</h1>
               <Badge>{item.source || 'Fonte não informada'}</Badge>
             </div>
-            <p className="text-sm text-gray-500 mt-1">{[item.neighborhood, item.city, item.state].filter(Boolean).join(' · ')}</p>
-            <p className="text-sm text-gray-500 mt-3">
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{[item.neighborhood, item.city, item.state].filter(Boolean).join(' · ')}</p>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-3">
               {item.area_m2 ?? '-'} m² · {item.bedrooms ?? '-'} quartos · {item.bathrooms ?? '-'} banheiros · {item.parking_spaces ?? '-'} vaga{item.parking_spaces === 1 ? '' : 's'}
             </p>
-            <div className="flex flex-wrap gap-3 mt-3 text-xs text-gray-500">
+            <div className="flex flex-wrap gap-3 mt-3 text-xs text-gray-500 dark:text-slate-400">
               <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" />{item.address || 'Endereço não informado'}</span>
               <span>Coleta: {new Date(context.collectedAt).toLocaleString('pt-BR')}</span>
-              {item.source_url && <a href={item.source_url} target="_blank" rel="noreferrer" className="text-primary-600 font-bold inline-flex items-center gap-1">Abrir anúncio <ExternalLink className="w-3 h-3" /></a>}
+              {sourceUrl && <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary-600 dark:text-primary-400 font-bold inline-flex items-center gap-1">Abrir anúncio <ExternalLink className="w-3 h-3" /></a>}
             </div>
           </div>
         </div>
@@ -230,8 +289,8 @@ export default function AnaliseMercadoOportunidade() {
         <Metric label={marketValueLabel} value={money(estimatedValue)} />
         <Metric label="Faixa provável" value={`${money(rangeMin)} - ${money(rangeMax)}`} />
         <Metric label="Preço médio por m²" value={referencePriceM2 ? `${money(referencePriceM2)}/m²` : 'Sem base'} />
-        <Metric label="Desconto estimado" value={percent(estimatedDiscount)} accent="text-emerald-600" />
-        <Metric label="Confiança" value={`${confidence}%`} accent={confidence >= 70 ? 'text-emerald-600' : 'text-amber-600'} />
+        <Metric label="Desconto estimado" value={percent(estimatedDiscount)} accent="text-emerald-600 dark:text-emerald-400" />
+        <Metric label="Confiança" value={`${confidence}%`} accent={confidence >= 70 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'} />
         <Metric label="Tipo de dado" value={marketDataType} />
       </div>
     </section>
@@ -245,16 +304,40 @@ export default function AnaliseMercadoOportunidade() {
 
     <NeighborhoodContextSection context={locationContext} />
 
-    <nav className="bg-white border rounded-2xl p-2 flex gap-2 overflow-x-auto text-sm font-bold">
+    <EconomicIndicatorsSection indicators={externalMarket?.economic_indicators} />
+
+    <section id="section-3d" className="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs overflow-hidden">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-3">
+        <div>
+          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary-600 dark:text-primary-400"><Box className="w-4 h-4" /> Modelo 3D deste imóvel</div>
+          <h2 className="font-black text-lg mt-1">{item.title}</h2>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Maquete deste anúncio, com fachada e ambientes nomeados. Não é fotogrametria nem tour virtual. O selo no visualizador diz se o volume é paramétrico ou só ilustrativo.</p>
+        </div>
+        <div className="text-xs text-gray-500 dark:text-slate-400">{item.area_m2 ?? '—'} m² · {item.bedrooms ?? '—'} quarto(s) · {item.bathrooms ?? '—'} banheiro(s)</div>
+      </div>
+      <ListingLayoutViewer
+        title={item.title}
+        areaM2={item.area_m2}
+        bedrooms={item.bedrooms}
+        bathrooms={item.bathrooms}
+        parkingSpaces={item.parking_spaces}
+        propertyType={item.property_type}
+        notes={item.title}
+        className="mt-4 w-full h-[520px] rounded-2xl bg-slate-200"
+      />
+    </section>
+
+    <nav className="bg-white dark:bg-slate-900 border rounded-2xl p-2 flex gap-2 overflow-x-auto text-sm font-bold">
       {[
         ['Visão geral', 'section-0'],
+        ['Modelo 3D', 'section-3d'],
         ['Últimas vendas', 'section-1'],
         ['Análise de preço/m²', 'section-3'],
         ['Fontes e metodologia', 'section-4'],
-      ].map(([tab, section], index) => <a key={tab} href={`#${section}`} className={`px-4 py-2 rounded-xl whitespace-nowrap ${index === 0 ? 'bg-primary-600 text-white' : 'text-slate-600'}`}>{tab}</a>)}
+      ].map(([tab, section], index) => <a key={tab} href={`#${section}`} className={`px-4 py-2 rounded-xl whitespace-nowrap ${index === 0 ? 'bg-primary-600 text-white' : 'text-slate-600 dark:text-slate-300'}`}>{tab}</a>)}
     </nav>
 
-    <section id="section-0" className="bg-white border rounded-3xl p-5 shadow-sm">
+    <section id="section-0" className="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs">
       <h2 className="font-black text-lg">Como chegamos ao valor de mercado</h2>
       <div className="grid lg:grid-cols-5 gap-3 mt-4">
         <PipelineStep icon={Tag} title="Preço anunciado" value={money(Number(item.asking_price || 0))} source={item.source || 'Portal'} />
@@ -263,7 +346,7 @@ export default function AnaliseMercadoOportunidade() {
         <PipelineStep icon={Building2} title="Anúncios comparáveis" value={`${listedComparables.length}`} source={sourceList(item)} />
         <PipelineStep icon={Star} title={marketValueLabel} value={money(estimatedValue)} source={`${confidence}% confiança`} />
       </div>
-      {confidence < 60 && <div className="mt-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4 text-sm">
+      {confidence < 60 && <div className="mt-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 text-amber-800 dark:text-amber-300 rounded-2xl p-4 text-sm">
         Alto desconto aparente, mas com confiança limitada nos dados. A análise usa anúncios comparáveis; confirme vendas reais, condomínio e endereço antes de decidir.
       </div>}
     </section>
@@ -275,7 +358,7 @@ export default function AnaliseMercadoOportunidade() {
         transactions={buildingTransactions}
         loading={externalLoading}
         providers={externalMarket?.providers ?? []}
-        message="Ainda não encontramos venda importada com o mesmo endereço/prédio deste anúncio. A busca regional abaixo já usa a planilha de ITBI importada."
+        message="Ainda não encontramos venda pública com o mesmo endereço/prédio deste anúncio. A busca regional usa ITBI em dados abertos, planilha importada e, se houver, endpoint municipal."
       />
       <TransactionSection
         title="Últimas vendas na região"
@@ -283,12 +366,32 @@ export default function AnaliseMercadoOportunidade() {
         transactions={regionTransactions}
         loading={externalLoading}
         providers={externalMarket?.providers ?? []}
-        message="Nenhuma venda regional encontrada na planilha importada para este bairro/cidade. Importe mais dados ou revise bairro/cidade do anúncio."
+        message="Nenhuma venda pública no bairro/cidade nesta coleta. Foram consultados ITBI em dados abertos (CKAN), planilha importada e BCB. Os anúncios comparáveis do radar aparecem abaixo como ofertas, não como escritura."
       />
     </section>
 
+    {listedComparables.length > 0 && <section className="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="font-black text-lg">Ofertas recentes na região</h2>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Anúncios do radar, não transações de cartório. Usados como apoio de preço/m².</p>
+        </div>
+        <Badge>{listedComparables.length} oferta(s)</Badge>
+      </div>
+      <div className="mt-4 grid md:grid-cols-2 xl:grid-cols-3 gap-3">
+        {listedComparables.slice(0, 6).map(comparable => <div key={comparable.id} className="border rounded-2xl p-4 bg-slate-50 dark:bg-slate-950">
+          <div className="font-bold truncate">{comparable.title}</div>
+          <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">{[comparable.neighborhood, comparable.city].filter(Boolean).join(' · ')}</div>
+          <div className="mt-3 flex justify-between text-sm">
+            <strong>{money(Number(comparable.asking_price || 0))}</strong>
+            <span>{comparable.area_m2 ? `${comparable.area_m2} m²` : '—'}</span>
+          </div>
+        </div>)}
+      </div>
+    </section>}
+
     <section id="section-3" className="grid xl:grid-cols-[1fr_320px] gap-5">
-      <div className="bg-white border rounded-3xl p-5 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs">
         <h2 className="font-black text-lg">Análise de preço por m²</h2>
         <div className="grid md:grid-cols-4 gap-3 mt-4">
           <MetricCard label="Preço/m² do anúncio" value={comparablePricePerM2(item) ? `${money(comparablePricePerM2(item))}/m²` : 'Não informado'} />
@@ -298,7 +401,7 @@ export default function AnaliseMercadoOportunidade() {
         </div>
         <PriceM2Distribution values={priceM2Values} reference={referencePriceM2} />
       </div>
-      <div className="bg-white border rounded-3xl p-5 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs">
         <h2 className="font-black text-lg">Resumo da análise</h2>
         <SummaryRow label="Vendas reais utilizadas" value={`${confirmedTransactions.length}`} />
         <SummaryRow label="Anúncios comparáveis" value={`${listedComparables.length}`} />
@@ -308,12 +411,12 @@ export default function AnaliseMercadoOportunidade() {
       </div>
     </section>
 
-    <section id="section-4" className="bg-white border rounded-3xl p-5 shadow-sm">
+    <section id="section-4" className="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs">
       <h2 className="font-black text-lg">Fontes e metodologia</h2>
       <div className="grid lg:grid-cols-3 gap-5 mt-4 text-sm">
         <div>
           <h3 className="font-black mb-2">Fontes de dados</h3>
-          <ul className="space-y-2 text-gray-600">
+          <ul className="space-y-2 text-gray-600 dark:text-slate-300">
             <li>• Portais imobiliários coletados no radar: {connectedSources.length ? connectedSources.join(', ') : sourceList(item)}</li>
             <li>• Vendas reais: {providerSummary(externalMarket?.providers ?? [])}</li>
             <li>• Modelo AVM: InvestFlip</li>
@@ -321,23 +424,23 @@ export default function AnaliseMercadoOportunidade() {
         </div>
         <div>
           <h3 className="font-black mb-2">Critérios de comparação</h3>
-          <ul className="space-y-2 text-gray-600">
+          <ul className="space-y-2 text-gray-600 dark:text-slate-300">
             <li>• Mesmo tipo de imóvel: {context.propertyTypeLabel}</li>
             <li>• Mesma cidade/bairro quando disponível</li>
             <li>• Faixa de quartos semelhante</li>
             <li>• Remoção de outliers por mediana/IQR</li>
           </ul>
         </div>
-        <div className="bg-violet-50 border border-violet-100 rounded-2xl p-4">
-          <div className="font-black text-primary-700 flex items-center gap-2"><Info className="w-4 h-4" />Transparência</div>
-          <p className="text-gray-600 mt-2">Esta análise não substitui avaliação profissional. Quando não houver transações reais retornadas pelos providers, os valores continuam como estimativas baseadas em anúncios comparáveis e devem ser validados antes da compra.</p>
+        <div className="bg-violet-50 dark:bg-violet-950 border border-violet-100 rounded-2xl p-4">
+          <div className="font-black text-primary-700 dark:text-primary-300 flex items-center gap-2"><Info className="w-4 h-4" />Transparência</div>
+          <p className="text-gray-600 dark:text-slate-300 mt-2">Esta análise não substitui avaliação profissional. Quando não houver transações reais retornadas pelos providers, os valores continuam como estimativas baseadas em anúncios comparáveis e devem ser validados antes da compra.</p>
         </div>
       </div>
     </section>
 
-    {!externalLoading && usedCalculationSteps.length > 0 && <section className="bg-white border rounded-3xl p-5 shadow-sm">
+    {!externalLoading && usedCalculationSteps.length > 0 && <section className="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs">
       <h2 className="font-black text-lg">Explicação completa do cálculo</h2>
-      <p className="text-sm text-gray-500 mt-1">O InvestFlip segue uma hierarquia: vendas reais primeiro; anúncios ativos entram apenas como apoio quando a base transacional ainda é limitada.</p>
+      <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">O InvestFlip segue uma hierarquia: vendas reais primeiro; anúncios ativos entram apenas como apoio quando a base transacional ainda é limitada.</p>
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 mt-4">
         {usedCalculationSteps.map((step, index) => <CalculationStep key={step.title} index={index + 1} title={step.title} value={step.value} />)}
       </div>
@@ -347,51 +450,102 @@ export default function AnaliseMercadoOportunidade() {
 }
 
 function readContext(id?: string): MarketContext | null {
-  try {
-    const key = `market-analysis:${id}`;
-    const raw = sessionStorage.getItem(key) || localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
+  if (!id) return null;
+  const key = `market-analysis:${id}`;
+
+  for (const storage of [sessionStorage, localStorage]) {
+    try {
+      const raw = storage.getItem(key);
+      if (!raw) continue;
+      const parsed: unknown = JSON.parse(raw);
+      if (isMarketContext(parsed, id)) return parsed;
+    } catch {
+      // A corrupt or unavailable storage must not hide a valid fallback copy.
+    }
   }
+
+  return null;
+}
+
+function isMarketContext(value: unknown, expectedId: string): value is MarketContext {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const context = value as Partial<MarketContext>;
+  if (!isMarketItem(context.selected) || context.selected.id !== expectedId) return false;
+  if (!Array.isArray(context.comparables) || context.comparables.length > 250 || !context.comparables.every(isMarketItem)) return false;
+  if (typeof context.collectedAt !== 'string' || context.collectedAt.length > 40) return false;
+  if (typeof context.propertyTypeLabel !== 'string' || context.propertyTypeLabel.length > 80) return false;
+  if (context.diagnostics !== undefined && (!Array.isArray(context.diagnostics) || context.diagnostics.length > 25)) return false;
+  if (context.diagnostics?.some(item => !item || typeof item !== 'object' || typeof item.source !== 'string' || item.source.length > 120)) return false;
+
+  return true;
+}
+
+function isMarketItem(value: unknown): value is MarketItem {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const item = value as Partial<MarketItem>;
+
+  return typeof item.id === 'string' && item.id.length > 0 && item.id.length <= 500
+    && typeof item.title === 'string' && item.title.length <= 500
+    && typeof item.asking_price === 'number' && Number.isFinite(item.asking_price);
 }
 
 function Metric({ label, value, accent = '' }: { label: string; value: string; accent?: string }) {
-  return <div className="p-4"><span className="text-xs text-gray-500">{label}</span><strong className={`block mt-1 ${accent}`}>{value}</strong></div>;
+  return <div className="p-4"><span className="text-xs text-gray-500 dark:text-slate-400">{label}</span><strong className={`block mt-1 ${accent}`}>{value}</strong></div>;
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
-  return <div className="bg-slate-50 rounded-2xl p-4"><span className="text-xs text-gray-500">{label}</span><strong className="block mt-1">{value}</strong></div>;
+  return <div className="bg-slate-50 dark:bg-slate-950 rounded-2xl p-4"><span className="text-xs text-gray-500 dark:text-slate-400">{label}</span><strong className="block mt-1">{value}</strong></div>;
 }
 
 function Badge({ children }: { children: React.ReactNode }) {
-  return <span className="bg-violet-50 text-primary-700 px-2 py-1 rounded-full text-xs font-bold">{children}</span>;
+  return <span className="bg-violet-50 dark:bg-violet-950 text-primary-700 dark:text-primary-300 px-2 py-1 rounded-full text-xs font-bold">{children}</span>;
 }
 
 function PipelineStep({ icon: Icon, title, value, source }: { icon: any; title: string; value: string; source: string }) {
-  return <div className="border rounded-2xl p-4 bg-slate-50">
-    <Icon className="w-5 h-5 text-primary-600" />
-    <span className="text-xs text-gray-500 block mt-3">{title}</span>
+  return <div className="border rounded-2xl p-4 bg-slate-50 dark:bg-slate-950">
+    <Icon className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+    <span className="text-xs text-gray-500 dark:text-slate-400 block mt-3">{title}</span>
     <strong className="block mt-1">{value}</strong>
     <span className="text-[11px] text-gray-400 block mt-1">{source}</span>
   </div>;
 }
 
+function EconomicIndicatorsSection({ indicators }: { indicators?: EconomicIndicators | null }) {
+  if (!indicators?.items?.length) return null;
+
+  return <section className="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs">
+    <div className="flex items-center justify-between gap-3">
+      <div>
+        <h2 className="font-black text-lg">Indicadores públicos</h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{indicators.message}</p>
+      </div>
+      <Badge>{indicators.source}</Badge>
+    </div>
+    <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 mt-4">
+      {indicators.items.map(item => <div key={item.key} className="rounded-2xl border bg-slate-50 dark:bg-slate-950 p-4">
+        <div className="text-xs font-bold uppercase tracking-wide text-slate-500">{item.label}</div>
+        <div className="text-xl font-black mt-1">{item.value == null ? '—' : item.value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</div>
+        <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">{item.unit}{item.date ? ` · ${item.date}` : ''}</div>
+      </div>)}
+    </div>
+  </section>;
+}
+
 function NeighborhoodContextSection({ context }: { context?: LocationContext | null }) {
   if (!context) {
-    return <section className="bg-white border rounded-3xl p-5 shadow-sm">
+    return <section className="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs">
       <h2 className="font-black text-lg">Entorno do bairro</h2>
-      <p className="text-sm text-gray-500 mt-1">Consultando dados de localização...</p>
+      <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Consultando dados de localização...</p>
     </section>;
   }
 
   if (context.status !== 'connected') {
-    return <section className="bg-white border rounded-3xl p-5 shadow-sm">
+    return <section className="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 grid place-items-center"><MapPin className="w-5 h-5" /></div>
+        <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 grid place-items-center"><MapPin className="w-5 h-5" /></div>
         <div>
           <h2 className="font-black text-lg">Entorno do bairro</h2>
-          <p className="text-sm text-gray-500 mt-1">{context.message}</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{context.message}</p>
           <p className="text-xs text-gray-400 mt-2">O InvestFlip tenta Google Maps quando disponível e OpenStreetMap como fallback. Se a consulta oscilar, tente recarregar ou buscar apenas por bairro e cidade.</p>
         </div>
       </div>
@@ -401,50 +555,50 @@ function NeighborhoodContextSection({ context }: { context?: LocationContext | n
   const groups = context.groups ?? [];
   const total = groups.reduce((sum, group) => sum + Number(group.count || 0), 0);
 
-  return <section className="bg-white border rounded-3xl p-5 shadow-sm">
+  return <section className="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs">
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
       <div>
         <h2 className="font-black text-lg">Entorno do bairro</h2>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
           {total} ponto(s) próximos encontrados em até {Math.round(context.radius_m / 1000 * 10) / 10} km. Fonte: {context.source}{context.from_cache ? ' · última coleta válida' : ''}.
         </p>
       </div>
       <Badge>{context.from_cache ? 'Cache do bairro' : context.lat && context.lng ? `${context.lat.toFixed(4)}, ${context.lng.toFixed(4)}` : 'Coordenada localizada'}</Badge>
     </div>
     <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-4 mt-4">
-      {groups.map(group => <div key={group.key} className="border rounded-2xl p-4 bg-slate-50">
+      {groups.map(group => <div key={group.key} className="border rounded-2xl p-4 bg-slate-50 dark:bg-slate-950">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="font-black">{group.label}</div>
-            <div className="text-xs text-gray-500">{group.count} encontrados</div>
+            <div className="text-xs text-gray-500 dark:text-slate-400">{group.count} encontrados</div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-violet-100 text-primary-700 grid place-items-center font-black">{group.count}</div>
+          <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900 text-primary-700 dark:text-primary-300 grid place-items-center font-black">{group.count}</div>
         </div>
         <div className="mt-3 space-y-2">
           {(group.places || []).slice(0, 3).map(place => <div key={`${group.key}-${place.name}-${place.distance_m}`} className="text-xs border-t pt-2">
             <div className="font-bold line-clamp-1">{place.name}</div>
-            <div className="text-gray-500">{place.type || 'ponto'} · {place.distance_m != null ? `${place.distance_m} m` : 'distância n/d'}{place.rating ? ` · nota ${place.rating}` : ''}</div>
+            <div className="text-gray-500 dark:text-slate-400">{place.type || 'ponto'} · {place.distance_m != null ? `${place.distance_m} m` : 'distância n/d'}{place.rating ? ` · nota ${place.rating}` : ''}</div>
           </div>)}
           {(!group.places || group.places.length === 0) && <div className="text-xs text-gray-400 border-t pt-2">Nenhum ponto detalhado retornado.</div>}
         </div>
       </div>)}
     </div>
     <p className="text-xs text-gray-400 mt-4">Esses dados ajudam a avaliar liquidez e atratividade da região, mas não substituem vendas reais de cartório/ITBI.</p>
-    {context.from_cache && <p className="text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-xl p-3 mt-3">
+    {context.from_cache && <p className="text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950 border border-blue-100 rounded-xl p-3 mt-3">
       O OpenStreetMap/Overpass oscilou agora, então usamos a última coleta válida salva para este bairro.
     </p>}
   </section>;
 }
 
 function TransactionSection({ title, locationLabel, message, transactions, loading, providers }: { title: string; locationLabel: string; message: string; transactions: ConfirmedTransaction[]; loading: boolean; providers: ProviderStatus[] }) {
-  return <div className="bg-white border rounded-3xl p-5 shadow-sm">
+  return <div className="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs">
     <div className="flex items-center justify-between gap-3">
       <h2 className="font-black text-lg">{title}</h2>
       <Badge>{loading ? 'Consultando...' : `${transactions.length} vendas`}</Badge>
     </div>
     {transactions.length > 0 ? <div className="mt-4 overflow-hidden border rounded-2xl">
       <table className="w-full text-sm">
-        <thead className="bg-slate-50 text-xs text-gray-500 uppercase">
+        <thead className="bg-slate-50 dark:bg-slate-950 text-xs text-gray-500 dark:text-slate-400 uppercase">
           <tr>
             <th className="text-left p-3">Endereço/Fonte</th>
             <th className="text-left p-3">Data</th>
@@ -458,7 +612,7 @@ function TransactionSection({ title, locationLabel, message, transactions, loadi
           {transactions.map((transaction, index) => <tr key={`${transaction.source}-${transaction.address}-${index}`}>
             <td className="p-3">
               <div className="font-bold">{transaction.address || transaction.title || 'Endereço anonimizado'}</div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-500 dark:text-slate-400">
                 {transaction.source} · Venda confirmada
                 {transaction.registry_office ? ` · ${transaction.registry_office}` : ''}
                 {transaction.property_sql ? ` · SQL ${transaction.property_sql}` : ''}
@@ -474,18 +628,18 @@ function TransactionSection({ title, locationLabel, message, transactions, loadi
       </table>
     </div> : null}
     {transactions.length === 0 ? <>
-    <div className="mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-5">
+    <div className="mt-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 rounded-2xl p-5">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 grid place-items-center shrink-0"><PlugZap className="w-5 h-5" /></div>
+        <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 grid place-items-center shrink-0"><PlugZap className="w-5 h-5" /></div>
         <div>
-          <div className="font-black text-amber-900">{loading ? 'Consultando fontes transacionais...' : 'Nenhuma transação real retornada'}</div>
-          <p className="text-sm text-amber-800 mt-1">{loading ? 'O InvestFlip está consultando Cartórios, ITBI e Prefeitura conforme configuração disponível.' : message}</p>
+          <div className="font-black text-amber-900 dark:text-amber-200">{loading ? 'Consultando fontes transacionais...' : 'Nenhuma transação real retornada'}</div>
+          <p className="text-sm text-amber-800 dark:text-amber-300 mt-1">{loading ? 'Consultando ITBI em dados abertos, planilha importada, BCB e catálogos municipais públicos.' : message}</p>
           <div className="mt-3 grid sm:grid-cols-3 gap-2 text-xs">
             <StatusPill label="Região analisada" value={locationLabel || 'Não informada'} />
             <StatusPill label="Vendas confirmadas" value="0 nesta coleta" />
             <StatusPill label="Tipo de dado" value="Não simulado" />
           </div>
-          {!loading && providers.length > 0 && <div className="mt-3 text-xs text-amber-800">
+          {!loading && providers.length > 0 && <div className="mt-3 text-xs text-amber-800 dark:text-amber-300">
             {providers.map(provider => <div key={provider.key}>• {provider.label}: {provider.message}</div>)}
           </div>}
         </div>
@@ -497,19 +651,21 @@ function TransactionSection({ title, locationLabel, message, transactions, loadi
 
 function SafeImage({ src, alt, className, fallbackClassName }: { src?: string | null; alt: string; className: string; fallbackClassName: string }) {
   const [failed, setFailed] = React.useState(false);
+  const safeSrc = safeExternalHttpsUrl(src);
+  React.useEffect(() => setFailed(false), [safeSrc]);
 
-  if (!src || failed) {
-    return <div className={`${fallbackClassName} bg-gradient-to-br from-slate-100 to-slate-200 grid place-items-center text-slate-400`}>
+  if (!safeSrc || failed) {
+    return <div className={`${fallbackClassName} bg-linear-to-br from-slate-100 to-slate-200 grid place-items-center text-slate-400`}>
       <Building2 className="w-8 h-8" />
     </div>;
   }
 
-  return <img src={src} alt={alt} className={className} onError={() => setFailed(true)} referrerPolicy="no-referrer" />;
+  return <img src={safeSrc} alt={alt} className={className} onError={() => setFailed(true)} referrerPolicy="no-referrer" />;
 }
 
 function StatusPill({ label, value }: { label: string; value: string }) {
-  return <div className="bg-white/70 border border-amber-100 rounded-xl p-3">
-    <span className="text-amber-700 block">{label}</span>
+  return <div className="bg-white/70 dark:bg-slate-900/70 border border-amber-100 rounded-xl p-3">
+    <span className="text-amber-700 dark:text-amber-300 block">{label}</span>
     <strong className="text-amber-950">{value}</strong>
   </div>;
 }
@@ -520,30 +676,30 @@ function MarketDataNotice({ item, providers, confirmedTransactions, listedCompar
   const isSp = isSaoPauloItem(item);
 
   if (confirmedTransactions > 0) {
-    return <section className="bg-emerald-50 border border-emerald-200 rounded-3xl p-5">
-      <div className="font-black text-emerald-900">Transações reais encontradas</div>
-      <p className="text-sm text-emerald-800 mt-1">A análise está usando {confirmedTransactions} venda(s) confirmada(s), além de {listedComparables} anúncio(s) comparável(is).</p>
+    return <section className="bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 rounded-3xl p-5">
+      <div className="font-black text-emerald-900 dark:text-emerald-200">Transações reais encontradas</div>
+      <p className="text-sm text-emerald-800 dark:text-emerald-300 mt-1">A análise está usando {confirmedTransactions} venda(s) confirmada(s), além de {listedComparables} anúncio(s) comparável(is).</p>
     </section>;
   }
 
-  return <section className="bg-blue-50 border border-blue-200 rounded-3xl p-5">
+  return <section className="bg-blue-50 dark:bg-blue-950 border border-blue-200 rounded-3xl p-5">
     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
       <div>
         <div className="font-black text-blue-950">
           {isSp ? 'Integração São Paulo ativa, mas sem transações públicas retornadas' : 'Sem transações reais retornadas'}
         </div>
-        <p className="text-sm text-blue-900 mt-1">
-          O valor exibido nesta análise está vindo dos {listedComparables} anúncios comparáveis coletados no radar, não de vendas reais de cartório/ITBI.
+        <p className="text-sm text-blue-900 dark:text-blue-200 mt-1">
+          O valor exibido nesta análise está vindo dos {listedComparables} anúncios comparáveis do radar. As fontes públicas (CKAN/ITBI, BCB SGS) foram consultadas e não devolveram escritura para este endereço nesta coleta.
         </p>
       </div>
-      <Badge>{isSp ? 'Catálogo SP consultado' : 'Estimativa por anúncios'}</Badge>
+      <Badge>{isSp ? 'CKAN SP + BCB' : 'Dados abertos + anúncios'}</Badge>
     </div>
     <div className="grid md:grid-cols-3 gap-3 mt-4 text-sm">
       <StatusBox title="Anúncios comparáveis" value={`${listedComparables}`} detail="Base usada para preço/m² e valor estimado agora." />
-      <StatusBox title="Vendas reais" value="0" detail="Nenhuma venda confirmada retornou dos providers." />
-      <StatusBox title="Próximo nível" value="API paga/oficial" detail="DataZAP, cartório, ITBI normalizado ou base própria." />
+      <StatusBox title="Vendas reais" value="0" detail="Nenhuma venda pública retornou do ITBI aberto ou da planilha importada." />
+      <StatusBox title="Fontes públicas" value="CKAN + BCB" detail="ITBI em dados abertos, SELIC/CDI/IPCA/IVG-R. DataZAP/FipeZAP são comerciais e não entram nesta análise." />
     </div>
-    {(noDatasetProviders.length > 0 || unconfiguredProviders.length > 0) && <div className="mt-4 rounded-2xl bg-white/70 border border-blue-100 p-4 text-sm text-blue-900">
+    {(noDatasetProviders.length > 0 || unconfiguredProviders.length > 0) && <div className="mt-4 rounded-2xl bg-white/70 dark:bg-slate-900/70 border border-blue-100 p-4 text-sm text-blue-900 dark:text-blue-200">
       <strong className="block mb-2">Fontes consultadas/configuradas:</strong>
       {noDatasetProviders.map(provider => <div key={provider.key}>• {provider.label}: {provider.message}</div>)}
       {unconfiguredProviders.map(provider => <div key={provider.key}>• {provider.label}: {provider.message}</div>)}
@@ -552,24 +708,24 @@ function MarketDataNotice({ item, providers, confirmedTransactions, listedCompar
 }
 
 function StatusBox({ title, value, detail }: { title: string; value: string; detail: string }) {
-  return <div className="bg-white/80 border border-blue-100 rounded-2xl p-4">
-    <span className="text-blue-700 text-xs font-bold">{title}</span>
+  return <div className="bg-white/80 dark:bg-slate-900/80 border border-blue-100 rounded-2xl p-4">
+    <span className="text-blue-700 dark:text-blue-300 text-xs font-bold">{title}</span>
     <strong className="block text-xl mt-1">{value}</strong>
-    <p className="text-xs text-blue-800 mt-1">{detail}</p>
+    <p className="text-xs text-blue-800 dark:text-blue-300 mt-1">{detail}</p>
   </div>;
 }
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
-  return <div className="flex justify-between gap-3 py-3 border-b last:border-b-0 text-sm"><span className="text-gray-500">{label}</span><strong className="text-right">{value}</strong></div>;
+  return <div className="flex justify-between gap-3 py-3 border-b last:border-b-0 text-sm"><span className="text-gray-500 dark:text-slate-400">{label}</span><strong className="text-right">{value}</strong></div>;
 }
 
 function CalculationStep({ index, title, value }: { index: number; title: string; value: string }) {
-  return <div className="border rounded-2xl p-4 bg-emerald-50 border-emerald-100">
+  return <div className="border rounded-2xl p-4 bg-emerald-50 dark:bg-emerald-950 border-emerald-100">
     <div className="flex items-center gap-3">
       <span className="w-8 h-8 rounded-full grid place-items-center text-xs font-black bg-emerald-600 text-white">{index}</span>
       <div className="font-black text-sm">{title}</div>
     </div>
-    <p className="text-xs text-gray-500 mt-3">{value}</p>
+    <p className="text-xs text-gray-500 dark:text-slate-400 mt-3">{value}</p>
   </div>;
 }
 
@@ -698,32 +854,32 @@ function PriceM2Distribution({ values, reference }: { values: number[]; referenc
   const buckets = buildBuckets(values);
 
   if (!values.length) {
-    return <div className="mt-5 border rounded-2xl p-5 bg-slate-50 text-sm text-gray-500">
+    return <div className="mt-5 border rounded-2xl p-5 bg-slate-50 dark:bg-slate-950 text-sm text-gray-500 dark:text-slate-400">
       Não há comparáveis com preço/m² válido para montar a distribuição.
     </div>;
   }
 
   const maxCount = Math.max(...buckets.map(bucket => bucket.count), 1);
 
-  return <div className="mt-5 border rounded-2xl p-5 bg-slate-50">
+  return <div className="mt-5 border rounded-2xl p-5 bg-slate-50 dark:bg-slate-950">
     <div className="flex items-center justify-between gap-3 mb-4">
       <div>
         <h3 className="font-black text-sm">Distribuição dos comparáveis válidos</h3>
-        <p className="text-xs text-gray-500">Valores fora da faixa realista foram ignorados.</p>
+        <p className="text-xs text-gray-500 dark:text-slate-400">Valores fora da faixa realista foram ignorados.</p>
       </div>
       <Badge>{values.length} base(s)</Badge>
     </div>
     <div className="space-y-3">
       {buckets.map(bucket => <div key={bucket.label} className="grid grid-cols-[90px_1fr_42px] gap-3 items-center text-xs">
-        <span className="font-bold text-gray-600">{bucket.label}</span>
-        <div className="h-3 rounded-full bg-white border overflow-hidden">
+        <span className="font-bold text-gray-600 dark:text-slate-300">{bucket.label}</span>
+        <div className="h-3 rounded-full bg-white dark:bg-slate-900 border overflow-hidden">
           <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.max(bucket.count ? 8 : 0, (bucket.count / maxCount) * 100)}%` }} />
         </div>
-        <span className="text-right text-gray-500">{bucket.count}</span>
+        <span className="text-right text-gray-500 dark:text-slate-400">{bucket.count}</span>
       </div>)}
     </div>
-    <div className="mt-4 text-xs text-gray-500">
-      Referência usada: <strong className="text-gray-900">{reference ? `${money(reference)}/m²` : 'sem referência'}</strong>
+    <div className="mt-4 text-xs text-gray-500 dark:text-slate-400">
+      Referência usada: <strong className="text-gray-900 dark:text-slate-100">{reference ? `${money(reference)}/m²` : 'sem referência'}</strong>
     </div>
   </div>;
 }

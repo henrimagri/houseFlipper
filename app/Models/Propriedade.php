@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
@@ -26,7 +25,6 @@ class Propriedade extends BaseModel
         'valor_venda_alvo',
         'status',
         'observacoes',
-        'deletado_flg',
     ];
 
     protected $casts = [
@@ -58,5 +56,10 @@ class Propriedade extends BaseModel
     public function vendas(): HasMany
     {
         return $this->hasMany(Venda::class, 'propriedade_id');
+    }
+
+    public function scopeComAquisicao($query)
+    {
+        return $query->whereNotNull('data_aquisicao');
     }
 }

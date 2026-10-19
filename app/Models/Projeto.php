@@ -42,12 +42,15 @@ class Projeto extends BaseModel
 
     public function etapas(): HasMany
     {
-        return $this->hasMany(ProjetoEtapa::class, 'projeto_id')->orderBy('ordem');
+        return $this->hasMany(ProjetoEtapa::class, 'projeto_id')
+            ->where('projetos_etapas.deletado_flg', false)
+            ->orderBy('ordem');
     }
 
     public function tarefas(): HasMany
     {
-        return $this->hasMany(Tarefa::class, 'projeto_id');
+        return $this->hasMany(Tarefa::class, 'projeto_id')
+            ->where('tarefas.deletado_flg', false);
     }
 
     public function despesas(): HasMany

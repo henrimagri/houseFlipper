@@ -1,566 +1,206 @@
-import { useState } from 'react';
-import {
-  ArrowLeft,
-  ChevronDown,
-  MoreHorizontal,
-  Maximize2,
-  BedDouble,
-  Bath,
-  Car,
-  CalendarDays,
-  DollarSign,
-  Wrench,
-  Tag,
-  TrendingUp,
-  Percent,
-  FileText,
-  Save,
-  Pencil,
-  CheckCircle2,
-  Circle,
-  Info,
-} from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { Bath, BedDouble, Box, Building2, CalendarDays, Car, CircleDollarSign, Edit3, Home, Loader2, MapPin, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import api from '@/lib/api';
+import { PaginatedCollection } from '@/lib/paginatedCollection';
+import { emptyPropertyForm, propertyPayload, type PropertyForm } from '@/lib/propertyForm';
 
-type CenarioId = 'pessimista' | 'realista' | 'otimista';
-
-const cenarios: Record<
-  CenarioId,
-  { titulo: string; venda: number; lucro: number; roi: number; margem: number; payback: string; tema: string }
-> = {
-  pessimista: {
-    titulo: 'Pessimista',
-    venda: 780000,
-    lucro: 128417,
-    roi: 22.1,
-    margem: 16.5,
-    payback: '10,8 meses',
-    tema: 'red',
-  },
-  realista: {
-    titulo: 'Realista',
-    venda: 850000,
-    lucro: 198417,
-    roi: 34.2,
-    margem: 23.3,
-    payback: '7,6 meses',
-    tema: 'emerald',
-  },
-  otimista: {
-    titulo: 'Otimista',
-    venda: 920000,
-    lucro: 268417,
-    roi: 46.2,
-    margem: 29.2,
-    payback: '5,5 meses',
-    tema: 'emerald',
-  },
+type Address = { cep?: string | null; logradouro?: string | null; numero?: string | null; complemento?: string | null; bairro?: string | null; cidade?: string | null; estado?: string | null; pais?: string | null };
+type Property = {
+  id: number;
+  apelido: string;
+  tipo?: string | null;
+  area_m2?: string | number | null;
+  quartos?: number | null;
+  banheiros?: number | null;
+  vagas?: number | null;
+  valor_aquisicao?: string | number | null;
+  data_aquisicao?: string | null;
+  valor_venda_alvo?: string | number | null;
+  status: string;
+  observacoes?: string | null;
+  endereco?: Address | null;
 };
 
-const composicao = [
-  { nome: 'Valor do Imóvel', valor: 420000, pct: 72.4, cor: '#1e40af' },
-  { nome: 'Custo de Reforma', valor: 98750, pct: 17.0, cor: '#3b82f6' },
-  { nome: 'Custos de Compra', valor: 32300, pct: 5.6, cor: '#60a5fa' },
-  { nome: 'Custos de Venda', valor: 17200, pct: 3.0, cor: '#22c55e' },
-  { nome: 'Reserva / Contingência', valor: 11000, pct: 1.9, cor: '#a855f7' },
+const statuses = [
+  { value: 'prospeccao', label: 'Prospecção' },
+  { value: 'adquirida', label: 'Adquirida' },
+  { value: 'em_reforma', label: 'Em reforma' },
+  { value: 'a_venda', label: 'À venda' },
+  { value: 'vendida', label: 'Vendida' },
 ];
+const money = (value?: string | number | null) => value === null || value === undefined || value === '' ? 'Não informado' : Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const date = (value?: string | null) => value ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`)) : 'Não informada';
+const statusLabel = (value?: string) => statuses.find(item => item.value === value)?.label || value || 'Não informado';
 
-const linhaTempo = [
-  { etapa: 'Compra do Imóvel', data: '01/06/2024', estado: 'concluida' },
-  { etapa: 'Início da Reforma', data: '05/06/2024', estado: 'andamento' },
-  { etapa: 'Término da Reforma', data: '05/08/2024', estado: 'pendente' },
-  { etapa: 'Anúncio para Venda', data: '10/08/2024', estado: 'pendente' },
-  { etapa: 'Venda Estimada', data: '10/09/2024', estado: 'pendente' },
-];
+function errorMessage(error: any, fallback: string) {
+  return Object.values(error.response?.data?.errors ?? {}).flat().join(' ') || error.response?.data?.message || fallback;
+}
 
-const comparaveis = [
-  { titulo: 'Rua das Orquídeas, 45', bairro: 'Jardim Paulista', detalhes: '123 m² · 3 dorm · 2 vagas', preco: 'R$ 875.000', m2: 'R$ 7.114/m²' },
-  { titulo: 'Av. Paulista, 2000', bairro: 'Jardim Paulista', detalhes: '118 m² · 3 dorm · 2 vagas', preco: 'R$ 840.000', m2: 'R$ 7.119/m²' },
-  { titulo: 'Rua Itapeva, 150', bairro: 'Jardim Paulista', detalhes: '125 m² · 3 dorm · 2 vagas', preco: 'R$ 890.000', m2: 'R$ 7.120/m²' },
-  { titulo: 'Al. Santos, 300', bairro: 'Jardim Paulista', detalhes: '115 m² · 3 dorm · 2 vagas', preco: 'R$ 815.000', m2: 'R$ 7.087/m²' },
-];
-
-const fmtBrl = (v: number, comCentavos = true) =>
-  v.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: comCentavos ? 2 : 0,
-    maximumFractionDigits: comCentavos ? 2 : 0,
-  });
-
-type TabId = 'resumo' | 'custos' | 'projecao' | 'fluxo' | 'indicadores' | 'documentos';
-
-const tabs: { id: TabId; label: string }[] = [
-  { id: 'resumo', label: 'Resumo da Análise' },
-  { id: 'custos', label: 'Custos de Reforma' },
-  { id: 'projecao', label: 'Projeção de Venda' },
-  { id: 'fluxo', label: 'Fluxo de Caixa' },
-  { id: 'indicadores', label: 'Indicadores' },
-  { id: 'documentos', label: 'Documentos' },
-];
+function toForm(property: Property): PropertyForm {
+  const address = property.endereco ?? {};
+  const text = (value: unknown) => value === null || value === undefined ? '' : String(value);
+  return {
+    apelido: property.apelido, tipo: text(property.tipo), area_m2: text(property.area_m2), quartos: text(property.quartos),
+    banheiros: text(property.banheiros), vagas: text(property.vagas), valor_aquisicao: text(property.valor_aquisicao),
+    data_aquisicao: text(property.data_aquisicao), valor_venda_alvo: text(property.valor_venda_alvo), status: property.status,
+    observacoes: text(property.observacoes), cep: text(address.cep), logradouro: text(address.logradouro), numero: text(address.numero),
+    complemento: text(address.complemento), bairro: text(address.bairro), cidade: text(address.cidade), estado: text(address.estado), pais: text(address.pais || 'Brasil'),
+  };
+}
 
 export default function AnaliseImovel() {
-  const [tab, setTab] = useState<TabId>('resumo');
-  const [cenario, setCenario] = useState<CenarioId>('realista');
+  const navigate = useNavigate();
+  const loader = useRef(new PaginatedCollection<Property>());
+  const sequence = useRef(0);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('todos');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
+  const [dialog, setDialog] = useState<{ mode: 'create' | 'edit'; form: PropertyForm } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
-  return (
-    <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Análise de Imóvel</h1>
-            <p className="text-sm text-slate-500">
-              Avalie a viabilidade do negócio antes de fechar a compra
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="inline-flex items-center gap-2 text-sm text-slate-700 px-4 py-2 rounded-lg border border-slate-200 hover:bg-slate-50 bg-white">
-              <Save className="h-4 w-4" /> Salvar Análise
-            </button>
-            <button className="inline-flex items-center gap-2 text-sm text-white px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700">
-              <FileText className="h-4 w-4" /> Gerar Relatório <ChevronDown className="h-4 w-4" />
-            </button>
-            <button className="h-9 w-9 rounded-lg border border-slate-200 bg-white grid place-items-center text-slate-500 hover:bg-slate-50">
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+  async function load(silent = false) {
+    const request = ++sequence.current;
+    if (silent) setRefreshing(true); else setLoading(true);
+    setError('');
+    try {
+      const items = await loader.current.load(async (page, perPage, signal) => {
+        const response = await api.get('/propriedades', { params: { page, per_page: perPage }, signal });
+        return response.data;
+      });
+      if (!items || request !== sequence.current) return false;
+      setProperties(items);
+      setSelectedId(current => current && items.some(item => item.id === current) ? current : (items[0]?.id ?? null));
+      return true;
+    } catch (exception: any) {
+      if (request === sequence.current) setError(errorMessage(exception, 'Não foi possível carregar os imóveis.'));
+      return false;
+    } finally {
+      if (request === sequence.current) { setLoading(false); setRefreshing(false); }
+    }
+  }
 
-        <button className="text-sm text-slate-600 hover:text-slate-900 inline-flex items-center gap-1">
-          <ArrowLeft className="h-4 w-4" /> Voltar para análises
-        </button>
+  useEffect(() => {
+    void load();
+    return () => { sequence.current++; loader.current.cancel(); };
+  }, []);
 
-        {/* Cabeçalho do imóvel */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <div className="grid grid-cols-1 md:grid-cols-[220px_1fr_auto] gap-5">
-            <div className="relative h-40 rounded-lg bg-gradient-to-br from-slate-200 to-slate-300 overflow-hidden">
-              <span className="absolute top-2 left-2 bg-primary-600 text-white text-[10px] px-2 py-1 rounded-md font-medium">
-                Em análise
-              </span>
-              <div className="absolute inset-0 grid place-items-center text-slate-400">
-                <svg viewBox="0 0 24 24" className="h-14 w-14" fill="currentColor">
-                  <path d="M12 3 2 12h3v8h6v-6h2v6h6v-8h3z" />
-                </svg>
-              </div>
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">Casa Jardim Paulista</h2>
-              <p className="text-sm text-slate-500">
-                Rua das Flores, 123 · Jardim Paulista
-                <br />
-                São Paulo · SP
-              </p>
-              <div className="mt-4 flex flex-wrap gap-x-8 gap-y-3 text-xs text-slate-500">
-                <Spec icon={Maximize2} valor="120 m²" label="Área construída" />
-                <Spec icon={BedDouble} valor="3" label="Quartos" />
-                <Spec icon={Bath} valor="2" label="Banheiros" />
-                <Spec icon={Car} valor="2" label="Vagas" />
-                <Spec icon={CalendarDays} valor="1985" label="Ano construção" />
-              </div>
-            </div>
-            <div className="flex flex-col items-end justify-between">
-              <div className="text-right">
-                <div className="text-xs text-slate-500">Valor do Imóvel</div>
-                <div className="text-2xl font-bold text-primary-600">{fmtBrl(420000, false)}</div>
-              </div>
-              <button className="inline-flex items-center gap-2 text-sm text-slate-700 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-50">
-                <Pencil className="h-4 w-4" /> Editar dados
-              </button>
-            </div>
-          </div>
-        </div>
+  useEffect(() => {
+    if (!dialog) return;
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape' && !saving) setDialog(null); };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [dialog, saving]);
 
-        {/* Tabs */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <div className="border-b border-slate-200 flex gap-6 overflow-x-auto -mt-2">
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`text-sm pb-3 -mb-px border-b-2 whitespace-nowrap ${
-                  tab === t.id
-                    ? 'border-primary-600 text-primary-700 font-medium'
-                    : 'border-transparent text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+  const visible = useMemo(() => {
+    const needle = search.trim().toLocaleLowerCase('pt-BR');
+    return properties.filter(property => {
+      if (status !== 'todos' && property.status !== status) return false;
+      if (!needle) return true;
+      const address = property.endereco;
+      return [property.apelido, property.tipo, address?.logradouro, address?.bairro, address?.cidade, address?.estado].filter(Boolean).join(' ').toLocaleLowerCase('pt-BR').includes(needle);
+    });
+  }, [properties, search, status]);
+  const selected = properties.find(item => item.id === selectedId) ?? null;
+  const totalAcquisition = properties.reduce((cents, property) => cents + Math.round(Number(property.valor_aquisicao || 0) * 100), 0) / 100;
 
-          {tab === 'resumo' ? (
-            <div className="mt-5 space-y-6">
-              {/* KPIs */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                <KpiAnalise label="Investimento Total" valor={fmtBrl(580250, false)} icon={DollarSign} cor="primary" link="Ver detalhes" />
-                <KpiAnalise
-                  label="Custo de Reforma"
-                  valor={fmtBrl(98750, false)}
-                  icon={Wrench}
-                  cor="amber"
-                  ajuda="16,8% do investimento"
-                />
-                <KpiAnalise
-                  label="Preço de Venda Estimado"
-                  valor={fmtBrl(850000, false)}
-                  icon={Tag}
-                  cor="blue"
-                  link="Ver projeção detalhada"
-                />
-                <KpiAnalise
-                  label="Lucro Líquido Estimado"
-                  valor={fmtBrl(198417, false)}
-                  icon={TrendingUp}
-                  cor="emerald"
-                  link="Ver composição"
-                />
-                <KpiAnalise
-                  label="ROI (Retorno)"
-                  valor="34,2%"
-                  icon={Percent}
-                  cor="emerald"
-                  ajuda="Bom negócio"
-                />
-              </div>
+  function openCreate() { setDialog({ mode: 'create', form: { ...emptyPropertyForm } }); setFormError(''); setConfirmDelete(false); }
+  function openEdit(property: Property) { setDialog({ mode: 'edit', form: toForm(property) }); setFormError(''); setConfirmDelete(false); }
+  function setField<K extends keyof PropertyForm>(field: K, value: PropertyForm[K]) { setDialog(current => current ? { ...current, form: { ...current.form, [field]: value } } : current); }
 
-              {/* Cenários */}
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-3">Simulação de Cenários</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {(Object.keys(cenarios) as CenarioId[]).map((c) => (
-                    <CenarioCard
-                      key={c}
-                      data={cenarios[c]}
-                      ativo={c === cenario}
-                      onClick={() => setCenario(c)}
-                    />
-                  ))}
-                </div>
-              </div>
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    if (!dialog) return;
+    setSaving(true); setFormError('');
+    try {
+      const response = dialog.mode === 'create'
+        ? await api.post('/propriedades', propertyPayload(dialog.form))
+        : await api.put(`/propriedades/${selectedId}`, propertyPayload(dialog.form));
+      const saved: Property = response.data.data ?? response.data;
+      setDialog(null);
+      const refreshed = await load(true);
+      setSelectedId(saved.id);
+      if (!refreshed) setError('Imóvel salvo, mas a lista não pôde ser recarregada. Use Atualizar antes de repetir a operação.');
+    } catch (exception: any) {
+      setFormError(errorMessage(exception, 'Não foi possível salvar o imóvel.'));
+    } finally { setSaving(false); }
+  }
 
-              {/* Composição + Timeline */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <ComposicaoCard />
-                <TimelineCard />
-              </div>
-            </div>
-          ) : (
-            <div className="mt-8 text-sm text-slate-500 text-center py-10">
-              Conteúdo desta aba em breve.
-            </div>
-          )}
-        </div>
-      </div>
+  async function removeSelected() {
+    if (!selected) return;
+    setSaving(true); setError('');
+    try {
+      await api.delete(`/propriedades/${selected.id}`);
+      setConfirmDelete(false);
+      const refreshed = await load(true);
+      if (!refreshed) setError('Imóvel excluído, mas a lista não pôde ser recarregada. Use Atualizar.');
+    } catch (exception: any) {
+      setError(errorMessage(exception, 'Não foi possível excluir o imóvel.'));
+    } finally { setSaving(false); }
+  }
 
-      {/* Coluna lateral */}
-      <aside className="space-y-6">
-        <ProjecaoVendaCard />
-        <ComparaveisCard />
-        <AnotacoesCard />
-      </aside>
-    </div>
-  );
+  if (loading) return <div className="min-h-[50vh] grid place-items-center"><div className="text-center text-slate-500 dark:text-slate-400"><Loader2 className="h-8 w-8 mx-auto animate-spin text-primary-600" /><p className="mt-3">Carregando imóveis...</p></div></div>;
+
+  return <div className="space-y-6">
+    <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-4"><div><div className="text-xs uppercase tracking-widest text-primary-600 dark:text-primary-400 font-bold">Patrimônio da conta</div><h1 className="text-3xl font-black mt-2 text-slate-900 dark:text-slate-100">Imóveis</h1><p className="text-slate-500 dark:text-slate-400 mt-1">Consulte e mantenha os dados reais dos imóveis vinculados às suas operações.</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => void load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-3 text-sm font-bold disabled:opacity-60"><RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} /> Atualizar</button><button type="button" onClick={openCreate} className="inline-flex items-center gap-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white px-5 py-3 text-sm font-bold"><Plus className="h-4 w-4" /> Novo imóvel</button></div></header>
+
+    {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-950 p-4 text-red-800 dark:text-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3"><span>{error}</span><button type="button" onClick={() => void load()} className="font-bold underline underline-offset-2 w-fit">Tentar novamente</button></div>}
+
+    <section aria-label="Indicadores dos imóveis" className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4"><Metric icon={Home} label="Imóveis cadastrados" value={String(properties.length)} detail="Registros ativos da conta" /><Metric icon={Search} label="Em prospecção" value={String(properties.filter(item => item.status === 'prospeccao').length)} detail="Em avaliação" /><Metric icon={Building2} label="Em reforma" value={String(properties.filter(item => item.status === 'em_reforma').length)} detail="Execução em andamento" /><Metric icon={CircleDollarSign} label="Aquisição informada" value={money(totalAcquisition)} detail="Soma dos valores cadastrados" /></section>
+
+    <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 flex flex-col md:flex-row gap-3"><label className="relative flex-1"><span className="sr-only">Buscar imóveis</span><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar nome, tipo ou endereço" className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 pl-9 pr-3 py-2 text-sm" /></label><label><span className="sr-only">Filtrar por status</span><select value={status} onChange={event => setStatus(event.target.value)} className="w-full md:w-52 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 px-3 py-2 text-sm"><option value="todos">Todos os status</option>{statuses.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label></section>
+
+    {properties.length === 0 && !error ? <EmptyState onCreate={openCreate} onOpportunity={() => navigate('/leads')} /> : <div className="grid xl:grid-cols-[minmax(0,1fr)_390px] gap-6 items-start"><section aria-label="Lista de imóveis" className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden">{visible.length === 0 ? <div className="p-10 text-center text-slate-500"><Search className="h-8 w-8 mx-auto mb-3" /><p className="font-semibold text-slate-700 dark:text-slate-200">Nenhum imóvel corresponde aos filtros.</p><button type="button" onClick={() => { setSearch(''); setStatus('todos'); }} className="mt-3 font-bold text-primary-600 dark:text-primary-400">Limpar filtros</button></div> : <div className="divide-y divide-slate-100 dark:divide-slate-800">{visible.map(property => <PropertyRow key={property.id} property={property} selected={property.id === selectedId} onSelect={() => { setSelectedId(property.id); setConfirmDelete(false); }} />)}</div>}</section><aside className="xl:sticky xl:top-6">{selected && <PropertyDetail property={selected} confirmDelete={confirmDelete} saving={saving} onEdit={() => openEdit(selected)} onAskDelete={() => setConfirmDelete(true)} onCancelDelete={() => setConfirmDelete(false)} onDelete={() => void removeSelected()} />}</aside></div>}
+
+    {dialog && <PropertyDialog mode={dialog.mode} form={dialog.form} saving={saving} error={formError} onField={setField} onClose={() => !saving && setDialog(null)} onSubmit={save} />}
+  </div>;
 }
 
-function Spec({
-  icon: Icon,
-  valor,
-  label,
-}: {
-  icon: typeof Maximize2;
-  valor: string;
-  label: string;
-}) {
-  return (
-    <div className="flex items-start gap-2">
-      <Icon className="h-4 w-4 text-slate-400 mt-0.5" />
-      <div>
-        <div className="text-sm font-semibold text-slate-900">{valor}</div>
-        <div className="text-[11px] text-slate-500">{label}</div>
-      </div>
-    </div>
-  );
+function PropertyRow({ property, selected, onSelect }: { property: Property; selected: boolean; onSelect: () => void }) {
+  const address = property.endereco;
+  const location = [address?.bairro, address?.cidade, address?.estado].filter(Boolean).join(' · ') || 'Endereço não informado';
+  return <button type="button" onClick={onSelect} className={`w-full p-5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 ${selected ? 'bg-primary-50/70 dark:bg-primary-950/40' : ''}`}><div className="flex gap-4"><div className="h-12 w-12 rounded-xl bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400 grid place-items-center shrink-0"><Home className="h-6 w-6" /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap justify-between gap-2"><div><h2 className="font-bold text-slate-900 dark:text-slate-100">{property.apelido}</h2><p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{location}</p></div><StatusBadge value={property.status} /></div><div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-xs text-slate-500 dark:text-slate-400"><span>Tipo<br /><b className="text-slate-700 dark:text-slate-200">{property.tipo || 'Não informado'}</b></span><span>Área<br /><b className="text-slate-700 dark:text-slate-200">{property.area_m2 ? `${Number(property.area_m2).toLocaleString('pt-BR')} m²` : 'Não informada'}</b></span><span>Aquisição<br /><b className="text-slate-700 dark:text-slate-200">{money(property.valor_aquisicao)}</b></span><span>Venda alvo<br /><b className="text-slate-700 dark:text-slate-200">{money(property.valor_venda_alvo)}</b></span></div></div></div></button>;
 }
 
-function KpiAnalise({
-  label,
-  valor,
-  icon: Icon,
-  cor,
-  ajuda,
-  link,
-}: {
-  label: string;
-  valor: React.ReactNode;
-  icon: typeof DollarSign;
-  cor: 'primary' | 'blue' | 'emerald' | 'amber';
-  ajuda?: string;
-  link?: string;
-}) {
-  const map = {
-    primary: 'bg-primary-50 text-primary-600',
-    blue: 'bg-blue-50 text-blue-600',
-    emerald: 'bg-emerald-50 text-emerald-600',
-    amber: 'bg-amber-50 text-amber-600',
-  } as const;
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 p-4">
-      <div className="flex items-start justify-between gap-2">
-        <div className="text-xs text-slate-500">{label}</div>
-        <div className={`h-7 w-7 rounded-lg grid place-items-center ${map[cor]}`}>
-          <Icon className="h-3.5 w-3.5" />
-        </div>
-      </div>
-      <div className="mt-2 text-xl font-semibold text-slate-900">{valor}</div>
-      {ajuda && <div className="text-[11px] text-slate-500 mt-1">{ajuda}</div>}
-      {link && (
-        <button className="mt-2 text-xs text-primary-600 hover:text-primary-700 font-medium">
-          {link}
-        </button>
-      )}
-    </div>
-  );
+function PropertyDetail({ property, confirmDelete, saving, onEdit, onAskDelete, onCancelDelete, onDelete }: { property: Property; confirmDelete: boolean; saving: boolean; onEdit: () => void; onAskDelete: () => void; onCancelDelete: () => void; onDelete: () => void }) {
+  const navigate = useNavigate();
+  const address = property.endereco;
+  const street = [address?.logradouro, address?.numero].filter(Boolean).join(', ');
+  const location = [address?.bairro, address?.cidade, address?.estado].filter(Boolean).join(' · ');
+  return <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden"><div className="p-5 border-b border-slate-100 dark:border-slate-800"><div className="flex items-start justify-between gap-3"><div><p className="text-xs uppercase tracking-widest text-primary-600 dark:text-primary-400 font-bold">Detalhes do imóvel</p><h2 className="text-xl font-black mt-1 text-slate-900 dark:text-slate-100">{property.apelido}</h2><p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{property.tipo || 'Tipo não informado'}</p></div><StatusBadge value={property.status} /></div><div className="mt-5 flex gap-2"><button type="button" onClick={onEdit} className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 text-white px-3 py-2 text-sm font-bold"><Edit3 className="h-4 w-4" /> Editar</button><button type="button" onClick={() => navigate(`/imoveis/${property.id}/3d`)} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 dark:border-slate-700 px-3 py-2 text-sm font-bold"><Box className="h-4 w-4" /> 3D</button><button type="button" onClick={onAskDelete} aria-label="Excluir imóvel" className="rounded-lg border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 p-2.5"><Trash2 className="h-4 w-4" /></button></div></div>
+    <div className="p-5 space-y-5"><section><h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2"><MapPin className="h-4 w-4 text-primary-600" /> Endereço</h3><p className="text-sm text-slate-600 dark:text-slate-300 mt-2">{street || 'Logradouro não informado'}{address?.complemento ? ` · ${address.complemento}` : ''}<br />{location || 'Localidade não informada'}{address?.cep ? <><br />CEP {address.cep}</> : null}</p></section>
+      <section className="grid grid-cols-2 gap-3"><Spec icon={BedDouble} label="Quartos" value={property.quartos ?? '—'} /><Spec icon={Bath} label="Banheiros" value={property.banheiros ?? '—'} /><Spec icon={Car} label="Vagas" value={property.vagas ?? '—'} /><Spec icon={Building2} label="Área" value={property.area_m2 ? `${Number(property.area_m2).toLocaleString('pt-BR')} m²` : '—'} /></section>
+      <section className="rounded-xl bg-slate-50 dark:bg-slate-950 p-4 space-y-3"><Line label="Valor de aquisição" value={money(property.valor_aquisicao)} /><Line label="Data de aquisição" value={date(property.data_aquisicao)} /><Line label="Valor de venda alvo" value={money(property.valor_venda_alvo)} /></section>
+      {property.observacoes && <section><h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">Observações</h3><p className="text-sm text-slate-600 dark:text-slate-300 mt-2 whitespace-pre-wrap break-words">{property.observacoes}</p></section>}
+      {confirmDelete && <div role="alertdialog" aria-label="Confirmar exclusão do imóvel" className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 p-4"><p className="text-sm font-bold text-red-900 dark:text-red-200">Excluir “{property.apelido}”?</p><p className="text-xs text-red-800 dark:text-red-300 mt-1">O registro deixará de aparecer nas consultas. Projetos vinculados não são removidos por esta ação.</p><div className="flex gap-2 mt-3"><button type="button" onClick={onCancelDelete} disabled={saving} className="flex-1 rounded-lg border border-red-300 px-3 py-2 text-xs font-bold">Cancelar</button><button type="button" onClick={onDelete} disabled={saving} className="flex-1 rounded-lg bg-red-600 text-white px-3 py-2 text-xs font-bold disabled:opacity-60">{saving ? 'Excluindo...' : 'Confirmar exclusão'}</button></div></div>}
+    </div></div>;
 }
 
-function CenarioCard({
-  data,
-  ativo,
-  onClick,
-}: {
-  data: (typeof cenarios)[CenarioId];
-  ativo: boolean;
-  onClick: () => void;
-}) {
-  const temaHeader =
-    data.tema === 'red'
-      ? 'bg-red-50 text-red-700'
-      : data.tema === 'emerald' && ativo
-        ? 'bg-primary-50 text-primary-700'
-        : 'bg-emerald-50 text-emerald-700';
-  const lucroCor = data.lucro >= 0 ? 'text-emerald-600' : 'text-red-600';
-  const roiCor =
-    data.roi >= 30 ? 'text-emerald-600' : data.roi >= 20 ? 'text-amber-600' : 'text-red-600';
-
-  return (
-    <div
-      onClick={onClick}
-      className={`rounded-xl border bg-white overflow-hidden cursor-pointer transition ${
-        ativo ? 'border-primary-500 ring-2 ring-primary-100' : 'border-slate-200 hover:border-slate-300'
-      }`}
-    >
-      <div className={`px-4 py-3 ${temaHeader} flex items-center justify-between`}>
-        <div>
-          <div className="text-sm font-semibold">{data.titulo}</div>
-          <div className="text-[11px] opacity-80 mt-0.5">Venda: {fmtBrl(data.venda, false)}</div>
-        </div>
-        {ativo && (
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-primary-700 font-medium">
-            Cenário base
-          </span>
-        )}
-      </div>
-      <div className="p-4 space-y-2 text-sm">
-        <Linha label="Lucro Líquido" valor={fmtBrl(data.lucro, false)} valorCls={lucroCor} />
-        <Linha label="ROI" valor={`${data.roi.toString().replace('.', ',')}%`} valorCls={roiCor} />
-        <Linha label="Margem de Lucro" valor={`${data.margem.toString().replace('.', ',')}%`} />
-        <Linha label="Payback" valor={data.payback} />
-        <button
-          className={`mt-3 w-full text-sm py-2 rounded-lg ${
-            ativo
-              ? 'bg-primary-600 text-white hover:bg-primary-700'
-              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
-        >
-          Ver detalhes
-        </button>
-      </div>
-    </div>
-  );
+function PropertyDialog({ mode, form, saving, error, onField, onClose, onSubmit }: { mode: 'create' | 'edit'; form: PropertyForm; saving: boolean; error: string; onField: <K extends keyof PropertyForm>(field: K, value: PropertyForm[K]) => void; onClose: () => void; onSubmit: (event: FormEvent) => void }) {
+  return <div className="fixed inset-0 z-50 bg-slate-950/50 p-4 overflow-y-auto grid place-items-center" onMouseDown={event => { if (event.target === event.currentTarget) onClose(); }}><div role="dialog" aria-modal="true" aria-labelledby="property-dialog-title" className="w-full max-w-4xl rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-700"><div className="flex items-start justify-between gap-3 p-5 border-b border-slate-200 dark:border-slate-700"><div><h2 id="property-dialog-title" className="text-xl font-black">{mode === 'create' ? 'Novo imóvel' : 'Editar imóvel'}</h2><p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Preencha somente informações conhecidas. Os valores ficam vinculados à sua conta.</p></div><button type="button" onClick={onClose} aria-label="Fechar formulário" className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800"><X className="h-5 w-5" /></button></div>
+      <form onSubmit={onSubmit} className="p-5 space-y-6"><fieldset className="grid md:grid-cols-3 gap-4"><legend className="text-sm font-bold mb-3 md:col-span-3">Dados principais</legend><Field label="Nome do imóvel *"><input autoFocus required maxLength={120} value={form.apelido} onChange={event => onField('apelido', event.target.value)} className="input" /></Field><Field label="Tipo"><input maxLength={40} placeholder="Casa, apartamento, terreno" value={form.tipo} onChange={event => onField('tipo', event.target.value)} className="input" /></Field><Field label="Status"><select value={form.status} onChange={event => onField('status', event.target.value)} className="input">{statuses.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field><NumberField label="Área (m²)" value={form.area_m2} onChange={value => onField('area_m2', value)} step="0.01" max="99999999.99" /><NumberField label="Quartos" value={form.quartos} onChange={value => onField('quartos', value)} max="1000" /><NumberField label="Banheiros" value={form.banheiros} onChange={value => onField('banheiros', value)} max="1000" /><NumberField label="Vagas" value={form.vagas} onChange={value => onField('vagas', value)} max="1000" /><NumberField label="Valor de aquisição" value={form.valor_aquisicao} onChange={value => onField('valor_aquisicao', value)} step="0.01" max="999999999999" /><Field label="Data de aquisição"><input type="date" value={form.data_aquisicao} onChange={event => onField('data_aquisicao', event.target.value)} className="input" /></Field><NumberField label="Valor de venda alvo" value={form.valor_venda_alvo} onChange={value => onField('valor_venda_alvo', value)} step="0.01" max="999999999999" /></fieldset>
+        <fieldset className="grid md:grid-cols-4 gap-4"><legend className="text-sm font-bold mb-3 md:col-span-4">Endereço</legend><Field label="CEP"><input maxLength={12} value={form.cep} onChange={event => onField('cep', event.target.value)} className="input" /></Field><div className="md:col-span-2"><Field label="Logradouro"><input maxLength={200} value={form.logradouro} onChange={event => onField('logradouro', event.target.value)} className="input" /></Field></div><Field label="Número"><input maxLength={20} value={form.numero} onChange={event => onField('numero', event.target.value)} className="input" /></Field><Field label="Complemento"><input maxLength={100} value={form.complemento} onChange={event => onField('complemento', event.target.value)} className="input" /></Field><Field label="Bairro"><input maxLength={100} value={form.bairro} onChange={event => onField('bairro', event.target.value)} className="input" /></Field><Field label="Cidade"><input maxLength={100} value={form.cidade} onChange={event => onField('cidade', event.target.value)} className="input" /></Field><Field label="UF"><input maxLength={2} pattern="[A-Za-z]{2}" value={form.estado} onChange={event => onField('estado', event.target.value.toUpperCase())} className="input uppercase" /></Field></fieldset>
+        <Field label="Observações"><textarea rows={3} maxLength={5000} value={form.observacoes} onChange={event => onField('observacoes', event.target.value)} className="input resize-y" /></Field>
+        {error && <p role="alert" className="rounded-lg bg-red-50 dark:bg-red-950 p-3 text-sm text-red-800 dark:text-red-200">{error}</p>}
+        <div className="flex justify-end gap-2 border-t border-slate-200 dark:border-slate-700 pt-4"><button type="button" onClick={onClose} disabled={saving} className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-bold">Cancelar</button><button type="submit" disabled={saving} className="rounded-lg bg-primary-600 text-white px-5 py-2 text-sm font-bold disabled:opacity-60">{saving ? 'Salvando...' : mode === 'create' ? 'Cadastrar imóvel' : 'Salvar alterações'}</button></div></form></div></div>;
 }
 
-function Linha({ label, valor, valorCls }: { label: string; valor: string; valorCls?: string }) {
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-slate-500">{label}</span>
-      <span className={`font-medium text-slate-900 ${valorCls ?? ''}`}>{valor}</span>
-    </div>
-  );
+function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block"><span className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">{label}</span>{children}</label>; }
+function NumberField({ label, value, onChange, step = '1', max }: { label: string; value: string; onChange: (value: string) => void; step?: string; max: string }) { return <Field label={label}><input type="number" min="0" max={max} step={step} value={value} onChange={event => onChange(event.target.value)} className="input" /></Field>; }
+function Line({ label, value }: { label: string; value: string }) { return <div className="flex justify-between gap-3 text-sm"><span className="text-slate-500 dark:text-slate-400">{label}</span><b className="text-right text-slate-900 dark:text-slate-100">{value}</b></div>; }
+function Spec({ icon: Icon, label, value }: { icon: typeof Home; label: string; value: string | number }) { return <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3"><Icon className="h-4 w-4 text-primary-600 dark:text-primary-400" /><p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2">{label}</p><p className="font-bold text-sm mt-0.5">{value}</p></div>; }
+
+function StatusBadge({ value }: { value: string }) {
+  const classes: Record<string, string> = { prospeccao: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200', adquirida: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200', em_reforma: 'bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200', a_venda: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200', vendida: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200' };
+  return <span className={`rounded-full px-2.5 py-1 text-xs font-bold whitespace-nowrap ${classes[value] || 'bg-slate-100 text-slate-700'}`}>{statusLabel(value)}</span>;
 }
 
-function ComposicaoCard() {
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-900">Composição do Investimento</h3>
-          <p className="text-xs text-slate-500">Para o cenário realista</p>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] items-center gap-5">
-        <div className="relative h-44">
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie
-                data={composicao}
-                dataKey="valor"
-                innerRadius={55}
-                outerRadius={80}
-                paddingAngle={1}
-                stroke="none"
-              >
-                {composicao.map((c) => (
-                  <Cell key={c.nome} fill={c.cor} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="absolute inset-0 grid place-items-center pointer-events-none">
-            <div className="text-center">
-              <div className="text-base font-bold text-slate-900">R$ 580.250</div>
-              <div className="text-[10px] text-slate-500">Total Investido</div>
-            </div>
-          </div>
-        </div>
-        <div className="space-y-2">
-          {composicao.map((c) => (
-            <div key={c.nome} className="flex items-center gap-3 text-xs">
-              <span className="h-2 w-2 rounded-full" style={{ background: c.cor }} />
-              <span className="text-slate-600 flex-1">{c.nome}</span>
-              <span className="text-slate-900 font-medium">{fmtBrl(c.valor, false)}</span>
-              <span className="text-slate-400 w-12 text-right">{c.pct.toString().replace('.', ',')}%</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <button className="mt-4 text-xs text-primary-600 hover:text-primary-700 font-medium">
-        Ver detalhes completos
-      </button>
-    </div>
-  );
-}
+function Metric({ icon: Icon, label, value, detail }: { icon: typeof Home; label: string; value: string; detail: string }) { return <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5"><div className="flex items-start justify-between gap-3"><div><p className="text-sm text-slate-500 dark:text-slate-400">{label}</p><p className="text-2xl font-black mt-2 text-slate-900 dark:text-slate-100">{value}</p></div><div className="h-10 w-10 rounded-xl bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400 grid place-items-center"><Icon className="h-5 w-5" /></div></div><p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{detail}</p></div>; }
 
-function TimelineCard() {
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <h3 className="text-sm font-semibold text-slate-900 mb-4">Linha do Tempo Estimada</h3>
-      <ol className="relative ml-2">
-        {linhaTempo.map((t, i) => {
-          const Icon =
-            t.estado === 'concluida' ? CheckCircle2 : t.estado === 'andamento' ? Info : Circle;
-          const cor =
-            t.estado === 'concluida'
-              ? 'text-emerald-500'
-              : t.estado === 'andamento'
-                ? 'text-primary-500'
-                : 'text-slate-300';
-          return (
-            <li key={t.etapa} className="relative pl-7 pb-4 last:pb-0">
-              {i < linhaTempo.length - 1 && (
-                <span className="absolute left-2 top-5 bottom-0 w-px bg-slate-200" />
-              )}
-              <Icon className={`absolute left-0 top-0.5 h-4 w-4 ${cor}`} />
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-sm text-slate-900">{t.etapa}</div>
-                <div className="text-xs text-slate-500">{t.data}</div>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-        <span className="text-slate-500">Duração total estimada</span>
-        <span className="text-slate-900 font-medium">3 meses e 9 dias</span>
-      </div>
-    </div>
-  );
-}
-
-function ProjecaoVendaCard() {
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-900">Projeção de Venda</h3>
-          <p className="text-xs text-slate-500">Cenário realista</p>
-        </div>
-      </div>
-      <div className="space-y-3 text-sm">
-        <Linha label="Valor por m² na região" valor="R$ 7.083,33" />
-        <Linha label="Valor de mercado (120 m²)" valor="R$ 850.000,00" />
-        <Linha label="Ajustes" valor="R$ 0,00" />
-        <div className="border-t border-slate-100 pt-3">
-          <Linha label="Preço de venda estimado" valor="R$ 850.000,00" valorCls="text-emerald-600" />
-        </div>
-      </div>
-      <div className="mt-4 bg-primary-50 rounded-lg px-3 py-2 flex items-start gap-2 text-xs text-primary-700">
-        <Info className="h-4 w-4 mt-0.5" />
-        <div>
-          <div className="font-medium">Baseado em 8 imóveis comparáveis</div>
-          <div className="opacity-80">Análise realizada em 10/05/2024</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ComparaveisCard() {
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-900">Imóveis Comparáveis</h3>
-        <button className="text-xs text-primary-600 hover:text-primary-700 font-medium">
-          Ver todos
-        </button>
-      </div>
-      <div className="space-y-3">
-        {comparaveis.map((c) => (
-          <div key={c.titulo} className="flex gap-3 items-start">
-            <div className="h-14 w-16 rounded-lg bg-gradient-to-br from-slate-200 to-slate-300 grid place-items-center text-slate-500 shrink-0">
-              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
-                <path d="M12 3 2 12h3v8h6v-6h2v6h6v-8h3z" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-slate-900 truncate">{c.titulo}</div>
-              <div className="text-[11px] text-slate-500">{c.bairro}</div>
-              <div className="text-[11px] text-slate-500">{c.detalhes}</div>
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-sm font-semibold text-slate-900">{c.preco}</span>
-                <span className="text-[11px] text-slate-500">{c.m2}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      <button className="mt-4 w-full text-sm py-2 rounded-lg border border-primary-200 text-primary-600 hover:bg-primary-50">
-        Ver todos os comparáveis
-      </button>
-    </div>
-  );
-}
-
-function AnotacoesCard() {
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-slate-900">Anotações</h3>
-        <button className="text-xs text-primary-600 hover:text-primary-700 font-medium inline-flex items-center gap-1">
-          <Pencil className="h-3 w-3" /> Editar
-        </button>
-      </div>
-      <p className="text-xs text-slate-600 leading-relaxed">
-        Imóvel com ótimo potencial de valorização.
-        <br />
-        Rua tranquila e com alta demanda na região.
-        <br />
-        Reforma cosmética, sem necessidade de estrutura.
-        <br />
-        Foco em acabamento de cozinha e banheiros.
-      </p>
-      <div className="text-[10px] text-slate-400 mt-3 border-t border-slate-100 pt-2">
-        Atualizado em 10/05/2024 14:30 por Matheus Silva
-      </div>
-    </div>
-  );
-}
+function EmptyState({ onCreate, onOpportunity }: { onCreate: () => void; onOpportunity: () => void }) { return <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 py-16 px-6 text-center"><div className="h-14 w-14 rounded-2xl bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400 grid place-items-center mx-auto"><Home className="h-7 w-7" /></div><h2 className="text-xl font-black mt-5">Nenhum imóvel cadastrado</h2><p className="text-slate-500 dark:text-slate-400 mt-2 max-w-lg mx-auto">Cadastre um imóvel diretamente ou converta uma oportunidade após concluir a análise financeira.</p><div className="mt-5 flex flex-wrap justify-center gap-2"><button type="button" onClick={onCreate} className="inline-flex items-center gap-2 rounded-xl bg-primary-600 text-white px-5 py-3 font-bold"><Plus className="h-4 w-4" /> Cadastrar imóvel</button><button type="button" onClick={onOpportunity} className="rounded-xl border border-slate-300 dark:border-slate-700 px-5 py-3 font-bold">Ver oportunidades</button></div></div>; }

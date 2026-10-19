@@ -29,17 +29,24 @@ class ItbiMunicipalProvider implements PropertyTransactionProviderInterface
             if ($this->isSaoPaulo($subject)) {
                 return $this->result(
                     'no_dataset',
-                    'Sem endpoint ITBI municipal configurado. A análise usa a planilha ITBI importada como fonte real local.',
+                    'Endpoint ITBI próprio não configurado. A busca pública usa o catálogo CKAN da Prefeitura e a planilha ITBI importada.',
                     []
                 );
             } else {
-                return $this->result('unconfigured', 'Defina SP_ITBI_API_URL ou ITBI_API_URL para consultar transações municipais.', []);
+                return $this->result(
+                    'no_dataset',
+                    'Sem endpoint ITBI próprio. A análise consulta catálogos CKAN municipais/nacionais de dados abertos quando existirem para esta cidade.',
+                    []
+                );
             }
         }
 
         try {
+            $endpoint = $this->assertPublicHttpsEndpoint($endpoint);
             $request = Http::timeout(18)
                 ->accept('*/*')
+                ->withHeaders(['Accept-Encoding' => 'identity'])
+                ->withOptions($this->guardedHttpOptions())
                 ->withUserAgent('InvestFlip/1.0 (+market-data)');
             if ($token = config('services.itbi.token')) {
                 $request = $request->withToken($token);
@@ -52,8 +59,9 @@ class ItbiMunicipalProvider implements PropertyTransactionProviderInterface
                 'address' => $subject['address'] ?? null,
                 'limit' => 50,
             ]);
+            $this->assertGuardedResponseSize($response);
         } catch (\Throwable $exception) {
-            return $this->result('error', $exception->getMessage(), []);
+            return $this->result('error', 'Serviço externo indisponível.', []);
         }
 
         if (! $response->successful()) {
@@ -106,10 +114,14 @@ class ItbiMunicipalProvider implements PropertyTransactionProviderInterface
 
         foreach ($terms as $term) {
             try {
+                $catalog = $this->assertPublicHttpsEndpoint($catalog);
                 $response = Http::timeout(12)
                     ->acceptJson()
+                    ->withHeaders(['Accept-Encoding' => 'identity'])
+                    ->withOptions($this->guardedHttpOptions())
                     ->withUserAgent('Mozilla/5.0 InvestFlip/1.0')
                     ->get($catalog, ['q' => $term, 'rows' => 20]);
+                $this->assertGuardedResponseSize($response);
             } catch (\Throwable) {
                 continue;
             }
@@ -191,7 +203,11 @@ class ItbiMunicipalProvider implements PropertyTransactionProviderInterface
             ->map(function (string $line) use ($headers, $delimiter) {
                 $values = str_getcsv($line, $delimiter);
 
-                return array_combine(array_slice($headers, 0, count($values)), $values) ?: [];
+                if (count($headers) !== count($values)) {
+                    return [];
+                }
+
+                return array_combine($headers, $values) ?: [];
             })
             ->filter()
             ->values()
@@ -204,12 +220,13 @@ class ItbiMunicipalProvider implements PropertyTransactionProviderInterface
         $city = Str::lower((string) ($subject['city'] ?? ''));
 
         return collect($rows)
+            ->filter(fn ($row) => is_array($row) && collect($row)->every(fn ($value) => is_scalar($value) || $value === null))
             ->filter(function (array $row) use ($neighborhood, $city) {
                 $haystack = Str::lower(implode(' ', array_map('strval', $row)));
                 $matchesNeighborhood = $neighborhood === '' || Str::contains($haystack, $neighborhood);
                 $matchesCity = $city === '' || Str::contains($haystack, $city);
 
-                return $matchesNeighborhood || $matchesCity;
+                return $matchesNeighborhood && $matchesCity;
             })
             ->values()
             ->all();

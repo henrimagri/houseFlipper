@@ -30,6 +30,26 @@ class InvestmentAnalysisTest extends TestCase
         $this->assertSame('excellent', $result['decision']);
     }
 
+    public function test_calculator_uses_compound_equivalence_for_periodic_returns(): void
+    {
+        $result = app(InvestmentAnalysisCalculatorService::class)->calculate([
+            'purchase_price' => 100000,
+            'down_payment' => 100000,
+            'detailed_costs_total' => 0,
+            'expected_sale_price' => 200000,
+            'expected_months_until_sale' => 12,
+            'expected_monthly_costs' => 0,
+            'expected_installment_value' => 0,
+            'expected_outstanding_balance' => 0,
+        ]);
+
+        $this->assertSame(100.0, $result['expected_roi_percentage']);
+        $this->assertSame(5.9463, $result['expected_monthly_roi_percentage']);
+        $this->assertSame(100.0, $result['expected_annualized_roi_percentage']);
+        $this->assertStringNotContainsString('negócio', $result['decision_reason']);
+        $this->assertStringNotContainsString('comprar', $result['decision_reason']);
+    }
+
     public function test_first_analysis_is_primary_and_cannot_be_read_by_another_user(): void
     {
         $owner = User::factory()->create();
@@ -40,7 +60,109 @@ class InvestmentAnalysisTest extends TestCase
         $response = $this->actingAs($owner, 'sanctum')->postJson("/api/opportunities/{$opportunity->id}/investment-analysis", $payload)->assertCreated();
         $analysisId = $response->json('data.id');
         $this->assertDatabaseHas('investment_analyses', ['id' => $analysisId, 'user_id' => $owner->id, 'is_primary' => true]);
-        $this->actingAs($intruder, 'sanctum')->getJson("/api/investment-analyses/{$analysisId}")->assertForbidden();
+        $this->actingAs($intruder, 'sanctum')->getJson("/api/investment-analyses/{$analysisId}")->assertNotFound();
+    }
+
+    public function test_analysis_cover_uses_the_same_public_image_policy_as_opportunities(): void
+    {
+        $user = User::factory()->create();
+        $opportunity = Opportunity::create(['user_id' => $user->id, 'title' => 'Capa auditada', 'property_type' => 'house', 'source' => 'manual']);
+        $analysisId = $this->actingAs($user, 'sanctum')->postJson("/api/opportunities/{$opportunity->id}/investment-analysis", [
+            'purchase_price' => 300000,
+            'down_payment' => 60000,
+            'expected_sale_price' => 450000,
+            'expected_months_until_sale' => 6,
+        ])->assertCreated()->json('data.id');
+        $photo = $opportunity->photos()->create(['path' => 'https://127.0.0.1/private.jpg', 'original_name' => 'cover.jpg', 'is_cover' => true]);
+
+        foreach (['https://127.0.0.1/private.jpg', 'opportunities/../documents/private.jpg', 'documents/tenant/private.jpg'] as $unsafePath) {
+            $photo->update(['path' => $unsafePath]);
+            $this->getJson("/api/investment-analyses/{$analysisId}")
+                ->assertOk()
+                ->assertJsonPath('data.opportunity.cover_url', null)
+                ->assertJsonMissing(['cover_url' => $unsafePath]);
+        }
+
+        $photo->update(['path' => 'opportunities/tenant/safe.jpg']);
+        $this->getJson("/api/investment-analyses/{$analysisId}")
+            ->assertOk()
+            ->assertJsonPath('data.opportunity.cover_url', '/storage/opportunities/tenant/safe.jpg');
+
+        $photo->update(['path' => 'https://images.example.test/safe.jpg']);
+        $this->getJson("/api/investment-analyses/{$analysisId}")
+            ->assertOk()
+            ->assertJsonPath('data.opportunity.cover_url', 'https://images.example.test/safe.jpg');
+    }
+
+    public function test_analysis_resource_omits_internal_ownership_and_relation_keys(): void
+    {
+        $user = User::factory()->create();
+        $opportunity = Opportunity::create(['user_id' => $user->id, 'title' => 'Análise mínima', 'property_type' => 'house', 'source' => 'manual']);
+        $analysis = $opportunity->investmentAnalyses()->create([
+            'user_id' => $user->id,
+            'purchase_price' => 300000,
+            'down_payment' => 60000,
+            'expected_sale_price' => 450000,
+            'expected_months_until_sale' => 6,
+        ]);
+        $analysis->financingSimulations()->create([
+            'label' => 'Cenário seguro',
+            'is_selected' => true,
+            'bank_name' => 'Banco teste',
+            'financing_system' => 'PRICE',
+        ]);
+        $cost = $analysis->costs()->create([
+            'user_id' => $user->id,
+            'category' => 'renovation',
+            'description' => 'Obra',
+            'amount' => 10000,
+        ]);
+        $result = $analysis->result()->create([
+            'sale_price' => 450000,
+            'net_profit' => 100000,
+            'flip_duration_months' => 6,
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson("/api/investment-analyses/{$analysis->id}")
+            ->assertOk()
+            ->assertJsonPath('data.financing_detail.bank_name', 'Banco teste')
+            ->assertJsonPath('data.financing_simulations.0.label', 'Cenário seguro')
+            ->assertJsonPath('data.costs.0.description', 'Obra')
+            ->assertJsonPath('data.result.net_profit', 100000);
+
+        foreach ([
+            'data.user_id', 'data.deleted_at',
+            'data.financing_detail.investment_analysis_id',
+            'data.financing_simulations.0.investment_analysis_id',
+            'data.costs.0.investment_analysis_id', 'data.costs.0.user_id',
+            'data.result.investment_analysis_id',
+        ] as $path) {
+            $response->assertJsonMissingPath($path);
+        }
+
+        $this->postJson("/api/investment-analyses/{$analysis->id}/financing-simulations", [
+            'label' => 'Cenário adicional',
+            'bank_name' => 'Outro banco',
+            'financing_system' => 'SAC',
+        ])->assertCreated()
+            ->assertJsonMissingPath('investment_analysis_id');
+
+        $this->putJson("/api/investment-costs/{$cost->id}", [
+            'category' => 'renovation',
+            'description' => 'Obra atualizada',
+            'amount' => 12000,
+            'payment_status' => 'pending',
+        ])->assertOk()
+            ->assertJsonMissingPath('investment_analysis_id')
+            ->assertJsonMissingPath('user_id');
+
+        $this->putJson("/api/investment-results/{$result->id}", [
+            'sale_price' => 450000,
+            'sale_costs' => 0,
+            'flip_duration_months' => 6,
+        ])->assertOk()
+            ->assertJsonMissingPath('investment_analysis_id');
     }
 
     public function test_empty_optional_values_are_saved_as_zero(): void
@@ -61,22 +183,47 @@ class InvestmentAnalysisTest extends TestCase
         $this->assertDatabaseHas('investment_analyses', ['id' => $analysisId, 'expected_monthly_costs' => 0, 'broker_commission' => 0]);
     }
 
-    public function test_financing_reference_uses_bcb_rate_and_analysis_principal(): void
+    public function test_financing_simulation_uses_only_the_rate_informed_by_the_user(): void
     {
         $analysis = new InvestmentAnalysis(['financed_amount' => 400000]);
 
-        $reference = app(FinancingReferenceService::class)->for($analysis, null, 'PRICE', 360);
+        $reference = app(FinancingReferenceService::class)->for($analysis, null, 'PRICE', 360, null, 0, 0.95, 'Banco informado');
 
-        $this->assertSame(8.52, $reference['interest_rate_yearly']);
-        $this->assertSame('BANCO BARI S.A.', $reference['bank_name']);
+        $this->assertSame(0.95, $reference['interest_rate_monthly']);
+        $this->assertSame(12.0149, $reference['interest_rate_yearly']);
+        $this->assertSame('Banco informado', $reference['bank_name']);
+        $this->assertNull($reference['reference_date']);
+        $this->assertSame([], app(FinancingReferenceService::class)->banks());
         $this->assertSame(400000.0, $reference['outstanding_balance']);
         $this->assertGreaterThan(0, $reference['installment_value']);
         $this->assertTrue($reference['is_estimate']);
 
-        $afterEightPayments = app(FinancingReferenceService::class)->for($analysis, null, 'PRICE', 360, 400000, 8);
+        $afterEightPayments = app(FinancingReferenceService::class)->for($analysis, null, 'PRICE', 360, 400000, 8, 0.95, 'Banco informado');
         $this->assertSame(8, $afterEightPayments['paid_installments']);
         $this->assertLessThan(400000, $afterEightPayments['outstanding_balance']);
         $this->assertSame($afterEightPayments['outstanding_balance'], $afterEightPayments['payoff_amount']);
+    }
+
+    public function test_financing_reference_endpoint_accepts_manual_rate_and_rejects_out_of_range_values(): void
+    {
+        $user = User::factory()->create();
+        $opportunity = Opportunity::create(['user_id' => $user->id, 'title' => 'Casa', 'property_type' => 'house', 'source' => 'manual']);
+        $analysis = $opportunity->investmentAnalyses()->create([
+            'user_id' => $user->id, 'purchase_price' => 500000, 'down_payment' => 100000,
+            'financed_amount' => 400000, 'expected_sale_price' => 700000, 'expected_months_until_sale' => 8,
+        ]);
+
+        $this->actingAs($user, 'sanctum')->getJson("/api/investment-analyses/{$analysis->id}/financing-reference?system=PRICE&installments=360&monthly_rate=0.95&bank_name=Banco%20informado")
+            ->assertOk()
+            ->assertJsonPath('data.bank_name', 'Banco informado')
+            ->assertJsonPath('data.interest_rate_monthly', 0.95)
+            ->assertJsonPath('data.interest_rate_yearly', 12.0149)
+            ->assertJsonPath('data.reference_date', null)
+            ->assertJsonCount(0, 'banks');
+
+        $this->actingAs($user, 'sanctum')->getJson("/api/investment-analyses/{$analysis->id}/financing-reference?monthly_rate=101")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('monthly_rate');
     }
 
     public function test_actual_own_capital_uses_down_payment_projected_costs_and_paid_installments(): void
@@ -143,6 +290,12 @@ class InvestmentAnalysisTest extends TestCase
         $intelligence = app(InvestmentIntelligenceService::class)->analyze($analysis);
 
         $this->assertCount(3, $intelligence['scenarios']);
+        $this->assertSame(600000.0, $intelligence['scenarios']['realistic']['sale_price']);
+        $this->assertSame(0.0, $intelligence['scenarios']['realistic']['assumptions']['sale_price_change_percentage']);
+        $this->assertSame(540000.0, $intelligence['scenarios']['pessimistic']['sale_price']);
+        $this->assertSame(-10.0, $intelligence['scenarios']['pessimistic']['assumptions']['sale_price_change_percentage']);
+        $this->assertSame(648000.0, $intelligence['scenarios']['optimistic']['sale_price']);
+        $this->assertSame(8.0, $intelligence['scenarios']['optimistic']['assumptions']['sale_price_change_percentage']);
         $this->assertGreaterThanOrEqual(70, $intelligence['opportunity_score']['score']);
         $this->assertSame('Boa oportunidade de mercado', $intelligence['opportunity_score']['label']);
         $this->assertNull($intelligence['investment_score']);
@@ -154,8 +307,12 @@ class InvestmentAnalysisTest extends TestCase
         $completed = app(InvestmentIntelligenceService::class)->analyze($analysis->refresh());
 
         $this->assertTrue($completed['financial_analysis_complete']);
-        $this->assertSame('Comprar', $completed['investment_score']['signal']['label']);
-        $this->assertNotNull($completed['recommendation']);
+        $this->assertSame('Acima da meta', $completed['investment_score']['signal']['label']);
+        $this->assertSame('rules_based_financial_calculation', $completed['analysis_method']);
+        $this->assertSame(90, $completed['data_completeness']);
+        $this->assertArrayNotHasKey('confidence', $completed['investment_score']);
+        $this->assertNull($completed['recommendation']);
+        $this->assertSame('Acima da meta', $completed['rule_signal']);
     }
 
     public function test_user_can_compare_and_select_multiple_financing_simulations(): void

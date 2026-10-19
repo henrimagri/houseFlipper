@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthService
 {
@@ -23,9 +26,13 @@ class AuthService
                 'email' => $data['email'],
                 'password' => $data['password'],
             ]);
+            $user->forceFill([
+                'requires_email_verification' => true,
+                'registration_profile' => ['phone' => $data['phone'] ?? null, 'address' => $data['address'] ?? null],
+            ]);
             $user->save();
 
-            $token = $user->createToken($data['device_name'] ?? 'default')->plainTextToken;
+            $token = $user->createToken($data['device_name'] ?? 'default', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
 
             return ['tenant' => $tenant, 'user' => $user, 'token' => $token];
         });
@@ -33,19 +40,73 @@ class AuthService
 
     public function login(string $email, string $password, ?string $deviceName = null): ?array
     {
-        $user = User::where('email', $email)->where('deletado_flg', false)->first();
+        $matches = User::whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])->where('deletado_flg', false)->limit(2)->get();
+        if ($matches->count() !== 1) {
+            return null;
+        }
+        $user = $matches->first();
 
-        if (!$user || !Hash::check($password, $user->password)) {
+        if (! $user->ativo_flg || ! Hash::check($password, $user->password)) {
             return null;
         }
 
-        $token = $user->createToken($deviceName ?? 'default')->plainTextToken;
+        if ($user->tenant_id && (! $user->tenant || ! $user->tenant->ativo_flg || $user->tenant->deletado_flg)) {
+            return null;
+        }
+
+        $token = $user->createToken($deviceName ?? 'default', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
 
         return ['user' => $user, 'token' => $token];
     }
 
-    public function logout(User $user): void
+    public function logout(User $user, Request $request): void
     {
-        $user->currentAccessToken()->delete();
+        $token = $user->currentAccessToken();
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
+
+            return;
+        }
+
+        Auth::guard('web')->logout();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+    }
+
+    public function sessions(User $user): array
+    {
+        $currentId = $user->currentAccessToken() instanceof PersonalAccessToken
+            ? $user->currentAccessToken()->id
+            : null;
+
+        return $user->tokens()
+            ->orderByDesc('last_used_at')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn (PersonalAccessToken $token): array => [
+                'id' => $token->id,
+                'name' => $token->name,
+                'current' => $token->id === $currentId,
+                'last_used_at' => $token->last_used_at?->toIso8601String(),
+                'created_at' => $token->created_at?->toIso8601String(),
+                'expires_at' => $token->expires_at?->toIso8601String(),
+            ])->all();
+    }
+
+    public function revokeSession(User $user, int $tokenId): bool
+    {
+        return (bool) $user->tokens()->whereKey($tokenId)->delete();
+    }
+
+    public function logoutAll(User $user, Request $request): void
+    {
+        $user->tokens()->delete();
+        Auth::guard('web')->logout();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
     }
 }

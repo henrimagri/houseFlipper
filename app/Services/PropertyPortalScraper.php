@@ -2,16 +2,39 @@
 
 namespace App\Services;
 
+use App\Support\ExecutableLocator;
+use App\Support\RemoteUrlPolicy;
 use DOMDocument;
 use DOMElement;
 use DOMXPath;
+use GuzzleHttp\Psr7\Uri;
+use GuzzleHttp\Psr7\UriResolver;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\Process\Process;
 
 class PropertyPortalScraper
 {
+    private const MAX_HTML_BYTES = 5 * 1024 * 1024;
+
+    private const ALLOWED_PORTAL_HOSTS = [
+        'www.olx.com.br', 'olx.com.br',
+        'www.zapimoveis.com.br', 'zapimoveis.com.br',
+        'www.vivareal.com.br', 'vivareal.com.br',
+        'www.imovelweb.com.br', 'imovelweb.com.br',
+        'www.chavesnamao.com.br', 'chavesnamao.com.br',
+        'www.casamineira.com.br', 'casamineira.com.br',
+        'loft.com.br', 'www.loft.com.br',
+        'www.quintoandar.com.br', 'quintoandar.com.br',
+        'lista.mercadolivre.com.br', 'www.mercadolivre.com.br', 'mercadolivre.com.br',
+        'www.facebook.com', 'facebook.com', 'm.facebook.com',
+    ];
+
+    public function __construct(private readonly RemoteUrlPolicy $urlPolicy) {}
+
     public function scrape(string $city, string $neighborhood, int $limit = 250, string $state = 'SP', string $propertyType = 'apartment'): array
     {
         $limit = min(250, max(1, $limit));
@@ -36,7 +59,7 @@ class PropertyPortalScraper
 
         $targets = $this->targets($city, $neighborhood, $region, $state, $propertyType);
         $items = collect();
-        $diagnostics = [];
+        $diagnostics = $headless['diagnostics'];
 
         foreach ($targets as $target) {
             if ($items->count() >= $limit) {
@@ -46,6 +69,7 @@ class PropertyPortalScraper
             $result = $this->fetch($target['url']);
             if (! $result['ok']) {
                 $diagnostics[] = ['source' => $target['name'], 'status' => $result['status'], 'message' => $result['message']];
+
                 continue;
             }
 
@@ -79,19 +103,28 @@ class PropertyPortalScraper
         }
 
         $process = new Process([
-            'node',
+            ExecutableLocator::node(config('services.portal_scraper.node_binary')),
             $script,
             json_encode(['city' => $city, 'neighborhood' => $neighborhood, 'state' => $state, 'propertyType' => $propertyType, 'limit' => $limit], JSON_UNESCAPED_UNICODE),
-        ], base_path('frontend'), ['CHROME_PATH' => '/usr/bin/google-chrome'], null, 120);
+        ], base_path('frontend'), ExecutableLocator::childEnvironment([
+            'CHROME_PATH' => ExecutableLocator::browser(config('services.portal_scraper.chrome_path')) ?: false,
+            'SCRAPER_DISABLE_SANDBOX' => config('services.portal_scraper.disable_sandbox') ? 'true' : 'false',
+        ]), null, 120);
 
         try {
             $process->run();
         } catch (\Throwable $exception) {
-            return ['items' => [], 'diagnostics' => [['source' => 'Headless', 'message' => $exception->getMessage()]]];
+            Log::warning('Falha ao iniciar navegador da busca de imóveis', [
+                'exception_type' => $exception::class,
+            ]);
+
+            return ['items' => [], 'diagnostics' => [['source' => 'Headless', 'message' => 'Serviço externo indisponível.']]];
         }
 
         if (! $process->isSuccessful()) {
-            return ['items' => [], 'diagnostics' => [['source' => 'Headless', 'message' => trim($process->getErrorOutput()) ?: 'Falha ao executar navegador']]];
+            Log::warning('Navegador da busca de imóveis encerrou com falha', $this->failedProcessContext($process));
+
+            return ['items' => [], 'diagnostics' => [['source' => 'Headless', 'message' => 'Falha ao executar navegador']]];
         }
 
         $decoded = json_decode($process->getOutput(), true);
@@ -99,6 +132,17 @@ class PropertyPortalScraper
         return [
             'items' => is_array($decoded['items'] ?? null) ? $decoded['items'] : [],
             'diagnostics' => is_array($decoded['diagnostics'] ?? null) ? $decoded['diagnostics'] : [],
+        ];
+    }
+
+    private function failedProcessContext(Process $process): array
+    {
+        $stderr = $process->getErrorOutput();
+
+        return [
+            'exit_code' => $process->getExitCode(),
+            'stderr_bytes' => strlen($stderr),
+            'stderr_hash' => hash('sha256', $stderr),
         ];
     }
 
@@ -203,25 +247,60 @@ class PropertyPortalScraper
 
     private function fetch(string $url): array
     {
-        try {
-            $response = Http::withHeaders([
-                'User-Agent' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0 Safari/537.36',
-                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language' => 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-            ])->timeout(15)->get($url);
-        } catch (\Throwable $exception) {
-            return ['ok' => false, 'status' => 0, 'message' => $exception->getMessage(), 'body' => ''];
+        for ($redirects = 0; $redirects <= 3; $redirects++) {
+            try {
+                $this->urlPolicy->assertAllowedHttps($url, self::ALLOWED_PORTAL_HOSTS);
+                $response = Http::withHeaders([
+                    'User-Agent' => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0 Safari/537.36',
+                    'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language' => 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+                    'Accept-Encoding' => 'identity',
+                ])->withOptions([
+                    'decode_content' => false,
+                    'on_headers' => function (ResponseInterface $response): void {
+                        $this->assertHtmlSize((float) $response->getHeaderLine('Content-Length'));
+                    },
+                    'progress' => function ($total, $received): void {
+                        $this->assertHtmlSize(max($total, $received));
+                    },
+                ])->withoutRedirecting()->timeout(15)->get($url);
+            } catch (\Throwable) {
+                return ['ok' => false, 'status' => 0, 'message' => 'Serviço externo indisponível.', 'body' => ''];
+            }
+
+            if (! in_array($response->status(), [301, 302, 303, 307, 308], true)) {
+                $body = $response->body();
+                try {
+                    $this->assertHtmlSize(strlen($body));
+                } catch (\Throwable) {
+                    return ['ok' => false, 'status' => 0, 'message' => 'Serviço externo indisponível.', 'body' => ''];
+                }
+                $blocked = Str::contains(Str::lower($body), ['captcha', 'suspicious traffic', 'access denied', 'robot']);
+
+                return [
+                    'ok' => $response->successful() && ! $blocked && strlen($body) > 500,
+                    'status' => $response->status(),
+                    'message' => $blocked ? 'Bloqueado por anti-bot/captcha' : ($response->successful() ? 'OK' : 'Falha HTTP'),
+                    'body' => $body,
+                ];
+            }
+
+            $location = $response->header('Location');
+            if (! $location) {
+                return ['ok' => false, 'status' => $response->status(), 'message' => 'Redirecionamento inválido.', 'body' => ''];
+            }
+
+            $url = (string) UriResolver::resolve(new Uri($url), new Uri($location));
         }
 
-        $body = $response->body();
-        $blocked = Str::contains(Str::lower($body), ['captcha', 'suspicious traffic', 'access denied', 'robot']);
+        return ['ok' => false, 'status' => 0, 'message' => 'Limite de redirecionamentos excedido.', 'body' => ''];
+    }
 
-        return [
-            'ok' => $response->successful() && ! $blocked && strlen($body) > 500,
-            'status' => $response->status(),
-            'message' => $blocked ? 'Bloqueado por anti-bot/captcha' : ($response->successful() ? 'OK' : 'Falha HTTP'),
-            'body' => $body,
-        ];
+    private function assertHtmlSize(int|float $size): void
+    {
+        if ($size > self::MAX_HTML_BYTES) {
+            throw new \RuntimeException('Resposta do portal excede o limite permitido.');
+        }
     }
 
     private function parseHtml(string $html, array $target, string $city, string $neighborhood, string $state): Collection
@@ -266,7 +345,7 @@ class PropertyPortalScraper
 
     private function parseDomCards(string $html, array $target, string $city, string $neighborhood, string $state): Collection
     {
-        $dom = new DOMDocument();
+        $dom = new DOMDocument;
         libxml_use_internal_errors(true);
         $dom->loadHTML('<?xml encoding="utf-8" ?>'.$html);
         libxml_clear_errors();

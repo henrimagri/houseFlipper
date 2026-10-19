@@ -5,14 +5,22 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Services\PropertyPortalScraper;
 use App\Services\PropertyValuationService;
+use App\Support\ExternalImageUrlPolicy;
+use App\Support\ExternalUrlPolicy;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Psr\Http\Message\ResponseInterface;
+use RuntimeException;
 
 class AIPropertySearchController extends Controller
 {
+    private const MAX_PROVIDER_RESPONSE_BYTES = 2_097_152;
+
     public function __construct(
         private readonly PropertyPortalScraper $scraper,
         private readonly PropertyValuationService $valuationService,
@@ -25,8 +33,12 @@ class AIPropertySearchController extends Controller
             'neighborhood' => ['nullable', 'string', 'max:120'],
             'state' => ['nullable', 'string', 'size:2'],
             'property_type' => ['nullable', 'string', 'in:apartment,house,commercial'],
-            'max_price' => ['nullable', 'numeric', 'min:0'],
+            'max_price' => ['nullable', 'numeric', 'min:0', 'max:999999999999'],
             'min_discount' => ['nullable', 'numeric', 'min:0', 'max:90'],
+            'min_bedrooms' => ['nullable', 'integer', 'min:0', 'max:20'],
+            'min_bathrooms' => ['nullable', 'integer', 'min:0', 'max:20'],
+            'min_parking' => ['nullable', 'integer', 'min:0', 'max:20'],
+            'min_area_m2' => ['nullable', 'numeric', 'min:0', 'max:99999'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:250'],
         ]);
 
@@ -39,26 +51,42 @@ class AIPropertySearchController extends Controller
         $limit = min(250, (int) ($data['limit'] ?? 250));
 
         $scraped = $this->scraper->scrape($city, $neighborhood, $limit, $state, $propertyType);
+        $scraperDiagnostics = $this->publicDiagnostics($scraped['diagnostics'] ?? []);
         $providerResponse = count($scraped['items'])
-            ? ['provider' => 'scraper', 'name' => $scraped['source_name'], 'items' => $scraped['items'], 'diagnostics' => $scraped['diagnostics']]
+            ? ['provider' => 'scraper', 'name' => $scraped['source_name'], 'items' => $scraped['items'], 'diagnostics' => $scraperDiagnostics]
             : ($this->fetchNestoria($city, $neighborhood, $limit, $state, $propertyType) ?? $this->fetchMercadoLivre($query, $limit));
 
         if ($providerResponse === null) {
             return response()->json([
                 'message' => 'Nenhuma fonte de anúncios respondeu agora.',
                 'details' => 'Tente novamente em instantes ou configure uma credencial de conector oficial.',
+                'diagnostics' => $scraperDiagnostics,
             ], 502);
         }
 
-        $items = collect($providerResponse['items'])
-            ->map(fn (array $item) => match ($providerResponse['provider']) {
-                'scraper' => $item,
-                'nestoria' => $this->normalizeNestoriaItem($item, $city, $neighborhood, $state),
-                default => $this->normalizeMercadoLivreItem($item, $city, $neighborhood, $state),
-            })
-            ->filter(fn (array $item) => $this->matchesRequestedPropertyType($item, $propertyType))
-            ->filter(fn (array $item) => $this->matchesRequestedLocation($item, $city, $neighborhood, $state))
-            ->filter(fn (array $item) => $item['asking_price'] > 0)
+        $normalizedItems = collect($providerResponse['items'])
+            ->map(function (array $item) use ($providerResponse, $city, $neighborhood, $state): array {
+                $normalized = match ($providerResponse['provider']) {
+                    'scraper' => $item,
+                    'nestoria' => $this->normalizeNestoriaItem($item, $city, $neighborhood, $state),
+                    default => $this->normalizeMercadoLivreItem($item, $city, $neighborhood, $state),
+                };
+                $normalized['source_url'] = $this->validHttpUrl($normalized['source_url'] ?? null);
+                $normalized['thumbnail'] = $this->validImageUrl($normalized['thumbnail'] ?? null);
+
+                return $normalized;
+            });
+        $typeMatchedItems = $normalizedItems->filter(fn (array $item) => $this->matchesRequestedPropertyType($item, $propertyType));
+        $locationMatchedItems = $typeMatchedItems->filter(fn (array $item) => $this->matchesRequestedLocation($item, $city, $neighborhood, $state));
+        $pricedItems = $locationMatchedItems->filter(fn (array $item) => $item['asking_price'] > 0);
+        $pipelineDiagnostics = [
+            ['source' => 'Itens coletados', 'found' => $normalizedItems->count()],
+            ['source' => 'Tipo compatível', 'found' => $typeMatchedItems->count()],
+            ['source' => 'Local compatível', 'found' => $locationMatchedItems->count()],
+            ['source' => 'Preço válido', 'found' => $pricedItems->count()],
+        ];
+
+        $items = $pricedItems
             ->map(function (array $item) use ($propertyType) {
                 $item['property_type'] = $propertyType;
 
@@ -67,6 +95,10 @@ class AIPropertySearchController extends Controller
             ->pipe(fn ($items) => $this->valuationService->applyComparableMarketEstimates($items))
             ->when(isset($data['max_price']) && (float) $data['max_price'] > 0, fn ($items) => $items->filter(fn (array $item) => $item['asking_price'] <= (float) $data['max_price']))
             ->when(isset($data['min_discount']) && (float) $data['min_discount'] > 0, fn ($items) => $items->filter(fn (array $item) => $item['discount_percentage'] >= (float) $data['min_discount']))
+            ->when(isset($data['min_bedrooms']) && (int) $data['min_bedrooms'] > 0, fn ($items) => $items->filter(fn (array $item) => (int) ($item['bedrooms'] ?? 0) >= (int) $data['min_bedrooms']))
+            ->when(isset($data['min_bathrooms']) && (int) $data['min_bathrooms'] > 0, fn ($items) => $items->filter(fn (array $item) => (int) ($item['bathrooms'] ?? 0) >= (int) $data['min_bathrooms']))
+            ->when(isset($data['min_parking']) && (int) $data['min_parking'] > 0, fn ($items) => $items->filter(fn (array $item) => (int) ($item['parking_spaces'] ?? 0) >= (int) $data['min_parking']))
+            ->when(isset($data['min_area_m2']) && (float) $data['min_area_m2'] > 0, fn ($items) => $items->filter(fn (array $item) => (float) ($item['area_m2'] ?? 0) >= (float) $data['min_area_m2']))
             ->sortByDesc('score')
             ->values();
 
@@ -79,12 +111,13 @@ class AIPropertySearchController extends Controller
 
         return response()->json([
             'data' => $items,
+            'valuation_model' => ['version' => PropertyValuationService::VERSION, 'type' => 'rules_and_comparables', 'trained_statistical_model' => false],
             'stats' => $stats,
             'source' => [
                 'name' => $providerResponse['name'],
                 'mode' => $providerResponse['provider'] === 'scraper' ? 'web_scraper' : 'public_api',
                 'query' => $query,
-                'diagnostics' => $providerResponse['diagnostics'] ?? $scraped['diagnostics'] ?? [],
+                'diagnostics' => array_merge($this->publicDiagnostics($providerResponse['diagnostics'] ?? $scraperDiagnostics), $pipelineDiagnostics),
             ],
         ]);
     }
@@ -107,7 +140,7 @@ class AIPropertySearchController extends Controller
             }
 
             try {
-                $response = Http::withoutVerifying()
+                $response = $this->guardedProviderRequest()
                     ->acceptJson()
                     ->timeout(10)
                     ->get('https://api.nestoria.com.br/api', [
@@ -119,6 +152,7 @@ class AIPropertySearchController extends Controller
                         'place_name' => $place,
                         'number_of_results' => $limit,
                     ]);
+                $this->assertProviderResponseSize($response);
             } catch (\Throwable) {
                 continue;
             }
@@ -143,7 +177,8 @@ class AIPropertySearchController extends Controller
     private function fetchMercadoLivre(string $query, int $limit): ?array
     {
         try {
-            $request = Http::acceptJson()
+            $request = $this->guardedProviderRequest()
+                ->acceptJson()
                 ->withHeaders(['User-Agent' => 'InvestFlip/1.0'])
                 ->timeout(10);
 
@@ -156,6 +191,7 @@ class AIPropertySearchController extends Controller
                 'limit' => $limit,
                 'sort' => 'relevance',
             ]);
+            $this->assertProviderResponseSize($response);
         } catch (\Throwable) {
             return null;
         }
@@ -293,7 +329,81 @@ class AIPropertySearchController extends Controller
             $url = 'https:'.$url;
         }
 
-        return filter_var($url, FILTER_VALIDATE_URL) ? $url : null;
+        return ExternalImageUrlPolicy::allows($url) ? $url : null;
+    }
+
+    private function validHttpUrl(mixed $url): ?string
+    {
+        $url = trim((string) $url);
+
+        return ExternalUrlPolicy::allows($url) ? $url : null;
+    }
+
+    /**
+     * Keep upstream diagnostics useful without returning exception text, URLs or
+     * filesystem paths supplied by external processes and providers.
+     */
+    private function publicDiagnostics(mixed $diagnostics): array
+    {
+        if (! is_array($diagnostics)) {
+            return [];
+        }
+
+        return collect($diagnostics)
+            ->filter(fn (mixed $diagnostic): bool => is_array($diagnostic))
+            ->take(25)
+            ->map(function (array $diagnostic): array {
+                $source = Str::of((string) ($diagnostic['source'] ?? 'Fonte externa'))
+                    ->replaceMatches('/[\x00-\x1F\x7F]+/u', ' ')
+                    ->squish()
+                    ->limit(80, '')
+                    ->toString();
+
+                $public = ['source' => $source !== '' ? $source : 'Fonte externa'];
+
+                if (isset($diagnostic['status']) && is_numeric($diagnostic['status'])) {
+                    $public['status'] = max(0, min(599, (int) $diagnostic['status']));
+                }
+
+                if (isset($diagnostic['found']) && is_numeric($diagnostic['found'])) {
+                    $public['found'] = max(0, min(250, (int) $diagnostic['found']));
+                }
+
+                if (array_key_exists('message', $diagnostic)) {
+                    $public['message'] = 'Fonte externa indisponível.';
+                }
+
+                return $public;
+            })
+            ->values()
+            ->all();
+    }
+
+    private function guardedProviderRequest(): PendingRequest
+    {
+        return Http::withHeaders(['Accept-Encoding' => 'identity'])->withOptions([
+            'verify' => true,
+            'allow_redirects' => false,
+            'decode_content' => false,
+            'on_headers' => function (ResponseInterface $response): void {
+                $length = trim($response->getHeaderLine('Content-Length'));
+                if ($length !== '' && ctype_digit($length) && (int) $length > self::MAX_PROVIDER_RESPONSE_BYTES) {
+                    throw new RuntimeException('Resposta externa excede o limite permitido.');
+                }
+            },
+            'progress' => function (int $downloadTotal, int $downloadedBytes): void {
+                if ($downloadTotal > self::MAX_PROVIDER_RESPONSE_BYTES || $downloadedBytes > self::MAX_PROVIDER_RESPONSE_BYTES) {
+                    throw new RuntimeException('Resposta externa excede o limite permitido.');
+                }
+            },
+        ]);
+    }
+
+    private function assertProviderResponseSize(Response $response): void
+    {
+        if (strlen($response->body()) > self::MAX_PROVIDER_RESPONSE_BYTES) {
+            throw new RuntimeException('Resposta externa excede o limite permitido.');
+        }
     }
 
     private function matchesRequestedPropertyType(array $item, string $propertyType): bool

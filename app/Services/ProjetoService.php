@@ -2,12 +2,16 @@
 
 namespace App\Services;
 
+use App\Exceptions\ProjectInUseException;
 use App\Models\Despesa;
+use App\Models\Documento;
+use App\Models\EventoCalendario;
 use App\Models\Projeto;
 use App\Models\ProjetoEtapa;
 use App\Models\Propriedade;
 use App\Models\Venda;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class ProjetoService
 {
@@ -42,10 +46,10 @@ class ProjetoService
     {
         $query = Projeto::query()->ativos()->with('propriedade');
 
-        if (!empty($filtros['propriedade_id'])) {
+        if (! empty($filtros['propriedade_id'])) {
             $query->where('propriedade_id', $filtros['propriedade_id']);
         }
-        if (!empty($filtros['status'])) {
+        if (! empty($filtros['status'])) {
             $query->where('status', $filtros['status']);
         }
 
@@ -60,9 +64,11 @@ class ProjetoService
     public function criar(array $dados): Projeto
     {
         return DB::transaction(function () use ($dados) {
+            Propriedade::ativos()->lockForUpdate()->findOrFail((int) $dados['propriedade_id']);
             $etapasInput = $dados['etapas'] ?? null;
             $categorias = $dados['orcamento_categorias'] ?? null;
             unset($dados['etapas'], $dados['orcamento_categorias']);
+            $dados = $this->normalizeActualEndDate($dados);
 
             // Se orçamento_total não foi informado, somar categorias.
             if (empty($dados['orcamento_total']) && is_array($categorias)) {
@@ -88,9 +94,8 @@ class ProjetoService
 
     /**
      * Cria etapas padrão automaticamente para uma nova obra.
-     * @param int $workId
-     * @param int $tenantId
-     * @param array|null $categorias
+     *
+     * @param  int  $workId
      */
     public function criarEtapasPadrao(int $projetoId, int $tenantId, ?array $categorias = null): void
     {
@@ -105,7 +110,7 @@ class ProjetoService
             if ($categorias && isset($categorias[$etapa['nome']])) {
                 $custoEstimado = (float) $categorias[$etapa['nome']];
             }
-            \App\Models\ProjetoEtapa::create([
+            ProjetoEtapa::create([
                 'tenant_id' => $tenantId,
                 'projeto_id' => $projetoId,
                 'nome' => $etapa['nome'],
@@ -120,14 +125,39 @@ class ProjetoService
 
     public function atualizar(Projeto $projeto, array $dados): Projeto
     {
-        unset($dados['etapas'], $dados['orcamento_categorias']);
-        $projeto->update($dados);
-        return $projeto->fresh(['propriedade', 'etapas']);
+        return DB::transaction(function () use ($projeto, $dados): Projeto {
+            $newPropertyId = (int) ($dados['propriedade_id'] ?? $projeto->propriedade_id);
+            $propertyIds = array_values(array_unique([(int) $projeto->propriedade_id, $newPropertyId]));
+            sort($propertyIds);
+            Propriedade::query()->whereIn('id', $propertyIds)->orderBy('id')->lockForUpdate()->get();
+            Propriedade::ativos()->lockForUpdate()->findOrFail($newPropertyId);
+
+            $locked = Projeto::ativos()->lockForUpdate()->findOrFail($projeto->id);
+            unset($dados['etapas'], $dados['orcamento_categorias']);
+            $dados = $this->normalizeActualEndDate($dados, $locked);
+            $locked->update($dados);
+
+            return $locked->fresh(['propriedade', 'etapas']);
+        });
     }
 
     public function excluir(Projeto $projeto): void
     {
-        $projeto->update(['deletado_flg' => true]);
+        DB::transaction(function () use ($projeto): void {
+            $locked = Projeto::query()->lockForUpdate()->findOrFail($projeto->id);
+            $hasProtectedHistory = $locked->despesas()->where('deletado_flg', false)->exists()
+                || Documento::ativos()->where('projeto_id', $locked->id)->exists();
+            if ($hasProtectedHistory) {
+                throw new ProjectInUseException('O projeto possui registros ativos protegidos.');
+            }
+            $locked->tarefas()->update(['deletado_flg' => true]);
+            $locked->etapas()->where('deletado_flg', false)->update(['deletado_flg' => true]);
+            EventoCalendario::query()
+                ->where('projeto_id', $locked->id)
+                ->where('deletado_flg', false)
+                ->update(['deletado_flg' => true]);
+            $locked->update(['deletado_flg' => true]);
+        });
     }
 
     /**
@@ -137,15 +167,17 @@ class ProjetoService
     public function recalcularCustos(int $projetoId): void
     {
         DB::transaction(function () use ($projetoId) {
-            $etapas = ProjetoEtapa::where('projeto_id', $projetoId)->get();
+            $etapas = ProjetoEtapa::ativos()->where('projeto_id', $projetoId)->get();
             foreach ($etapas as $etapa) {
                 $total = (float) Despesa::where('etapa_id', $etapa->id)
+                    ->where('status_pagamento', '!=', 'cancelado')
                     ->where('deletado_flg', false)
                     ->sum('valor');
                 $etapa->update(['custo_real' => $total]);
             }
 
             $totalProjeto = (float) Despesa::where('projeto_id', $projetoId)
+                ->where('status_pagamento', '!=', 'cancelado')
                 ->where('deletado_flg', false)
                 ->sum('valor');
             Projeto::where('id', $projetoId)->update(['custo_real' => $totalProjeto]);
@@ -195,10 +227,11 @@ class ProjetoService
     private function montarEtapas(?array $etapasInput, ?array $categorias): array
     {
         if (is_array($etapasInput) && count($etapasInput) > 0) {
-            return $etapasInput;
+            return array_map(fn (array $stage) => $this->normalizeStageState($stage), $etapasInput);
         }
 
         $categorias = $categorias ?? [];
+
         return collect(self::ETAPAS_PADRAO)->map(fn (array $e) => [
             'nome' => $e['nome'],
             'ordem' => $e['ordem'],
@@ -208,6 +241,66 @@ class ProjetoService
         ])->all();
     }
 
+    public function normalizeStageState(array $data, ?ProjetoEtapa $stage = null): array
+    {
+        $hasStatus = array_key_exists('status', $data) && filled($data['status']);
+        $hasProgress = array_key_exists('progresso_pct', $data);
+        $status = (string) ($hasStatus ? $data['status'] : ($stage?->status ?? 'pendente'));
+        $progress = (int) ($hasProgress ? $data['progresso_pct'] : ($stage?->progresso_pct ?? 0));
+
+        if ($hasStatus && $hasProgress) {
+            $invalid = ($status === 'concluida' && $progress !== 100)
+                || ($status === 'pendente' && $progress !== 0)
+                || (in_array($status, ['em_andamento', 'bloqueada'], true) && $progress === 100);
+            if ($invalid) {
+                throw ValidationException::withMessages([
+                    'progresso_pct' => 'O progresso deve corresponder ao status da etapa: pendente 0%, concluída 100% e demais estados abaixo de 100%.',
+                ]);
+            }
+
+            return $data;
+        }
+
+        if ($hasStatus) {
+            $data['progresso_pct'] = match ($status) {
+                'concluida' => 100,
+                'pendente' => 0,
+                default => $progress === 100 ? 0 : $progress,
+            };
+
+            return $data;
+        }
+
+        if ($hasProgress) {
+            $data['status'] = match (true) {
+                $progress === 100 => 'concluida',
+                $progress === 0 && $status === 'concluida' => 'pendente',
+                $progress > 0 && in_array($status, ['pendente', 'concluida'], true) => 'em_andamento',
+                default => $status,
+            };
+        }
+
+        return $data;
+    }
+
+    private function normalizeActualEndDate(array $data, ?Projeto $project = null): array
+    {
+        $status = (string) ($data['status'] ?? $project?->status ?? 'planejamento');
+        if ($status !== 'concluido') {
+            $data['data_termino_real'] = null;
+
+            return $data;
+        }
+
+        if (! array_key_exists('data_termino_real', $data) || ! filled($data['data_termino_real'])) {
+            $data['data_termino_real'] = $project?->status === 'concluido' && $project->data_termino_real
+                ? $project->data_termino_real->toDateString()
+                : now()->toDateString();
+        }
+
+        return $data;
+    }
+
     private function roiProjetado(Projeto $projeto): array
     {
         $propriedadeId = $projeto->propriedade_id;
@@ -215,12 +308,15 @@ class ProjetoService
         $valorAquisicao = $propriedade ? (float) $propriedade->valor_aquisicao : 0;
 
         $totalDespesas = (float) Despesa::where('propriedade_id', $propriedadeId)
+            ->where('status_pagamento', '!=', 'cancelado')
             ->where('deletado_flg', false)
             ->sum('valor');
 
         $venda = Venda::ativos()
             ->where('propriedade_id', $propriedadeId)
+            ->whereIn('status', ['fechada', 'escriturada'])
             ->orderByDesc('data_fechamento')
+            ->orderByDesc('id')
             ->first();
 
         $valorVenda = $venda ? (float) $venda->valor_venda : 0;

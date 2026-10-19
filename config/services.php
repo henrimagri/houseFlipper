@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'http' => ['ca_bundle' => env('HTTP_CA_BUNDLE')],
+
+    'portal_scraper' => [
+        'node_binary' => env('NODE_BINARY'),
+        'chrome_path' => env('CHROME_PATH'),
+        'disable_sandbox' => env('SCRAPER_DISABLE_SANDBOX', false),
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -52,6 +59,39 @@ return [
         'endpoint' => env('PREFEITURA_TRANSACOES_API_URL'),
         'sp_catalog' => env('SP_DADOS_ABERTOS_CKAN_URL', 'https://dados.prefeitura.sp.gov.br/api/3/action/package_search'),
         'token' => env('PREFEITURA_TRANSACOES_API_TOKEN'),
+    ],
+
+    'open_data' => [
+        'ckan_catalogs' => [
+            [
+                'key' => 'sp',
+                'states' => ['SP'],
+                'cities' => ['sao paulo'],
+                'package_search' => env('SP_DADOS_ABERTOS_CKAN_URL', 'https://dados.prefeitura.sp.gov.br/api/3/action/package_search'),
+                'datastore_search' => env('SP_DADOS_ABERTOS_DATASTORE_URL', 'https://dados.prefeitura.sp.gov.br/api/3/action/datastore_search'),
+            ],
+            [
+                'key' => 'fortaleza',
+                'states' => ['CE'],
+                'cities' => ['fortaleza'],
+                'package_search' => env('FORTALEZA_CKAN_URL', 'https://dados.fortaleza.ce.gov.br/api/3/action/package_search'),
+                'datastore_search' => env('FORTALEZA_CKAN_DATASTORE_URL', 'https://dados.fortaleza.ce.gov.br/api/3/action/datastore_search'),
+            ],
+            [
+                'key' => 'rj',
+                'states' => ['RJ'],
+                'cities' => ['rio de janeiro'],
+                'package_search' => env('RJ_CKAN_URL', 'https://www.data.rio/api/3/action/package_search'),
+                'datastore_search' => env('RJ_CKAN_DATASTORE_URL', 'https://www.data.rio/api/3/action/datastore_search'),
+            ],
+            [
+                'key' => 'nacional',
+                'states' => [],
+                'cities' => [],
+                'package_search' => env('DADOS_GOV_CKAN_URL', 'https://dados.gov.br/api/3/action/package_search'),
+                'datastore_search' => env('DADOS_GOV_DATASTORE_URL', 'https://dados.gov.br/api/3/action/datastore_search'),
+            ],
+        ],
     ],
 
     'ses' => [

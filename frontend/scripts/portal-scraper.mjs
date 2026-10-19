@@ -1,4 +1,6 @@
 import puppeteer from 'puppeteer-core';
+import { browserRuntime } from './browser-runtime.mjs';
+import { isAllowedHttpsUrl, isPublicHttpUrl, isPublicNetworkTarget } from './network-policy.mjs';
 
 const input = JSON.parse(process.argv[2] || '{}');
 const limit = Math.min(250, Math.max(1, Number(input.limit || 250)));
@@ -117,13 +119,25 @@ const targets = [
     url: `https://www.facebook.com/marketplace/search/?query=${encodeURIComponent(`${terms.query} venda ${region} ${state}`)}`,
   },
 ];
+const allowedPortalHosts = [
+  'olx.com.br',
+  'zapimoveis.com.br',
+  'vivareal.com.br',
+  'imovelweb.com.br',
+  'chavesnamao.com.br',
+  'casamineira.com.br',
+  'loft.com.br',
+  'quintoandar.com.br',
+  'mercadolivre.com.br',
+  'facebook.com',
+];
 
+const runtime = browserRuntime();
 const browser = await puppeteer.launch({
-  executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
+  executablePath: runtime.executablePath,
   headless: 'new',
   args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
+    ...runtime.args,
     '--disable-dev-shm-usage',
     '--disable-blink-features=AutomationControlled',
     '--disable-crash-reporter',
@@ -142,6 +156,7 @@ try {
     if (items.length >= minEnoughResults || items.length >= limit) break;
 
     const page = await browser.newPage();
+    await denyDownloads(page);
     await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0 Safari/537.36');
     await page.setExtraHTTPHeaders({ 'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7' });
     await speedUpPage(page);
@@ -297,10 +312,16 @@ async function enrichListings(browser, listings) {
     }
 
     const page = await browser.newPage();
+    await denyDownloads(page);
     await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0 Safari/537.36');
     await page.setExtraHTTPHeaders({ 'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7' });
+    await speedUpPage(page);
 
     try {
+      if (!isAllowedHttpsUrl(item.source_url, allowedPortalHosts)) {
+        enriched.push({ ...item, source_url: null });
+        continue;
+      }
       await page.goto(item.source_url, { waitUntil: 'domcontentloaded', timeout: 15000 });
       await new Promise(resolve => setTimeout(resolve, 1200));
 
@@ -387,13 +408,30 @@ async function autoScroll(page) {
 
 async function speedUpPage(page) {
   await page.setRequestInterception(true);
-  page.on('request', (request) => {
+  page.on('request', async (request) => {
     const resourceType = request.resourceType();
-    if (['font', 'media', 'stylesheet'].includes(resourceType)) {
-      request.abort();
+    const url = request.url();
+    let safe = false;
+
+    try {
+      if (!isPublicHttpUrl(url)) throw new Error('Unsafe URL');
+      if (request.isNavigationRequest() && request.frame() === page.mainFrame()
+        && !isAllowedHttpsUrl(url, allowedPortalHosts)) throw new Error('Untrusted navigation');
+      safe = await isPublicNetworkTarget(url);
+    } catch {
+      safe = false;
+    }
+
+    if (!safe || ['font', 'media', 'stylesheet'].includes(resourceType)) {
+      await request.abort().catch(() => {});
       return;
     }
 
-    request.continue();
+    await request.continue().catch(() => {});
   });
+}
+
+async function denyDownloads(page) {
+  const client = await page.createCDPSession();
+  await client.send('Page.setDownloadBehavior', { behavior: 'deny' });
 }

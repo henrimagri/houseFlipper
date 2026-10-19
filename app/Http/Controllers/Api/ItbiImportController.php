@@ -22,16 +22,18 @@ class ItbiImportController extends Controller
         }
 
         $latestBatch = ItbiImportBatch::query()->latest()->first();
+        $canImport = $request->user()->can('import-itbi');
         $transactions = RealEstateTransaction::query()
             ->latest('transaction_date')
             ->latest('id')
             ->paginate((int) $request->integer('per_page', 20));
 
         return response()->json([
+            'can_import' => $canImport,
             'summary' => [
                 'batches' => ItbiImportBatch::count(),
                 'transactions' => RealEstateTransaction::count(),
-                'latest_batch' => $latestBatch ? $this->batchPayload($latestBatch) : null,
+                'latest_batch' => $latestBatch ? $this->batchPayload($latestBatch, $canImport) : null,
             ],
             'transactions' => $transactions->through(fn (RealEstateTransaction $transaction) => $this->transactionPayload($transaction)),
         ]);
@@ -45,6 +47,7 @@ class ItbiImportController extends Controller
 
         $data = $request->validate([
             'file' => ['required', 'file', 'max:256000'],
+            'reference_period' => ['nullable', 'string', 'max:100'],
         ]);
 
         $file = $data['file'];
@@ -56,48 +59,74 @@ class ItbiImportController extends Controller
             ], 422);
         }
 
-        $contents = file_get_contents($file->getRealPath());
-        $hash = hash('sha256', $contents ?: '');
+        $hash = hash_file('sha256', $file->getRealPath());
         $safeName = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) ?: 'upload-itbi';
         $storagePath = trim(config('real_estate_data.itbi_sp.storage_path'), '/').'/upload-'.$safeName.'-'.$hash.'.'.$extension;
         $disk = config('real_estate_data.itbi_sp.storage_disk', 'local');
+        $storedNewFile = false;
 
-        Storage::disk($disk)->put($storagePath, $contents);
+        try {
+            $storage = Storage::disk($disk);
+            $storedNewFile = ! $storage->exists($storagePath);
+            if ($storedNewFile && ! $storage->putFileAs(dirname($storagePath), $file, basename($storagePath))) {
+                throw new \RuntimeException('Falha de gravação do arquivo.');
+            }
+        } catch (\Throwable $exception) {
+            Log::warning('Falha ao armazenar upload ITBI', ['exception_type' => $exception::class]);
 
-        $batch = ItbiImportBatch::create([
-            'provider' => 'manual_upload_itbi_sp',
-            'source_url' => 'upload://'.$originalName,
-            'source_filename' => $originalName,
-            'reference_period' => $request->string('reference_period')->toString() ?: null,
-            'file_hash' => $hash,
-            'storage_path' => $storagePath,
-            'status' => 'downloaded',
-            'discovered_at' => now(),
-            'downloaded_at' => now(),
-            'metadata_json' => [
-                'uploaded_by' => $request->user()?->id,
-                'mime_type' => $file->getClientMimeType(),
-                'size' => $file->getSize(),
-            ],
-        ]);
+            return response()->json(['message' => 'Não foi possível armazenar o arquivo. Tente novamente.'], 503);
+        }
+
+        try {
+            $batch = ItbiImportBatch::create([
+                'provider' => 'manual_upload_itbi_sp',
+                'source_url' => 'upload://'.$originalName,
+                'source_filename' => $originalName,
+                'reference_period' => $request->string('reference_period')->toString() ?: null,
+                'file_hash' => $hash,
+                'storage_path' => $storagePath,
+                'status' => 'downloaded',
+                'discovered_at' => now(),
+                'downloaded_at' => now(),
+                'metadata_json' => [
+                    'uploaded_by' => $request->user()?->id,
+                    'mime_type' => $file->getClientMimeType(),
+                    'size' => $file->getSize(),
+                ],
+            ]);
+        } catch (\Throwable $exception) {
+            if ($storedNewFile) {
+                try {
+                    Storage::disk($disk)->delete($storagePath);
+                } catch (\Throwable) {
+                    Log::critical('Falha ao remover arquivo ITBI após rollback do lote', [
+                        'storage_path_hash' => hash('sha256', $storagePath),
+                    ]);
+                }
+            }
+
+            throw $exception;
+        }
 
         try {
             $batch = $importer->import($batch);
         } catch (\Throwable $exception) {
             Log::error('Falha ao importar arquivo ITBI enviado', [
                 'batch_id' => $batch->id,
-                'filename' => $originalName,
-                'error' => $exception->getMessage(),
+                'filename_hash' => hash('sha256', $originalName),
+                'exception_type' => $exception::class,
             ]);
 
             return response()->json([
-                'message' => 'Falha ao importar arquivo ITBI: '.$exception->getMessage(),
+                'message' => 'Falha ao importar arquivo ITBI. Verifique o formato e a estrutura do arquivo.',
             ], 422);
         }
 
         return response()->json([
-            'message' => 'Arquivo ITBI importado com sucesso.',
-            'batch' => $this->batchPayload($batch),
+            'message' => $batch->status === 'completed_with_errors'
+                ? 'Importação parcial: algumas linhas falharam. Confira os totais do lote antes de usar os dados.'
+                : 'Arquivo ITBI importado com sucesso.',
+            'batch' => $this->batchPayload($batch, true),
             'summary' => [
                 'transactions' => RealEstateTransaction::count(),
                 'imported_rows' => $batch->imported_rows,
@@ -119,12 +148,12 @@ class ItbiImportController extends Controller
         ], 503);
     }
 
-    private function batchPayload(ItbiImportBatch $batch): array
+    private function batchPayload(ItbiImportBatch $batch, bool $canViewSourceFilename): array
     {
         return [
             'id' => $batch->id,
             'provider' => $batch->provider,
-            'source_filename' => $batch->source_filename,
+            'source_filename' => $canViewSourceFilename ? $batch->source_filename : null,
             'reference_period' => $batch->reference_period,
             'status' => $batch->status,
             'total_rows' => $batch->total_rows,
@@ -132,7 +161,7 @@ class ItbiImportController extends Controller
             'updated_rows' => $batch->updated_rows,
             'skipped_rows' => $batch->skipped_rows,
             'failed_rows' => $batch->failed_rows,
-            'error_message' => $batch->error_message,
+            'error_message' => $batch->status === 'failed' ? 'Falha ao processar o arquivo.' : null,
             'created_at' => $batch->created_at?->toIso8601String(),
         ];
     }

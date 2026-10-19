@@ -1,13 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Bot, Building2, CheckCircle2, ExternalLink, Filter, Loader2, MapPin, Search, SlidersHorizontal, Sparkles, Star, Target, TrendingDown } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Building2, CheckCircle2, ExternalLink, Filter, Loader2, MapPin, Search, SlidersHorizontal, Sparkles, Star, Target, TrendingDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
+import ComboField, { normalizeLocation } from '@/components/LocationComboField';
+import AiConsultantPanel from '@/components/AiConsultantPanel';
+import { readJson, writeJson } from '@/lib/browserStore';
+import { safeExternalHttpsUrl } from '@/lib/externalUrl';
 
 const money = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const percent = (value: number) => `${value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 const SEARCH_LIMIT = 250;
 const PAGE_SIZE = 20;
 const RADAR_STATE_KEY = 'ia-inteligente:radar-state';
+
+function persistMarketAnalysis(key: string, payload: unknown) {
+  return writeJson(key, payload);
+}
 
 const propertyTypes = [
   { value: 'apartment', label: 'Apartamento' },
@@ -90,6 +98,9 @@ type SearchResult = {
   market_reference_count?: number | null;
   market_reference_sources?: string[];
   confidence_percentage?: number | null;
+  confidence_basis?: string;
+  valuation_version?: string;
+  transaction_reference_window_months?: number;
   confirmed_transactions_count?: number | null;
   score: number;
   signal: 'Boa oportunidade' | 'Negociar' | 'Atenção';
@@ -147,6 +158,8 @@ export default function IAInteligente() {
   const [error, setError] = useState('');
   const [savedIds, setSavedIds] = useState<Record<string, boolean>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
+  const searchSequence = useRef(0);
+  const searchAbort = useRef<AbortController | null>(null);
   const [showRefine, setShowRefine] = useState(false);
   const [refine, setRefine] = useState({
     minPrice: '',
@@ -160,6 +173,8 @@ export default function IAInteligente() {
     source: '',
     onlyWithPhoto: false,
   });
+  const skipRadarWrite = useRef(true);
+  const [workspace, setWorkspace] = useState<'chat' | 'radar'>('chat');
 
   useEffect(() => {
     const snapshot = readRadarState();
@@ -177,6 +192,7 @@ export default function IAInteligente() {
     setDiagnostics(Array.isArray(snapshot.diagnostics) ? snapshot.diagnostics : []);
     setSavedIds(snapshot.savedIds || {});
     setShowRefine(Boolean(snapshot.showRefine));
+    if (snapshot.searched) setWorkspace('radar');
     setRefine({
       minPrice: snapshot.refine?.minPrice || '',
       maxPrice: snapshot.refine?.maxPrice || '',
@@ -192,6 +208,11 @@ export default function IAInteligente() {
   }, []);
 
   useEffect(() => {
+    if (skipRadarWrite.current) {
+      skipRadarWrite.current = false;
+      return;
+    }
+
     writeRadarState({
       state,
       city,
@@ -280,11 +301,16 @@ export default function IAInteligente() {
   }, [state]);
 
   async function handleSearch() {
+    const request = ++searchSequence.current;
+    searchAbort.current?.abort();
+    const controller = new AbortController();
+    searchAbort.current = controller;
     setLoading(true);
     setSearched(true);
     setError('');
     try {
       const response = await api.get('/ai-property-search', {
+        signal: controller.signal,
         params: {
           city,
           neighborhood,
@@ -295,19 +321,28 @@ export default function IAInteligente() {
           limit: SEARCH_LIMIT,
         },
       });
+      if (request !== searchSequence.current) return;
       setResults(response.data.data ?? []);
       setPage(1);
       setDiagnostics(response.data.source?.diagnostics ?? []);
     } catch (exception: any) {
+      if (controller.signal.aborted || request !== searchSequence.current) return;
       setResults([]);
-      setDiagnostics([]);
-      setError(exception.response?.data?.message ?? 'Não foi possível buscar anúncios reais agora.');
+      setDiagnostics(exception.response?.data?.diagnostics ?? []);
+      const message = exception.response?.data?.message ?? 'Não foi possível buscar anúncios reais agora.';
+      const details = exception.response?.data?.details;
+      setError(details ? `${message} ${details}` : message);
     } finally {
-      setLoading(false);
+      if (request === searchSequence.current) {
+        setLoading(false);
+        if (searchAbort.current === controller) searchAbort.current = null;
+      }
     }
   }
 
-  const neighborhoodOptions = neighborhoodsByCity[`${state}|${city}`] ?? [];
+  useEffect(() => () => searchAbort.current?.abort(), []);
+
+  const neighborhoodOptions = Object.entries(neighborhoodsByCity).find(([key]) => normalizeLocation(key) === normalizeLocation(`${state}|${city}`))?.[1] ?? [];
   const selectedTypeLabel = propertyTypes.find(item => item.value === propertyType)?.label.toLowerCase() ?? 'imóvel';
 
   async function saveLead(item: SearchResult) {
@@ -351,8 +386,10 @@ export default function IAInteligente() {
       diagnostics,
     };
     const storageKey = `market-analysis:${item.id}`;
-    sessionStorage.setItem(storageKey, JSON.stringify(payload));
-    localStorage.setItem(storageKey, JSON.stringify(payload));
+    if (!persistMarketAnalysis(storageKey, payload)) {
+      setError('O navegador não permitiu salvar a análise temporária. Libere o armazenamento do site e tente novamente.');
+      return;
+    }
 
     const url = `/ia-inteligente/analise/${encodeURIComponent(item.id)}`;
     if (openInNewTab) {
@@ -361,53 +398,33 @@ export default function IAInteligente() {
       return;
     }
 
-    navigate(url);
+    navigate(url, { state: payload });
   }
 
-  return <div className="space-y-6">
-    <section className="bg-slate-950 text-white rounded-3xl p-7 overflow-hidden relative">
-      <div className="absolute right-0 top-0 w-96 h-96 bg-primary-600/20 blur-3xl rounded-full translate-x-1/3 -translate-y-1/3" />
-      <div className="relative grid xl:grid-cols-[1fr_420px] gap-8 items-center">
-        <div>
-          <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 px-3 py-2 rounded-full text-xs uppercase tracking-widest font-bold text-violet-200">
-            <Sparkles className="w-4 h-4" />
-            Motor de prospecção inteligente
-          </div>
-          <h1 className="text-4xl font-black mt-5">IA Inteligente</h1>
-          <p className="text-slate-300 mt-3 max-w-3xl text-lg">
-            Escolha uma região e o InvestFlip coleta até {SEARCH_LIMIT} imóveis anunciados, calcula o Opportunity Score e monta um ranking do que merece virar oportunidade.
-          </p>
-          <div className="grid sm:grid-cols-3 gap-3 mt-7">
-            <HeroStat label="Coleta ativa" value="Web Scraper" />
-            <HeroStat label="Volume máximo" value={`Até ${SEARCH_LIMIT} imóveis`} />
-            <HeroStat label="Saída" value="Ranking InvestFlip" />
-          </div>
-        </div>
-        <div className="bg-white/10 border border-white/10 rounded-3xl p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-primary-500 grid place-items-center"><Bot className="w-7 h-7" /></div>
-            <div>
-              <h2 className="font-black">Radar de anúncios</h2>
-              <p className="text-sm text-slate-300">Raspagem HTML de portais públicos com fallback por API.</p>
-            </div>
-          </div>
-          <div className="mt-5 bg-emerald-400/10 border border-emerald-300/20 rounded-2xl p-4 text-sm text-emerald-100">
-            Fluxo: região → web scraper/conector → até {SEARCH_LIMIT} imóveis → Opportunity Score → ranking → InvestFlip.
-          </div>
-        </div>
+  return <div className="space-y-5">
+    <header className="px-1">
+      <p className="text-[11px] font-bold uppercase tracking-widest text-primary-600 inline-flex items-center gap-2"><Sparkles className="w-4 h-4" /> Assistente de busca</p>
+      <h1 className="text-3xl font-black mt-2">IA Inteligente</h1>
+      <p className="text-slate-500 dark:text-slate-400 mt-1 max-w-3xl">Converse em português ou use o radar por filtros. A coleta é o scraper e a carteira da conta; nenhum anúncio é inventado.</p>
+      <div className="flex gap-2 mt-4">
+        <button type="button" onClick={() => setWorkspace('chat')} className={`rounded-full px-4 py-2 text-sm font-bold ${workspace === 'chat' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'border border-slate-300 dark:border-slate-700'}`}>Conversar</button>
+        <button type="button" onClick={() => setWorkspace('radar')} className={`rounded-full px-4 py-2 text-sm font-bold ${workspace === 'radar' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'border border-slate-300 dark:border-slate-700'}`}>Radar por filtros</button>
       </div>
-    </section>
+    </header>
 
-    <section className="bg-white border rounded-3xl p-5 shadow-sm">
+    {workspace === 'chat' && <AiConsultantPanel />}
+    {workspace === 'radar' && <>
+
+    <section className="bg-white dark:bg-slate-900 border rounded-3xl p-5 shadow-xs">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black">Onde você quer procurar?</h2>
-          <p className="text-sm text-gray-500 mt-1">Use estado, cidade, bairro, tipo e filtros para montar o radar de imóveis.</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Use estado, cidade, bairro, tipo e filtros para montar o radar de imóveis. As avaliações usam comparáveis e regras explicáveis; a qualidade da base não é uma probabilidade de acerto.</p>
         </div>
-        <span className="bg-violet-50 text-primary-700 px-3 py-2 rounded-full text-xs font-bold">IA de prospecção</span>
+        <span className="bg-violet-50 dark:bg-violet-950 text-primary-700 dark:text-primary-300 px-3 py-2 rounded-full text-xs font-bold">IA de prospecção</span>
       </div>
 
-      <div className="grid lg:grid-cols-[220px_1fr_1fr_190px_180px_170px_auto] gap-3 mt-5 items-end">
+      <div className="grid md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-[180px_1fr_1fr_150px_160px_150px_auto] gap-3 mt-5 items-end">
         <label className="text-sm block">
           <span>Estado</span>
           <select className="input mt-1" value={state} onChange={event => {
@@ -430,14 +447,14 @@ export default function IAInteligente() {
         </label>
         <TextField label="Preço máximo" placeholder="R$ 0,00" value={maxPrice} onChange={value => setMaxPrice(formatCurrencyDraft(value))} />
         <TextField label="Desconto mínimo" placeholder="Opcional" value={minDiscount} onChange={setMinDiscount} suffix="%" />
-        <button type="button" onClick={handleSearch} className="bg-primary-600 text-white px-5 py-3 rounded-xl font-bold flex items-center justify-center gap-2">
+        <button type="button" disabled={loading} onClick={handleSearch} className="bg-primary-600 text-white px-5 py-3 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-60">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
           Buscar
         </button>
       </div>
     </section>
 
-    {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-4">{error}</div>}
+    {error && <div className="bg-red-50 dark:bg-red-950 border border-red-200 text-red-700 dark:text-red-300 rounded-2xl p-4">{error}</div>}
 
     {searched && <section className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <Kpi title="Anúncios ranqueados" value={stats.total.toString()} detail={`até ${SEARCH_LIMIT} imóveis por busca`} icon={Target} tone="violet" />
@@ -446,15 +463,15 @@ export default function IAInteligente() {
       <Kpi title="Preço médio" value={money(stats.avgPrice)} detail="média do preço pedido filtrado" icon={Building2} tone="blue" />
     </section>}
 
-    {searched ? <section className="bg-white border rounded-3xl overflow-hidden shadow-sm">
+    {searched ? <section className="bg-white dark:bg-slate-900 border rounded-3xl overflow-hidden shadow-xs">
       <div className="p-5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black">{capitalize(selectedTypeLabel)}s encontrados</h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
             Resultados reais retornados pela fonte conectada e normalizados para virar oportunidade. Página {page} de {totalPages}, com {PAGE_SIZE} por página.
           </p>
         </div>
-        <button type="button" onClick={() => setShowRefine(current => !current)} className="border px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 text-slate-700"><Filter className="w-4 h-4" />Refinar busca</button>
+        <button type="button" onClick={() => setShowRefine(current => !current)} className="border px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 text-slate-700 dark:text-slate-200"><Filter className="w-4 h-4" />Refinar busca</button>
       </div>
 
       {showRefine && <RefinePanel
@@ -472,17 +489,17 @@ export default function IAInteligente() {
 
       <div className="grid xl:grid-cols-[1fr_360px] gap-0">
         <div className="divide-y">
-          {loading ? <div className="p-12 text-center text-gray-500"><Loader2 className="w-8 h-8 animate-spin mx-auto text-primary-600" /><p className="mt-3">Consultando anúncios reais da região...</p></div> : paginatedResults.map(item => <ListingRow key={item.id} item={item} onSave={saveLead} onOpenAnalysis={openMarketAnalysis} saving={savingId === item.id} saved={!!savedIds[item.id]} />)}
-          {!loading && filteredResults.length === 0 && <div className="p-12 text-center text-gray-500">
+          {loading ? <div className="p-12 text-center text-gray-500 dark:text-slate-400"><Loader2 className="w-8 h-8 animate-spin mx-auto text-primary-600 dark:text-primary-400" /><p className="mt-3">Consultando anúncios reais da região...</p></div> : paginatedResults.map(item => <ListingRow key={item.id} item={item} onSave={saveLead} onOpenAnalysis={openMarketAnalysis} saving={savingId === item.id} saved={!!savedIds[item.id]} />)}
+          {!loading && filteredResults.length === 0 && <div className="p-12 text-center text-gray-500 dark:text-slate-400">
             <Search className="w-10 h-10 mx-auto text-gray-300" />
-            <h3 className="font-black text-gray-700 mt-3">{results.length ? 'Nenhum anúncio passou nos filtros' : 'Nenhum anúncio retornado agora'}</h3>
+            <h3 className="font-black text-gray-700 dark:text-slate-200 mt-3">{results.length ? 'Nenhum anúncio passou nos filtros' : 'Nenhum anúncio retornado agora'}</h3>
             <p className="mt-2 max-w-xl mx-auto">{results.length ? 'Afrouxe preço, área, quartos, score ou fonte para ampliar os resultados.' : 'Tente buscar só pela cidade, remova preço máximo/desconto mínimo ou escolha outra região. Algumas fontes públicas podem bloquear consultas em determinados momentos.'}</p>
           </div>}
           {!loading && filteredResults.length > PAGE_SIZE && <Pagination page={page} totalPages={totalPages} total={filteredResults.length} onPageChange={setPage} />}
         </div>
-        <aside className="border-l bg-slate-50 p-5 hidden xl:block">
+        <aside className="border-l bg-slate-50 dark:bg-slate-950 p-5 hidden xl:block">
           <div className="sticky top-24">
-            <div className="w-12 h-12 bg-primary-50 text-primary-600 rounded-2xl grid place-items-center"><SlidersHorizontal className="w-6 h-6" /></div>
+            <div className="w-12 h-12 bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400 rounded-2xl grid place-items-center"><SlidersHorizontal className="w-6 h-6" /></div>
             <h3 className="font-black mt-4">Como a IA prioriza</h3>
             <div className="space-y-3 mt-4 text-sm">
               <Rule label="Preço abaixo do mercado" />
@@ -491,15 +508,15 @@ export default function IAInteligente() {
               <Rule label="Potencial de reforma" />
               <Rule label="Margem estimada para flip" />
             </div>
-            <div className="bg-white border rounded-2xl p-4 mt-5 text-xs text-gray-500 leading-5">
+            <div className="bg-white dark:bg-slate-900 border rounded-2xl p-4 mt-5 text-xs text-gray-500 dark:text-slate-400 leading-5">
               Web Scraper ativo: ZAP, VivaReal, OLX, ImovelWeb, Chaves na Mão, Casa Mineira, Loft, QuintoAndar, Mercado Livre e Facebook Marketplace. Se algum portal bloquear por anti-bot/login, o InvestFlip tenta o próximo.
             </div>
-            {diagnostics.length > 0 && <div className="bg-white border rounded-2xl p-4 mt-4 text-xs">
-              <div className="font-bold text-gray-800 mb-2">Diagnóstico da coleta</div>
+            {diagnostics.length > 0 && <div className="bg-white dark:bg-slate-900 border rounded-2xl p-4 mt-4 text-xs">
+              <div className="font-bold text-gray-800 dark:text-slate-100 mb-2">Diagnóstico da coleta</div>
               <div className="space-y-2">
                 {diagnostics.map((item, index) => <div key={`${item.source}-${index}`} className="flex justify-between gap-3">
-                  <span className="text-gray-600">{item.source}</span>
-                  <span className={Number(item.found || 0) > 0 ? 'text-emerald-600 font-bold' : 'text-gray-400'}>{item.found ?? item.message ?? item.status ?? '-'}</span>
+                  <span className="text-gray-600 dark:text-slate-300">{item.source}</span>
+                  <span className={Number(item.found || 0) > 0 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-gray-400'}>{item.found ?? item.message ?? item.status ?? '-'}</span>
                 </div>)}
               </div>
             </div>}
@@ -507,23 +524,25 @@ export default function IAInteligente() {
         </aside>
       </div>
     </section> : <EmptyState />}
+    </>}
   </div>;
 }
 
 function ListingRow({ item, onSave, onOpenAnalysis, saving, saved }: { item: SearchResult; onSave: (item: SearchResult) => void; onOpenAnalysis: (item: SearchResult, openInNewTab?: boolean) => void; saving: boolean; saved: boolean }) {
   const itemDiscount = Number(item.discount_percentage || 0);
-  const scoreColor = item.score >= 80 ? 'text-emerald-600 bg-emerald-50' : item.score >= 65 ? 'text-amber-600 bg-amber-50' : 'text-red-600 bg-red-50';
+  const sourceUrl = safeExternalHttpsUrl(item.source_url);
+  const scoreColor = item.score >= 80 ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950' : item.score >= 65 ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950' : 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950';
 
-  return <div className="p-5 hover:bg-slate-50 transition cursor-pointer" onClick={() => onOpenAnalysis(item)}>
+  return <div className="p-5 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer" onClick={() => onOpenAnalysis(item)}>
     <div className="grid lg:grid-cols-[1fr_160px_160px_120px_180px] gap-4 items-center">
       <div className="flex gap-4 min-w-0">
         <SafeListingImage src={item.thumbnail} alt={item.title} />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-black truncate">{item.title}</h3>
-            <span className="text-[11px] bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-bold">{item.source}</span>
+            <span className="text-[11px] bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-full font-bold">{item.source}</span>
           </div>
-          <p className="text-sm text-gray-500 mt-1 truncate">{item.address} · {item.neighborhood}, {item.city}</p>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1 truncate">{item.address} · {item.neighborhood}, {item.city}</p>
           <p className="text-xs text-gray-400 mt-2">
             {item.area_m2 ?? '-'} m² · {item.bedrooms ?? '-'} quartos · {item.bathrooms ?? '-'} banheiros · {item.parking_spaces ?? '-'} vaga{item.parking_spaces === 1 ? '' : 's'}
           </p>
@@ -531,13 +550,13 @@ function ListingRow({ item, onSave, onOpenAnalysis, saving, saved }: { item: Sea
       </div>
       <Small label="Preço pedido" value={money(Number(item.asking_price || 0))} />
       <Small label="Valor de mercado estimado" value={money(Number(item.estimated_market_price || 0))} hint={marketBaseLabel(item)} />
-      <Small label="Desconto" value={percent(itemDiscount)} accent={itemDiscount >= 18 ? 'text-emerald-600' : 'text-amber-600'} />
+      <Small label="Desconto" value={percent(itemDiscount)} accent={itemDiscount >= 18 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'} />
       <div className="flex items-center justify-between gap-3">
         <div className={`w-16 h-16 rounded-2xl grid place-items-center font-black ${scoreColor}`}>{item.score}</div>
         <div className="flex flex-col gap-2">
-          <button type="button" onClick={(event) => { event.stopPropagation(); onOpenAnalysis(item, true); }} className="border border-primary-200 bg-primary-50 text-primary-700 px-3 py-2 rounded-xl font-bold text-sm">Ver análise</button>
+          <button type="button" onClick={(event) => { event.stopPropagation(); onOpenAnalysis(item, true); }} className="border border-primary-200 bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 px-3 py-2 rounded-xl font-bold text-sm">Ver análise / 3D</button>
           <button type="button" disabled={saving || saved} onClick={(event) => { event.stopPropagation(); onSave(item); }} className="bg-primary-600 text-white px-3 py-2 rounded-xl font-bold text-sm disabled:opacity-60">{saving ? 'Salvando...' : saved ? 'Lead salvo' : 'Salvar lead'}</button>
-          <a onClick={(event) => event.stopPropagation()} href={item.source_url ?? '#'} target="_blank" rel="noreferrer" className="border px-3 py-2 rounded-xl font-bold text-sm flex items-center gap-1">Abrir <ExternalLink className="w-3 h-3" /></a>
+          {sourceUrl && <a onClick={(event) => event.stopPropagation()} href={sourceUrl} target="_blank" rel="noopener noreferrer" className="border px-3 py-2 rounded-xl font-bold text-sm flex items-center gap-1">Abrir <ExternalLink className="w-3 h-3" /></a>}
         </div>
       </div>
     </div>
@@ -548,12 +567,12 @@ function SafeListingImage({ src, alt }: { src?: string | null; alt: string }) {
   const [failed, setFailed] = useState(false);
 
   if (!src || failed) {
-    return <div className="w-20 h-16 rounded-2xl bg-gradient-to-br from-slate-200 to-slate-100 grid place-items-center shrink-0 text-slate-400">
+    return <div className="w-20 h-16 rounded-2xl bg-linear-to-br from-slate-200 dark:from-slate-700 to-slate-100 dark:to-slate-800 grid place-items-center shrink-0 text-slate-400">
       <Building2 className="w-8 h-8" />
     </div>;
   }
 
-  return <img src={src} alt={alt} className="w-20 h-16 rounded-2xl object-cover shrink-0 bg-slate-100" referrerPolicy="no-referrer" onError={() => setFailed(true)} />;
+  return <img src={src} alt={alt} className="w-20 h-16 rounded-2xl object-cover shrink-0 bg-slate-100 dark:bg-slate-800" referrerPolicy="no-referrer" onError={() => setFailed(true)} />;
 }
 
 function RefinePanel({ refine, sourceOptions, onChange, onClear }: {
@@ -575,13 +594,13 @@ function RefinePanel({ refine, sourceOptions, onChange, onClear }: {
 }) {
   const update = (key: string, value: string | boolean) => onChange({ ...refine, [key]: value });
 
-  return <div className="border-b bg-slate-50 p-5">
+  return <div className="border-b bg-slate-50 dark:bg-slate-950 p-5">
     <div className="flex items-center justify-between gap-3 mb-4">
       <div>
         <h3 className="font-black">Refinar resultados</h3>
-        <p className="text-sm text-gray-500">Filtre a lista já carregada para recalcular score médio, preço médio e paginação.</p>
+        <p className="text-sm text-gray-500 dark:text-slate-400">Filtre a lista já carregada para recalcular score médio, preço médio e paginação.</p>
       </div>
-      <button type="button" onClick={onClear} className="text-sm font-bold text-primary-600">Limpar filtros</button>
+      <button type="button" onClick={onClear} className="text-sm font-bold text-primary-600 dark:text-primary-400">Limpar filtros</button>
     </div>
 
     <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-3 items-end">
@@ -600,16 +619,12 @@ function RefinePanel({ refine, sourceOptions, onChange, onClear }: {
       <TextField label="Banheiros mín." placeholder="0" value={refine.bathrooms} onChange={value => update('bathrooms', integerDraft(value))} />
       <TextField label="Vagas mín." placeholder="0" value={refine.parking} onChange={value => update('parking', integerDraft(value))} />
       <TextField label="Score mínimo" placeholder="Ex: 70" value={refine.minScore} onChange={value => update('minScore', integerDraft(value, 100))} />
-      <label className="flex items-center gap-3 bg-white border rounded-xl px-4 py-3 text-sm font-bold">
+      <label className="flex items-center gap-3 bg-white dark:bg-slate-900 border rounded-xl px-4 py-3 text-sm font-bold">
         <input type="checkbox" checked={refine.onlyWithPhoto} onChange={event => update('onlyWithPhoto', event.target.checked)} />
         Só com foto
       </label>
     </div>
   </div>;
-}
-
-function HeroStat({ label, value }: { label: string; value: string }) {
-  return <div className="bg-white/10 border border-white/10 rounded-2xl p-4"><span className="text-xs text-slate-300">{label}</span><strong className="block mt-1">{value}</strong></div>;
 }
 
 function TextField({ label, value, onChange, placeholder, icon: Icon, suffix }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; icon?: any; suffix?: string }) {
@@ -623,37 +638,22 @@ function TextField({ label, value, onChange, placeholder, icon: Icon, suffix }: 
   </label>;
 }
 
-function ComboField({ label, value, onChange, placeholder, options, icon: Icon }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string; options: string[]; icon?: any }) {
-  const listId = `${label.toLowerCase().replace(/\s+/g, '-')}-options`;
-
-  return <label className="text-sm block">
-    <span>{label}</span>
-    <div className="relative mt-1">
-      {Icon && <Icon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />}
-      <input className={`input ${Icon ? 'pl-9' : ''}`} list={listId} value={value} placeholder={placeholder} onChange={event => onChange(event.target.value)} />
-      <datalist id={listId}>
-        {options.map(option => <option key={option} value={option} />)}
-      </datalist>
-    </div>
-  </label>;
-}
-
 function Kpi({ title, value, detail, icon: Icon, tone }: { title: string; value: string; detail: string; icon: any; tone: 'violet' | 'emerald' | 'amber' | 'blue' }) {
   const colors = {
-    violet: 'bg-violet-50 text-violet-700',
-    emerald: 'bg-emerald-50 text-emerald-700',
-    amber: 'bg-amber-50 text-amber-700',
-    blue: 'bg-blue-50 text-blue-700',
+    violet: 'bg-violet-50 dark:bg-violet-950 text-violet-700 dark:text-violet-300',
+    emerald: 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300',
+    amber: 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300',
+    blue: 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300',
   };
 
-  return <div className="bg-white border rounded-2xl p-5 shadow-sm flex items-start gap-4">
+  return <div className="bg-white dark:bg-slate-900 border rounded-2xl p-5 shadow-xs flex items-start gap-4">
     <div className={`w-12 h-12 rounded-xl grid place-items-center ${colors[tone]}`}><Icon className="w-6 h-6" /></div>
-    <div><span className="text-xs text-gray-500">{title}</span><strong className="block text-2xl mt-1">{value}</strong><p className="text-xs text-gray-400 mt-1">{detail}</p></div>
+    <div><span className="text-xs text-gray-500 dark:text-slate-400">{title}</span><strong className="block text-2xl mt-1">{value}</strong><p className="text-xs text-gray-400 mt-1">{detail}</p></div>
   </div>;
 }
 
 function Small({ label, value, accent = '', hint }: { label: string; value: string; accent?: string; hint?: string }) {
-  return <div><span className="text-xs text-gray-500 block">{label}</span><strong className={`block mt-1 ${accent}`}>{value}</strong>{hint && <span className="text-[11px] text-gray-400 block mt-0.5">{hint}</span>}</div>;
+  return <div><span className="text-xs text-gray-500 dark:text-slate-400 block">{label}</span><strong className={`block mt-1 ${accent}`}>{value}</strong>{hint && <span className="text-[11px] text-gray-400 block mt-0.5">{hint}</span>}</div>;
 }
 
 function Pagination({ page, totalPages, total, onPageChange }: { page: number; totalPages: number; total: number; onPageChange: (page: number) => void }) {
@@ -661,7 +661,7 @@ function Pagination({ page, totalPages, total, onPageChange }: { page: number; t
     .filter(item => item === 1 || item === totalPages || Math.abs(item - page) <= 2);
 
   return <div className="p-5 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-    <span className="text-sm text-gray-500">
+    <span className="text-sm text-gray-500 dark:text-slate-400">
       Mostrando {((page - 1) * PAGE_SIZE) + 1} a {Math.min(page * PAGE_SIZE, total)} de {total} anúncios
     </span>
     <div className="flex items-center gap-2">
@@ -671,7 +671,7 @@ function Pagination({ page, totalPages, total, onPageChange }: { page: number; t
 
         return <div key={item} className="flex items-center gap-2">
           {previous && item - previous > 1 && <span className="text-gray-400">...</span>}
-          <button type="button" onClick={() => onPageChange(item)} className={`w-10 h-10 rounded-xl text-sm font-black ${item === page ? 'bg-primary-600 text-white' : 'border text-slate-700'}`}>{item}</button>
+          <button type="button" onClick={() => onPageChange(item)} className={`w-10 h-10 rounded-xl text-sm font-black ${item === page ? 'bg-primary-600 text-white' : 'border text-slate-700 dark:text-slate-200'}`}>{item}</button>
         </div>;
       })}
       <button type="button" className="border px-3 py-2 rounded-xl text-sm font-bold disabled:opacity-40" disabled={page === totalPages} onClick={() => onPageChange(page + 1)}>Próxima</button>
@@ -712,24 +712,28 @@ function marketSourceLabel(item: SearchResult) {
 
 function marketBaseLabel(item: SearchResult) {
   const count = Number(item.market_reference_count || 0);
-  const confidence = Number(item.confidence_percentage || Math.max(20, Math.min(95, 30 + Math.min(30, count * 3) + (item.neighborhood ? 5 : 0) + (item.area_m2 ? 5 : 0))));
+  const realSales = Number(item.confirmed_transactions_count || 0);
+  const activeListings = Math.max(0, count - realSales);
+  const quality = item.confidence_basis === 'heuristic_evidence_quality' && item.confidence_percentage != null
+    ? `Qualidade da base ${Number(item.confidence_percentage)}/100 (heurística)` : 'Qualidade da base não avaliada nesta versão';
 
   if (count <= 0 || item.market_estimate_method === 'fallback_heuristic') {
-    return `Baseado somente em regra interna temporária · Confiança ${confidence}%`;
+    return `Baseado somente em regra interna temporária · ${quality} · Sem validação por comparáveis`;
   }
 
-  return `Baseado em ${Number(item.confirmed_transactions_count || 0)} vendas reais e ${count} anúncios comparáveis · Confiança ${confidence}%`;
+  const period = realSales > 0 && item.transaction_reference_window_months ? ` nos últimos ${item.transaction_reference_window_months} meses` : '';
+  return `Baseado em ${realSales} vendas reais${period} e ${activeListings} anúncios comparáveis · ${quality}`;
 }
 
 function Rule({ label }: { label: string }) {
-  return <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /><span>{label}</span></div>;
+  return <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /><span>{label}</span></div>;
 }
 
 function EmptyState() {
-  return <section className="bg-white border border-dashed rounded-3xl p-10 text-center">
-    <div className="w-16 h-16 bg-primary-50 text-primary-600 rounded-2xl grid place-items-center mx-auto"><Search className="w-8 h-8" /></div>
+  return <section className="bg-white dark:bg-slate-900 border border-dashed rounded-3xl p-10 text-center">
+    <div className="w-16 h-16 bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400 rounded-2xl grid place-items-center mx-auto"><Search className="w-8 h-8" /></div>
     <h2 className="text-2xl font-black mt-5">Comece buscando uma região</h2>
-    <p className="text-gray-500 mt-2 max-w-2xl mx-auto">Digite uma cidade ou bairro para o InvestFlip montar o radar de anúncios e apontar quais imóveis parecem bons candidatos para flip.</p>
+    <p className="text-gray-500 dark:text-slate-400 mt-2 max-w-2xl mx-auto">Digite uma cidade ou bairro para o InvestFlip montar o radar de anúncios e apontar quais imóveis parecem bons candidatos para flip.</p>
   </section>;
 }
 
@@ -747,21 +751,11 @@ function currencyDraftToNumber(value: string) {
 }
 
 function readRadarState(): RadarStateSnapshot | null {
-  try {
-    const raw = sessionStorage.getItem(RADAR_STATE_KEY);
-
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  return readJson<RadarStateSnapshot>(RADAR_STATE_KEY);
 }
 
 function writeRadarState(snapshot: RadarStateSnapshot) {
-  try {
-    sessionStorage.setItem(RADAR_STATE_KEY, JSON.stringify(snapshot));
-  } catch {
-    // Se o navegador negar storage ou o payload ficar grande demais, apenas não persiste.
-  }
+  writeJson(RADAR_STATE_KEY, snapshot);
 }
 
 function integerDraft(value: string, max?: number) {

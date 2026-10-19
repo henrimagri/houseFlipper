@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\CategoriaDespesa;
 use App\Models\Tenant;
+use App\Models\TenantProductSubscription;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -11,6 +12,10 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            return;
+        }
+
         $tenant = Tenant::firstOrCreate(
             ['slug' => 'demo'],
             ['nome' => 'Tenant Demo', 'email_contato' => 'demo@houseflipper.local'],
@@ -23,6 +28,11 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Admin Demo',
                 'password' => 'password',
             ],
+        );
+
+        TenantProductSubscription::firstOrCreate(
+            ['tenant_id' => $tenant->id, 'product_slug' => 'house_flipper'],
+            ['active' => true],
         );
 
         $categorias = [

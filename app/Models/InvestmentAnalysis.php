@@ -13,7 +13,7 @@ class InvestmentAnalysis extends Model
 
     protected function casts(): array
     {
-        return ['is_primary' => 'boolean', 'viability_completed_at' => 'datetime', 'financing_completed_at' => 'datetime', 'costs_completed_at' => 'datetime', 'result_completed_at' => 'datetime'];
+        return ['projeto_id' => 'integer', 'is_primary' => 'boolean', 'viability_completed_at' => 'datetime', 'financing_completed_at' => 'datetime', 'costs_completed_at' => 'datetime', 'result_completed_at' => 'datetime'];
     }
 
     public function opportunity()

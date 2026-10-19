@@ -24,6 +24,13 @@ class Opportunity extends Model
         'is_archived' => false,
     ];
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $opportunity): void {
+            $opportunity->is_archived = $opportunity->status === OpportunityStatus::Archived;
+        });
+    }
+
     protected function casts(): array
     {
         return ['status' => OpportunityStatus::class, 'property_type' => PropertyType::class, 'source' => OpportunitySource::class, 'is_favorite' => 'boolean', 'is_archived' => 'boolean', 'asking_price' => 'decimal:2', 'estimated_market_price' => 'decimal:2'];

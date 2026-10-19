@@ -1,5 +1,19 @@
 <?php
 
+use App\Support\CorsOriginPolicy;
+
+$configuredOrigins = preg_split('/\s*,\s*/', (string) env('CORS_ALLOWED_ORIGINS', ''), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+$allowedOrigins = CorsOriginPolicy::normalize([
+    env('FRONTEND_URL', 'http://127.0.0.1:5173'),
+    ...$configuredOrigins,
+    ...(in_array(env('APP_ENV', 'production'), ['local', 'testing'], true) ? [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:5175',
+        'http://127.0.0.1:5175',
+    ] : []),
+]);
+
 return [
 
     /*
@@ -19,7 +33,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5175', 'http://127.0.0.1:5175'],
+    'allowed_origins' => $allowedOrigins,
 
     'allowed_origins_patterns' => [],
 
