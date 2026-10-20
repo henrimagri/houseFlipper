@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /platform
+Disallow: /entrar
+Disallow: /login
+Disallow: /cadastro
+Disallow: /esqueci-senha
+Disallow: /recuperar-senha
+Disallow: /redefinir-senha
+Disallow: /confirmar-email
+Disallow: /api
+
+Sitemap: /sitemap.xml

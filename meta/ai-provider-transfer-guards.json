@@ -1,0 +1,22 @@
+{
+  "bug": "BUG 159",
+  "result": "passed",
+  "risk": [
+    "SSRF through provider redirects",
+    "memory exhaustion through oversized AI-provider responses"
+  ],
+  "controls": [
+    "TLS verification",
+    "redirects and decoding disabled",
+    "2 MiB header, progress, and final-body limit"
+  ],
+  "focused_tests": {
+    "tests": 5,
+    "assertions": 46
+  },
+  "full_suite": {
+    "tests": 295,
+    "assertions": 1984
+  },
+  "checked_at": "2026-10-18"
+}

@@ -1,0 +1,43 @@
+{
+  "database": "MariaDB isolated",
+  "policy": "serialized row updates; disjoint PATCH fields are preserved; conflicting fields use last committed write",
+  "task_derived": {
+    "worker_statuses": [
+      200,
+      200
+    ],
+    "requests_overlapped": true,
+    "status": "concluida",
+    "completion_date_present": true
+  },
+  "task_conflict": {
+    "worker_statuses": [
+      200,
+      200
+    ],
+    "requests_overlapped": true,
+    "last_finished_worker": 1,
+    "expected_title": "Concurrent title B",
+    "actual_title": "Concurrent title B"
+  },
+  "stage_conflict": {
+    "worker_statuses": [
+      200,
+      200
+    ],
+    "requests_overlapped": true,
+    "last_finished_worker": 0,
+    "expected": {
+      "orcamento": 2100,
+      "status": "em_andamento",
+      "progresso_pct": 35
+    },
+    "actual": {
+      "orcamento": 2100,
+      "status": "em_andamento",
+      "progresso_pct": 35
+    },
+    "project_budget": 2100
+  },
+  "passed": true
+}

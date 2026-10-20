@@ -1,0 +1,14 @@
+{
+  "bug": 119,
+  "result": "passed",
+  "frontend_tests": 40,
+  "modules_transformed": 2309,
+  "before_entry_kb": 1123.42,
+  "before_entry_gzip_kb": 300.24,
+  "after_entry_kb": 269.46,
+  "after_entry_gzip_kb": 89.57,
+  "after_largest_chunk_kb": 421.58,
+  "after_largest_chunk_gzip_kb": 113.63,
+  "chunk_warning": false,
+  "lazy_pages": 24
+}

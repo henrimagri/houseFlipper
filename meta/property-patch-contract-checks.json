@@ -1,0 +1,15 @@
+{
+  "bug": 111,
+  "result": "passed",
+  "related_tests": 25,
+  "related_assertions": 236,
+  "full_suite_tests": 245,
+  "full_suite_assertions": 1631,
+  "checks": [
+    "PATCH with observations only returns 200",
+    "nickname is preserved",
+    "acquisition value is preserved",
+    "address is preserved",
+    "incomplete PUT still returns 422"
+  ]
+}

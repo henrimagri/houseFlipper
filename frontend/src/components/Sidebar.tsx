@@ -18,6 +18,10 @@ import {
   Hexagon,
   Sparkles,
   UploadCloud,
+  FolderKanban,
+  Globe,
+  Map,
+  MessageSquare,
 } from 'lucide-react';
 
 const menu = [
@@ -25,6 +29,10 @@ const menu = [
   { to: '/ia-inteligente', label: 'IA Inteligente', icon: Sparkles },
   { to: '/importar-itbi', label: 'Importar ITBI', icon: UploadCloud },
   { to: '/leads', label: 'Leads & Oportunidades', icon: Target },
+  { to: '/carteira', label: 'Carteira comercial', icon: FolderKanban },
+  { to: '/site-corretor', label: 'Página do corretor', icon: Globe },
+  { to: '/crm', label: 'Contatos', icon: MessageSquare },
+  { to: '/mapa', label: 'Mapa', icon: Map },
   { to: '/projetos', label: 'Projetos', icon: Briefcase },
   { to: '/imoveis', label: 'Imóveis', icon: Home },
   { to: '/obras', label: 'Obras', icon: HardHat },

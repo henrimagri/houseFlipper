@@ -48,6 +48,8 @@ export default function Oportunidades() {
   const [coverSelection, setCoverSelection] = useState('');
   const [saving, setSaving] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ item: Opportunity; action: 'archive' | 'delete' } | null>(null);
+  const [capture, setCapture] = useState<{ id: number; status: string; status_label: string; usable: boolean } | null>(null);
+  const [captureForm, setCaptureForm] = useState({ owner_name: '', owner_contact: '', evidence_notes: '' });
   const [cachedCovers, setCachedCovers] = useState<Record<string, string>>({});
 
   async function load() {
@@ -118,9 +120,54 @@ export default function Oportunidades() {
   }
   async function openDetail(item: Opportunity) {
     setSaving(true); setError('');
-    try { const { data } = await api.get(`/opportunities/${item.id}`); setSelected(data.data); setModal('detail'); }
-    catch (exception: any) { setError(exception.response?.data?.message ?? 'Não foi possível carregar os detalhes da oportunidade.'); }
+    try {
+      const { data } = await api.get(`/opportunities/${item.id}`);
+      setSelected(data.data);
+      setModal('detail');
+      try {
+        const captureRes = await api.get(`/opportunities/${item.id}/capture`);
+        setCapture(captureRes.data.data);
+      } catch {
+        setCapture(null);
+      }
+    } catch (exception: any) { setError(exception.response?.data?.message ?? 'Não foi possível carregar os detalhes da oportunidade.'); }
     finally { setSaving(false); }
+  }
+
+  async function startCapture(item: Opportunity) {
+    setSaving(true); setError('');
+    try {
+      const { data } = await api.post(`/opportunities/${item.id}/captures`);
+      setCapture(data.data);
+    } catch (exception: any) {
+      setError(exception.response?.data?.message ?? 'Não foi possível iniciar a captação.');
+    } finally { setSaving(false); }
+  }
+
+  async function grantCapture() {
+    if (!capture) return;
+    setSaving(true); setError('');
+    try {
+      const payload = new FormData();
+      payload.append('owner_name', captureForm.owner_name);
+      payload.append('owner_contact', captureForm.owner_contact);
+      payload.append('evidence_notes', captureForm.evidence_notes);
+      const { data } = await api.post(`/captures/${capture.id}/grant`, payload);
+      setCapture(data.data);
+    } catch (exception: any) {
+      setError(Object.values(exception.response?.data?.errors ?? {}).flat().join(' ') || exception.response?.data?.message || 'Autorização recusada.');
+    } finally { setSaving(false); }
+  }
+
+  async function addToWallet() {
+    if (!capture) return;
+    setSaving(true); setError('');
+    try {
+      const { data } = await api.post('/commercial-listings', { authorization_id: capture.id });
+      navigate(`/carteira/${data.data.id}`);
+    } catch (exception: any) {
+      setError(Object.values(exception.response?.data?.errors ?? {}).flat().join(' ') || exception.response?.data?.message || 'Só entra na carteira com autorização concedida.');
+    } finally { setSaving(false); }
   }
 
   async function save(e: FormEvent) {
@@ -198,7 +245,22 @@ export default function Oportunidades() {
 
       {modal === 'form' && <Modal title={selected ? 'Editar oportunidade' : 'Nova oportunidade'} onClose={closeModal}><form onSubmit={save} className="space-y-4">{error && <div role="alert" className="bg-red-50 dark:bg-red-950 border border-red-200 text-red-700 dark:text-red-300 rounded-lg p-3 text-sm">{error}</div>}<div className="grid grid-cols-1 md:grid-cols-2 gap-4"><FormInput className="md:col-span-2" label="Título *" name="title" form={form} setForm={setForm} required /><FilterSelect label="Tipo *" value={form.property_type} items={optionList(options?.property_types)} onChange={(property_type) => setForm({ ...form, property_type })} /><FilterSelect label="Origem *" value={form.source} items={optionList(options?.sources)} onChange={(source) => setForm({ ...form, source })} /><FilterSelect label="Status" value={form.status} items={optionList(options?.statuses)} onChange={(status) => setForm({ ...form, status })} /><FormInput label="URL da origem" name="source_url" type="url" form={form} setForm={setForm} /><FormInput className="md:col-span-2" label="Endereço" name="address" form={form} setForm={setForm} /><FormInput label="Bairro" name="neighborhood" form={form} setForm={setForm} /><FormInput label="Cidade" name="city" form={form} setForm={setForm} /><FormInput label="UF" name="state" form={form} setForm={setForm} /><FormInput label="CEP" name="zip_code" form={form} setForm={setForm} />{[['asking_price','Preço pedido'],['estimated_market_price','Valor de mercado'],['area_m2','Área (m²)'],['bedrooms','Quartos'],['bathrooms','Banheiros'],['parking_spaces','Vagas']].map(([name,label]) => <FormInput key={name} label={label} name={name} type="number" form={form} setForm={setForm} />)}<PhotoPicker existing={selected?.photos ?? []} files={photos} selection={coverSelection} onSelection={setCoverSelection} onFiles={(files) => { setPhotos(files); if (files.length && !coverSelection) setCoverSelection('new:0'); }} /><label className="md:col-span-2"><span className="text-xs font-medium text-gray-600 dark:text-slate-300">Descrição</span><textarea className="input mt-1 min-h-24" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label></div><div className="flex justify-end gap-2"><button type="button" onClick={closeModal} className="border px-4 py-2 rounded-lg">Cancelar</button><button disabled={saving} className="bg-primary-600 text-white px-4 py-2 rounded-lg font-semibold disabled:opacity-60">{saving ? 'Salvando...' : 'Salvar oportunidade'}</button></div></form></Modal>}
 
-    {modal === 'detail' && selected && <Modal title={selected.title} onClose={() => setModal(null)} wide><div className="space-y-5">{error && <div role="alert" className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 rounded-lg p-3 text-sm">{error}</div>}{selected.photos?.length ? <PhotoGallery photos={selected.photos} title={selected.title} /> : <div className="h-32 rounded-xl bg-gray-50 dark:bg-slate-950 grid place-items-center text-gray-400"><Building2 className="w-8 h-8" /></div>}<div className="grid grid-cols-2 md:grid-cols-4 gap-4">{[['Status',selected.status_label],['Tipo',selected.property_type_label],['Preço pedido',money(selected.asking_price)],['Valor de mercado',money(selected.estimated_market_price)],['Localização',[selected.city,selected.state].filter(Boolean).join(' - ')],['Bairro',selected.neighborhood || '—'],['Área',selected.area_m2 ? `${selected.area_m2} m²` : '—'],['Origem',selected.source_label]].map(([label,value]) => <div key={label}><div className="text-xs text-gray-400">{label}</div><div className="font-semibold mt-1">{value}</div></div>)}</div><div className="flex gap-4 text-sm text-gray-600 dark:text-slate-300"><span className="flex gap-1"><BedDouble className="w-4 h-4" />{selected.bedrooms ?? 0} quartos</span><span className="flex gap-1"><Bath className="w-4 h-4" />{selected.bathrooms ?? 0} banheiros</span><span className="flex gap-1"><MapPin className="w-4 h-4" />{selected.address || 'Endereço não informado'}</span></div>{selected.description && <p className="text-sm text-gray-600 dark:text-slate-300">{selected.description}</p>}<div><h3 className="font-semibold mb-3">Histórico de status</h3><div className="space-y-3 border-l-2 border-violet-100 pl-4">{selected.status_histories?.map((history) => <div key={history.id}><div className="font-medium text-sm">{history.new_status_label}</div><div className="text-xs text-gray-400">{new Date(history.created_at).toLocaleString('pt-BR')} · {history.user}</div>{history.notes && <div className="text-xs text-gray-600 dark:text-slate-300">{history.notes}</div>}</div>)}</div></div><div className="flex justify-end gap-2"><button disabled={saving} onClick={() => favorite(selected)} className="border px-3 py-2 rounded-lg flex gap-2 disabled:opacity-60"><Heart className="w-4 h-4" />Favoritar</button><button disabled={saving} onClick={() => setConfirmAction({ item: selected, action: 'archive' })} className="border px-3 py-2 rounded-lg flex gap-2 disabled:opacity-60"><Archive className="w-4 h-4" />Arquivar</button><button disabled={saving} onClick={() => openEdit(selected)} className="bg-primary-600 text-white px-4 py-2 rounded-lg disabled:opacity-60">Editar</button><button disabled={saving} aria-label={`Excluir ${selected.title}`} onClick={() => setConfirmAction({ item: selected, action: 'delete' })} className="border border-red-200 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg disabled:opacity-60"><Trash2 className="w-4 h-4" /></button></div></div></Modal>}
+    {modal === 'detail' && selected && <Modal title={selected.title} onClose={() => setModal(null)} wide><div className="space-y-5">{error && <div role="alert" className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-300 rounded-lg p-3 text-sm">{error}</div>}{selected.photos?.length ? <PhotoGallery photos={selected.photos} title={selected.title} /> : <div className="h-32 rounded-xl bg-gray-50 dark:bg-slate-950 grid place-items-center text-gray-400"><Building2 className="w-8 h-8" /></div>}<div className="grid grid-cols-2 md:grid-cols-4 gap-4">{[['Status',selected.status_label],['Tipo',selected.property_type_label],['Preço pedido',money(selected.asking_price)],['Valor de mercado',money(selected.estimated_market_price)],['Localização',[selected.city,selected.state].filter(Boolean).join(' - ')],['Bairro',selected.neighborhood || '—'],['Área',selected.area_m2 ? `${selected.area_m2} m²` : '—'],['Origem',selected.source_label]].map(([label,value]) => <div key={label}><div className="text-xs text-gray-400">{label}</div><div className="font-semibold mt-1">{value}</div></div>)}</div><div className="flex gap-4 text-sm text-gray-600 dark:text-slate-300"><span className="flex gap-1"><BedDouble className="w-4 h-4" />{selected.bedrooms ?? 0} quartos</span><span className="flex gap-1"><Bath className="w-4 h-4" />{selected.bathrooms ?? 0} banheiros</span><span className="flex gap-1"><MapPin className="w-4 h-4" />{selected.address || 'Endereço não informado'}</span></div>{selected.description && <p className="text-sm text-gray-600 dark:text-slate-300">{selected.description}</p>}<div><h3 className="font-semibold mb-3">Histórico de status</h3><div className="space-y-3 border-l-2 border-violet-100 pl-4">{selected.status_histories?.map((history) => <div key={history.id}><div className="font-medium text-sm">{history.new_status_label}</div><div className="text-xs text-gray-400">{new Date(history.created_at).toLocaleString('pt-BR')} · {history.user}</div>{history.notes && <div className="text-xs text-gray-600 dark:text-slate-300">{history.notes}</div>}</div>)}</div></div><div className="border rounded-xl p-3 space-y-2 text-sm">
+          <div className="font-semibold">Captação comercial</div>
+          <p className="text-xs text-gray-500">Descobrir o anúncio não autoriza republicar fotos nem intermediar a venda.</p>
+          <p>Estado: {capture ? capture.status_label : 'Descoberto'}</p>
+          {!capture && <button disabled={saving} type="button" onClick={() => startCapture(selected)} className="border px-3 py-2 rounded-lg">Solicitar captação</button>}
+          {capture && !capture.usable && (
+            <div className="grid md:grid-cols-3 gap-2">
+              <input className="input" placeholder="Nome do responsável" value={captureForm.owner_name} onChange={(e) => setCaptureForm({ ...captureForm, owner_name: e.target.value })} />
+              <input className="input" placeholder="Contato (privado)" value={captureForm.owner_contact} onChange={(e) => setCaptureForm({ ...captureForm, owner_contact: e.target.value })} />
+              <input className="input" placeholder="Notas da evidência" value={captureForm.evidence_notes} onChange={(e) => setCaptureForm({ ...captureForm, evidence_notes: e.target.value })} />
+              <button disabled={saving} type="button" onClick={grantCapture} className="border px-3 py-2 rounded-lg">Registrar autorização</button>
+            </div>
+          )}
+          {capture?.usable && <button disabled={saving} type="button" onClick={addToWallet} className="bg-primary-600 text-white px-3 py-2 rounded-lg">Adicionar à carteira</button>}
+        </div>
+        <div className="flex justify-end gap-2"><button disabled={saving} onClick={() => favorite(selected)} className="border px-3 py-2 rounded-lg flex gap-2 disabled:opacity-60"><Heart className="w-4 h-4" />Favoritar</button><button disabled={saving} onClick={() => setConfirmAction({ item: selected, action: 'archive' })} className="border px-3 py-2 rounded-lg flex gap-2 disabled:opacity-60"><Archive className="w-4 h-4" />Arquivar</button><button disabled={saving} onClick={() => openEdit(selected)} className="bg-primary-600 text-white px-4 py-2 rounded-lg disabled:opacity-60">Editar</button><button disabled={saving} aria-label={`Excluir ${selected.title}`} onClick={() => setConfirmAction({ item: selected, action: 'delete' })} className="border border-red-200 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg disabled:opacity-60"><Trash2 className="w-4 h-4" /></button></div></div></Modal>}
     {confirmAction && <ConfirmActionDialog title={confirmAction.action === 'archive' ? 'Arquivar oportunidade?' : 'Excluir oportunidade?'} description={`A oportunidade ${confirmAction.item.title} será ${confirmAction.action === 'archive' ? 'arquivada e ocultada das listas ativas' : 'removida da sua conta'}.`} actionLabel={confirmAction.action === 'archive' ? 'Arquivar oportunidade' : 'Excluir oportunidade'} pending={saving} onCancel={() => setConfirmAction(null)} onConfirm={() => confirmAction.action === 'archive' ? archive(confirmAction.item) : remove(confirmAction.item)} />}
   </div>;
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Building2, CheckCircle2, ExternalLink, Filter, Loader2, MapPin, Search, SlidersHorizontal, Sparkles, Star, Target, TrendingDown } from 'lucide-react';
+import { Building2, CheckCircle2, Cloud, ExternalLink, Filter, Globe2, Loader2, MapPin, Search, SlidersHorizontal, Sparkles, Star, Target, TrendingDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
 import ComboField, { normalizeLocation } from '@/components/LocationComboField';
@@ -111,7 +111,21 @@ type ScraperDiagnostic = {
   status?: number;
   found?: number;
   message?: string;
+  state?: 'connected' | 'not_configured' | 'local_fallback' | 'unavailable';
 };
+
+const portalSources = [
+  { name: 'OLX', mode: 'Coleta local' },
+  { name: 'ZAP Imóveis', mode: 'Apify' },
+  { name: 'VivaReal', mode: 'Apify' },
+  { name: 'ImovelWeb', mode: 'Apify' },
+  { name: 'Chaves na Mão', mode: 'Coleta local' },
+  { name: 'Casa Mineira', mode: 'Coleta local' },
+  { name: 'Loft', mode: 'Apify' },
+  { name: 'QuintoAndar', mode: 'Apify' },
+  { name: 'Mercado Livre', mode: 'API pública' },
+  { name: 'Facebook Marketplace', mode: 'Apify' },
+];
 
 type RadarStateSnapshot = {
   state: string;
@@ -456,6 +470,8 @@ export default function IAInteligente() {
 
     {error && <div className="bg-red-50 dark:bg-red-950 border border-red-200 text-red-700 dark:text-red-300 rounded-2xl p-4">{error}</div>}
 
+    <ProviderNetwork diagnostics={diagnostics} searched={searched} />
+
     {searched && <section className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <Kpi title="Anúncios ranqueados" value={stats.total.toString()} detail={`até ${SEARCH_LIMIT} imóveis por busca`} icon={Target} tone="violet" />
       <Kpi title="Melhor score" value={`${stats.best}/100`} detail="maior oportunidade da busca" icon={Star} tone="emerald" />
@@ -509,7 +525,7 @@ export default function IAInteligente() {
               <Rule label="Margem estimada para flip" />
             </div>
             <div className="bg-white dark:bg-slate-900 border rounded-2xl p-4 mt-5 text-xs text-gray-500 dark:text-slate-400 leading-5">
-              Web Scraper ativo: ZAP, VivaReal, OLX, ImovelWeb, Chaves na Mão, Casa Mineira, Loft, QuintoAndar, Mercado Livre e Facebook Marketplace. Se algum portal bloquear por anti-bot/login, o InvestFlip tenta o próximo.
+              As fontes Apify configuradas são consultadas em paralelo. O coletor local e a API pública do Mercado Livre continuam como alternativas quando uma fonte não responde.
             </div>
             {diagnostics.length > 0 && <div className="bg-white dark:bg-slate-900 border rounded-2xl p-4 mt-4 text-xs">
               <div className="font-bold text-gray-800 dark:text-slate-100 mb-2">Diagnóstico da coleta</div>
@@ -526,6 +542,44 @@ export default function IAInteligente() {
     </section> : <EmptyState />}
     </>}
   </div>;
+}
+
+function ProviderNetwork({ diagnostics, searched }: { diagnostics: ScraperDiagnostic[]; searched: boolean }) {
+  const entries = portalSources.map(source => {
+    const matches = diagnostics.filter(item => item.source.toLocaleLowerCase('pt-BR') === source.name.toLocaleLowerCase('pt-BR'));
+    const count = Math.max(0, ...matches.map(item => Number(item.found || 0)));
+    const failed = matches.some(item => Number(item.status || 0) >= 400 || (item.status === 0 && Boolean(item.message)));
+    const state = matches.find(item => item.state === 'connected' && Number(item.found || 0) > 0)?.state
+      ?? matches.find(item => item.state)?.state;
+    const label = !searched ? 'Aguardando primeira busca'
+      : count > 0 ? `${count} ${count === 1 ? 'anúncio' : 'anúncios'}`
+      : failed ? 'Portal bloqueou esta busca'
+      : state === 'not_configured' ? 'Informe o token Apify'
+      : state === 'local_fallback' ? 'Coletor local disponível'
+      : state === 'unavailable' ? 'Indisponível nesta busca'
+      : 'Nenhum anúncio encontrado';
+
+    return { ...source, count, state, label };
+  });
+
+  return <section className="rounded-3xl border bg-white p-5 shadow-xs dark:bg-slate-900">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-primary-600"><Cloud className="h-4 w-4" /> Rede de fontes</p>
+        <h2 className="mt-1 text-lg font-black">Portais ligados ao radar</h2>
+      </div>
+      <p className="max-w-xl text-xs text-slate-500 dark:text-slate-400">Resultados reais, deduplicados e filtrados pela localização informada. Credenciais ficam somente no servidor.</p>
+    </div>
+    <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      {entries.map(entry => <div key={entry.name} className="flex items-center gap-3 rounded-2xl border border-slate-200 p-3 dark:border-slate-700">
+        <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${entry.count > 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300'}`}><Globe2 className="h-4 w-4" /></span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold">{entry.name}</p>
+          <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">{entry.mode} · {entry.label}</p>
+        </div>
+      </div>)}
+    </div>
+  </section>;
 }
 
 function ListingRow({ item, onSave, onOpenAnalysis, saving, saved }: { item: SearchResult; onSave: (item: SearchResult) => void; onOpenAnalysis: (item: SearchResult, openInNewTab?: boolean) => void; saving: boolean; saved: boolean }) {

@@ -1,0 +1,18 @@
+{
+  "bug": "BUG173",
+  "result": "passed",
+  "checked_at": "2026-10-18",
+  "scope": "CORS configured-origin policy and preflight behavior",
+  "before": "CORS used fixed local origins and ignored FRONTEND_URL, blocking a correctly configured production frontend.",
+  "protections": [
+    "FRONTEND_URL is included in the effective allowlist",
+    "additional origins require explicit comma-separated configuration",
+    "wildcard, credentials, paths, query, fragment, and non-HTTP schemes are rejected",
+    "local Vite origins are limited to local/testing environments",
+    "allowed and foreign preflights are covered"
+  ],
+  "focused_tests": "6/64",
+  "full_php_tests": "306/2330",
+  "config_cache": "passed",
+  "pint": "passed"
+}

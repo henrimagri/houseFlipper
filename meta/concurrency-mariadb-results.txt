@@ -1,0 +1,16 @@
+analyses worker 0 HTTP 201
+analyses worker 1 HTTP 201
+selection worker 0 HTTP 200
+selection worker 1 HTTP 200
+costs worker 0 HTTP 201
+costs worker 1 HTTP 201
+{
+    "database": "MariaDB isolated",
+    "analyses": 2,
+    "primary_analyses": 1,
+    "selected_financing": 1,
+    "cost_rows": 2,
+    "cost_sum": 300,
+    "cached_cost_total": 300,
+    "passed": true
+}

@@ -1,0 +1,16 @@
+{
+  "bug": "BUG172",
+  "result": "passed",
+  "checked_at": "2026-10-18",
+  "scope": "Project stage serialization in project, create, and update responses",
+  "before": "Project stages were serialized as complete Eloquent models, exposing tenant, relation, soft-delete, and administrative timestamp fields.",
+  "protections": [
+    "dedicated ProjetoEtapaResource allowlist",
+    "nested project stages use the public resource",
+    "create and update stage responses use the same resource",
+    "operational fields remain compatible with the frontend"
+  ],
+  "focused_tests": "33/316",
+  "full_php_tests": "304/2320",
+  "pint": "passed"
+}

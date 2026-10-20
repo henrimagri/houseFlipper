@@ -1,0 +1,33 @@
+{
+  "checked_at": "2026-10-18T23:23:43.6961785-03:00",
+  "bug": 179,
+  "status": "fixed_and_verified",
+  "before": {
+    "public_requests_sent_bearer": true,
+    "any_401_cleared_token": true,
+    "reproduction": "valid session plus failed login in another tab cleared local token"
+  },
+  "after": {
+    "public_paths": [
+      "/auth/login",
+      "/auth/register",
+      "/auth/password/forgot",
+      "/auth/password/reset",
+      "/auth/postal-code/*",
+      "/auth/email/verify/*"
+    ],
+    "public_requests_send_bearer": false,
+    "clear_rule": "401 only when a protected request actually sent a Bearer token",
+    "resend_remains_protected": true
+  },
+  "tests": {
+    "frontend": {
+      "tests": 74,
+      "status": "passed"
+    },
+    "build": {
+      "modules": 2314,
+      "status": "passed"
+    }
+  }
+}

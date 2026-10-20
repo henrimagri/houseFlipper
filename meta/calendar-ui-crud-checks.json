@@ -1,0 +1,96 @@
+{
+  "checked_at": "2026-10-19",
+  "viewport": {
+    "width": 375,
+    "height": 812
+  },
+  "focused_initially": true,
+  "failure_state": {
+    "dialogOpen": true,
+    "title": "Vistoria multidiária descartável",
+    "alert": "Falha offline simulada no calendário."
+  },
+  "multi_day_occurrences": 4,
+  "final_state": {
+    "path": "/calendario",
+    "dark": true,
+    "width": 375,
+    "scrollWidth": 375,
+    "empty": true
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/eventos-calendario"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos"
+    },
+    {
+      "method": "POST",
+      "path": "/api/eventos-calendario"
+    },
+    {
+      "method": "POST",
+      "path": "/api/eventos-calendario"
+    },
+    {
+      "method": "GET",
+      "path": "/api/eventos-calendario"
+    },
+    {
+      "method": "GET",
+      "path": "/api/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/eventos-calendario"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/eventos-calendario/1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/eventos-calendario"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/eventos-calendario/1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/eventos-calendario"
+    },
+    {
+      "method": "GET",
+      "path": "/api/eventos-calendario"
+    },
+    {
+      "method": "GET",
+      "path": "/api/eventos-calendario"
+    }
+  ],
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "page_errors": [],
+  "passed": true
+}

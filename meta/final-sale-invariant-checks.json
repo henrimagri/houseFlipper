@@ -1,0 +1,38 @@
+{
+  "bug": 91,
+  "status": "fixed_and_concurrency_verified",
+  "before": {
+    "second_final_sale_create_status": 201,
+    "second_proposal_finalization_status": 200,
+    "dashboard_behavior": "deduplicated_by_property",
+    "roi_behavior": "selected_one_sale"
+  },
+  "invariant": {
+    "open_proposals_per_property": "multiple_allowed",
+    "active_final_sales_per_property": 1,
+    "final_statuses": [
+      "fechada",
+      "escriturada"
+    ],
+    "locking": "property rows in deterministic id order"
+  },
+  "after": {
+    "conflict_status": 422,
+    "conflict_field": "status",
+    "related_tests": "16 tests, 142 assertions passed",
+    "php_full_suite": "227 tests, 1459 assertions passed",
+    "pint": "passed"
+  },
+  "concurrency": {
+    "database": "MariaDB 11.4.10 isolated",
+    "workers": 2,
+    "requests_overlapped": true,
+    "statuses": [
+      201,
+      422
+    ],
+    "active_final_sales": 1,
+    "property_status": "vendida",
+    "evidence": "final-sale-concurrency-mariadb.json"
+  }
+}

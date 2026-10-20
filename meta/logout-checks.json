@@ -1,0 +1,13 @@
+{
+  "tests": 3,
+  "route": "/api/auth/logout",
+  "assertions": 8,
+  "checks": [
+    "bearer deletes only current token",
+    "second bearer token remains stored",
+    "authenticated request without personal token returns 200",
+    "web guard becomes guest",
+    "session-authenticated follow-up returns 401"
+  ],
+  "result": "passed"
+}

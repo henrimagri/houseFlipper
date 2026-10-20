@@ -1,0 +1,23 @@
+[
+  {
+    "url": "http://127.0.0.1:8000/audit-static-probe.txt",
+    "status": 200,
+    "type": "text/plain; charset=UTF-8",
+    "fixtureMatched": true,
+    "location": ""
+  },
+  {
+    "url": "http://127.0.0.1:8000/storage/audit-storage-probe.txt",
+    "status": 302,
+    "type": "text/html; charset=utf-8",
+    "fixtureMatched": false,
+    "location": "http://127.0.0.1:5173/"
+  },
+  {
+    "url": "http://127.0.0.1:5173/storage/audit-storage-probe.txt",
+    "status": 302,
+    "type": "text/html; charset=utf-8",
+    "fixtureMatched": false,
+    "location": "http://127.0.0.1:5173/"
+  }
+]

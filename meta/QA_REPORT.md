@@ -2243,3 +2243,30 @@ Correção: pipeline fotos → análise (nome + histograma GD) → brief estrutu
 
 Verificação: `PropertyVisualizationTest` (uma foto, quarto ≠ planta, isolamento de lead/tenant, paredes azuis e restore, GLB fiel), `SceneCommandInterpreterTest`, `frontend/tests/propertyVisualization.test.mjs`. Build frontend: `tsc -b && vite build`, 2329 módulos. Protótipo local em `/leads/30/3d` com `sala-estar-janela-sofa.jpg`. Pendente: fila assíncrona, malha por profundidade, API GPU 3D.
 
+## Diagnóstico 19/10/2026 — plataforma imobiliária (brief marketplace)
+
+Categoria: Produto/Arquitetura. Severidade: n/a (gap, não regressão). Status: documentado, **não implementado**.
+
+O código atual é FlipControl House Flipper (Laravel 13 + React). SPA só autenticada (`App.tsx`): não há `/corretor/:slug` nem `/c/:slug`. Sidebar fixa “House Flipper”. `OpportunityStatus` é funil de investimento, não captação comercial. `public_listing_3d` e `lead_matching` existem só em `config/products.php`. `DataSourceStatusController` declara DataZAP unavailable e leilões not_implemented. Tenant não tem filial. Billing Mercado Pago/Stripe ausente.
+
+Aceite deste item: os arquivos `/meta/PRODUCT_VISION.md`, `REQUIREMENTS.md`, `ARCHITECTURE.md`, `DATABASE.md`, `INTEGRATIONS.md`, `API_SPEC.md`, `USER_FLOWS.md`, `ROADMAP.md`, `SECURITY.md`, `PROGRESS.md` descrevem o gap sem marcar marketplace como concluído.
+
+## Diagnóstico 19/10/2026 — verificação do MVP de captação
+
+Categoria: Segurança/Funcional. Status: verificado no código local (não é o briefing inteiro).
+
+Executado via serviços Laravel em tenants fictícios A/B:
+
+- B não inicia captação no lead de A (404).
+- Carteira recusa autorização `pending`.
+- Publicar sem plano `public_listing` retorna 403.
+- Publicar sem foto `licensed_for_publication` retorna 422.
+- Trial corretor + foto licenciada publica.
+- JSON público não contém nome, telefone nem documento do proprietário.
+- Tenant B não lê listing de A no `TenantScope`.
+- Cancelar o plano esconde `/c/{slug}` e mantém o registro da carteira.
+
+Frontend: `tsc -b && vite build` (2335 módulos). Migração `2026_10_19_000300_create_marketplace_tables` aplicada.
+
+Ainda fora: 8 modos de mapa, WhatsApp Cloud, checkout real, roleta, comissões, filiais, editor visual de sites, conectores de portal/leilão.
+

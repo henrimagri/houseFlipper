@@ -13,6 +13,11 @@ export default defineConfig(({ command }) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
+    optimizeDeps: {
+      // MapLibre 6 loads its worker as an ESM asset; pre-bundling rewrites the
+      // worker URL to a transient dependency path that Vite cannot serve.
+      exclude: ['maplibre-gl'],
+    },
     server: {
       host: '127.0.0.1',
       port: 5173,
@@ -24,6 +29,10 @@ export default defineConfig(({ command }) => {
           changeOrigin: true,
         },
         '/storage': {
+          target: 'http://127.0.0.1:8000',
+          changeOrigin: true,
+        },
+        '/uploads': {
           target: 'http://127.0.0.1:8000',
           changeOrigin: true,
         },

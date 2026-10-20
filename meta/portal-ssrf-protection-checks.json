@@ -1,0 +1,29 @@
+{
+  "bug": "BUG 82",
+  "status": "corrected",
+  "risk": "high",
+  "surface": "headless property portal browser",
+  "blocked": [
+    "localhost and .local",
+    "IPv4 private, loopback, link-local, carrier-grade NAT, metadata",
+    "IPv6 loopback, unique-local, link-local, IPv4-mapped",
+    "non-HTTP schemes and credentialed URLs",
+    "hostnames resolving to any private address"
+  ],
+  "coverage": "all main portal pages and optional detail pages",
+  "targeted": {
+    "tool": "node:test",
+    "network_policy_tests": 4,
+    "total_tests": 38,
+    "passed": 38,
+    "duration_ms": 236.759
+  },
+  "build": {
+    "result": "passed",
+    "modules": 2307
+  },
+  "npm_production_audit": {
+    "vulnerabilities": 0,
+    "dependencies": 249
+  }
+}

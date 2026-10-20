@@ -166,24 +166,24 @@ export default function ImportarItbi() {
           </div>
         </div>
 
-        {!data?.can_import && <p role="status" className="text-sm text-gray-600 dark:text-slate-300">A importação da base compartilhada exige permissão de operador.</p>}
-        <label className="block border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer hover:border-primary-300 hover:bg-violet-50/40 transition">
+        {!data?.can_import && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">Você pode selecionar e conferir o arquivo, mas o envio da base compartilhada exige permissão de operador.</p>}
+        <label className="block border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer hover:border-primary-300 hover:bg-violet-50/40 transition focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20">
           <FileSpreadsheet className="w-10 h-10 mx-auto text-primary-600 dark:text-primary-400" />
           <div className="font-bold mt-3">{file ? file.name : 'Clique para selecionar o arquivo'}</div>
           <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">Até 250 MB. O arquivo bruto fica guardado para auditoria.</div>
           <input
             ref={fileInput}
             type="file"
-            disabled={!data?.can_import || uploading}
+            disabled={uploading}
             accept=".ods,.csv,.txt,.xlsx"
-            className="hidden"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+            className="sr-only"
+            onChange={(event) => { setFile(event.target.files?.[0] ?? null); setMessage(null); }}
           />
         </label>
 
-        <button disabled={uploading || !data?.can_import} className="w-full bg-primary-600 text-white rounded-xl px-5 py-3 font-black disabled:opacity-60 inline-flex justify-center items-center gap-2">
+        <button disabled={uploading || !data?.can_import || !file} className="w-full bg-primary-600 text-white rounded-xl px-5 py-3 font-black disabled:cursor-not-allowed disabled:opacity-60 inline-flex justify-center items-center gap-2">
           {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UploadCloud className="w-5 h-5" />}
-          {uploading ? 'Importando...' : 'Importar arquivo'}
+          {uploading ? 'Importando...' : !file ? 'Selecione um arquivo' : !data?.can_import ? 'Permissão de operador necessária' : 'Importar arquivo'}
         </button>
 
         {message && <div role="status" className={`rounded-2xl p-4 text-sm flex gap-3 ${message.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-100' : message.type === 'warning' ? 'bg-amber-50 dark:bg-amber-950 text-amber-900 dark:text-amber-200 border border-amber-200' : 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 border border-red-100'}`}>

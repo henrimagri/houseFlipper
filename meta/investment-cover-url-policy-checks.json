@@ -1,0 +1,16 @@
+{
+  "bug": "BUG170",
+  "result": "passed",
+  "checked_at": "2026-10-18",
+  "scope": "Investment-analysis opportunity cover serialization",
+  "before": "The financial resource returned arbitrary external and local photo paths without the opportunity policies.",
+  "protections": [
+    "external cover requires ExternalImageUrlPolicy",
+    "local cover requires OpportunityPhotoPathPolicy",
+    "unsafe origins serialize as null",
+    "public HTTPS and managed local paths remain supported"
+  ],
+  "focused_tests": "11/87",
+  "full_php_tests": "302/2280",
+  "pint": "passed"
+}

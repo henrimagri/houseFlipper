@@ -1,0 +1,19 @@
+[
+  {
+    "route": "/small",
+    "sent": 4096,
+    "planned": 4096
+  },
+  {
+    "route": "/headers",
+    "sent": 0,
+    "planned": 65536,
+    "closed": true
+  },
+  {
+    "route": "/chunked",
+    "sent": 4352,
+    "planned": 65536,
+    "closed": true
+  }
+]

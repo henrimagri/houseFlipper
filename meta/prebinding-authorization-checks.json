@@ -1,0 +1,45 @@
+{
+  "checked_at": "2026-10-18T23:22:17.1889646-03:00",
+  "bug": 178,
+  "status": "fixed_and_verified",
+  "before": {
+    "middleware_order": [
+      "auth:sanctum",
+      "throttle:api",
+      "SubstituteBindings",
+      "active-account",
+      "verified-account"
+    ],
+    "unverified_missing_resource": "404",
+    "unverified_existing_resource": "403 email_verification_required",
+    "verified_foreign_resource": "403",
+    "impact": "resource existence enumeration"
+  },
+  "after": {
+    "middleware_order": [
+      "auth:sanctum",
+      "active-account",
+      "verified-account",
+      "throttle",
+      "SubstituteBindings",
+      "can"
+    ],
+    "unverified_business_routes": "uniform 403 email_verification_required before binding",
+    "verified_foreign_resource": "404",
+    "mutation": "none",
+    "inactive_accounts": "uniform 401 Conta indisponível before binding and controller across every protected method"
+  },
+  "tests": {
+    "focused": {
+      "tests": 57,
+      "assertions": 801,
+      "status": "passed"
+    },
+    "full_php": {
+      "tests": 311,
+      "assertions": 2761,
+      "status": "passed"
+    },
+    "pint": "passed"
+  }
+}

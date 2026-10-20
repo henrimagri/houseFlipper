@@ -1,0 +1,250 @@
+[
+  {
+    "name": "dashboard-imobiliaria",
+    "route": "/app/imobiliaria/dashboard",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "Imobiliária Demo",
+    "overflow": false,
+    "mapCanvases": 1,
+    "body": "Imobiliária\nTema visual\nSistema\nClaro\nEscuro\nID\nImobiliária Demo\n\nPainel executivo. Indicadores e gráficos usam o mesmo período e filtros.\n\nDe\nAté\nFilial\nTodas\nCorretor\nTodos\nImobiliária Demo\nImóveis cadastrados\n0\nDisponíveis\n0\nLeads novos\n0\nAtendimentos abertos\n0\nPropostas abertas\n3\nNegócios conclu",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  },
+  {
+    "name": "dashboard-imobiliaria",
+    "route": "/app/imobiliaria/dashboard",
+    "viewport": {
+      "width": 768,
+      "height": 1024
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "Imobiliária Demo",
+    "overflow": false,
+    "mapCanvases": 1,
+    "body": "Imobiliária\nTema visual\nSistema\nClaro\nEscuro\nID\nImobiliária Demo\n\nPainel executivo. Indicadores e gráficos usam o mesmo período e filtros.\n\nDe\nAté\nFilial\nTodas\nCorretor\nTodos\nImobiliária Demo\nImóveis cadastrados\n0\nDisponíveis\n0\nLeads novos\n0\nAtendimentos abertos\n0\nPropostas abertas\n3\nNegócios conclu",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  },
+  {
+    "name": "dashboard-imobiliaria",
+    "route": "/app/imobiliaria/dashboard",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "Imobiliária Demo",
+    "overflow": false,
+    "mapCanvases": 1,
+    "body": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\nSite\nMapa\n\nCONTA\n\nAssinatura\n\nAssinatura em teste\n\nRecolher\nSair\nImobiliária\nImo",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  },
+  {
+    "name": "dashboard-imobiliaria",
+    "route": "/app/imobiliaria/dashboard",
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "Imobiliária Demo",
+    "overflow": false,
+    "mapCanvases": 1,
+    "body": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\nSite\nMapa\n\nCONTA\n\nAssinatura\n\nAssinatura em teste\n\nRecolher\nSair\nImobiliária\nImo",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  },
+  {
+    "name": "crm",
+    "route": "/app/imobiliaria/crm",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "Funil comercial",
+    "overflow": false,
+    "mapCanvases": 0,
+    "body": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\nSite\nMapa\n\nCONTA\n\nAssinatura\n\nAssinatura em teste\n\nRecolher\nSair\nImobiliária\nImo",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  },
+  {
+    "name": "atendimentos",
+    "route": "/app/imobiliaria/atendimentos",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "Central de atendimento",
+    "overflow": false,
+    "mapCanvases": 0,
+    "body": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\nSite\nMapa\n\nCONTA\n\nAssinatura\n\nAssinatura em teste\n\nRecolher\nSair\nImobiliária\nImo",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  },
+  {
+    "name": "site-imobiliaria",
+    "route": "/app/imobiliaria/site",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "Site da imobiliária",
+    "overflow": false,
+    "mapCanvases": 0,
+    "body": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\nSite\nMapa\n\nCONTA\n\nAssinatura\n\nAssinatura em teste\n\nRecolher\nSair\nImobiliária\nImo",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  },
+  {
+    "name": "mapa-imobiliaria",
+    "route": "/app/imobiliaria/mapa",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "",
+    "overflow": false,
+    "mapCanvases": 1,
+    "body": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\nSite\nMapa\n\nCONTA\n\nAssinatura\n\nAssinatura em teste\n\nRecolher\nSair\nImobiliária\nImo",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  },
+  {
+    "name": "configuracoes",
+    "route": "/app/configuracoes",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "Configurações",
+    "overflow": false,
+    "mapCanvases": 0,
+    "body": "HF\n\nConta\n\nImobiliária Demo\n\nCONTA\n\nInício\nProdutos\nAssinaturas\nConfigurações\nAjuda\nRecolher\nSair\nMeus produtos\nConta e assinaturas\n\nConta\n\nTema visual\nSistema\nClaro\nEscuro\nID\n\nCONTA\n\nConfigurações\n\nPreferências, segurança e integrações da sua conta.\n\nAparência\nSegurança e sessões\nIntegrações\nAssina",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  },
+  {
+    "operation": "crm-create-move-persist",
+    "title": "QA CRM 1792417827603",
+    "created": 201,
+    "moved": 200,
+    "persisted": true,
+    "history": true
+  },
+  {
+    "operation": "ticket-create-message-close-reopen",
+    "title": "QA Atendimento 1792417831083",
+    "created": 201,
+    "message": 200,
+    "closed": 200,
+    "reopened": 200,
+    "persisted": true
+  },
+  {
+    "operation": "agency-site-publish-unpublish",
+    "status": 200,
+    "publicPath": "/i/imobiliaria-demo-imob",
+    "publicStatus": 200,
+    "unpublishStatus": 200
+  },
+  {
+    "name": "dashboard-house-flipper",
+    "route": "/app/house-flipper/dashboard",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "Análise de investimentos",
+    "overflow": false,
+    "mapCanvases": 1,
+    "body": "House Flipper\nTema visual\nSistema\nClaro\nEscuro\nAD\nAnálise de investimentos\n\nProjeções usam premissas cadastradas (aquisição, orçamento e valor alvo). Lucro e ROI realizados usam vendas fechadas. Não há promessa de rentabilidade.\n\nOportunidades analisadas\n2\n0 favoritas\nProjetos ativos\n0\n0 concluídos\n",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  },
+  {
+    "name": "dashboard-house-flipper",
+    "route": "/app/house-flipper/dashboard",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "Análise de investimentos",
+    "overflow": false,
+    "mapCanvases": 1,
+    "body": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDespesas\nTarefas\nDocumentos\nRelatórios\nCalendário\n\nCONTA\n\nAssinatura\n\nAssinatura at",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  },
+  {
+    "name": "analise-financeira",
+    "route": "/analises-financeiras/1",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "Central Financeira do Investimento",
+    "overflow": false,
+    "mapCanvases": 0,
+    "body": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDespesas\nTarefas\nDocumentos\nRelatórios\nCalendário\n\nCONTA\n\nAssinatura\n\nAssinatura at",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  },
+  {
+    "name": "dashboard-corretor",
+    "route": "/app/corretor/dashboard",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "Minha operação",
+    "overflow": false,
+    "mapCanvases": 1,
+    "body": "Corretor\nTema visual\nSistema\nClaro\nEscuro\nCD\nMinha operação\n\nNúmeros reais da sua conta. Período 2026-09-19 a 2026-10-19.\n\nDe\nAté\nImóveis na carteira\n0\nPublicados\n0\nCaptações pendentes\n0\nLeads recebidos\n1\nVisitas agendadas\n0\nPropostas abertas\n0\nMapa\n\n0 pontos da conta\n\nAbrir mapa\nMapLibre | OpenFree",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  },
+  {
+    "name": "dashboard-corretor",
+    "route": "/app/corretor/dashboard",
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "title": "FlipControl — plataforma imobiliária",
+    "heading": "Minha operação",
+    "overflow": false,
+    "mapCanvases": 1,
+    "body": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsultor IA\n\nCONTA\n\nAssinatura\n\nAssinatura em teste\n\nRecolher\nSair\nCorretor\nCorretor",
+    "consoleErrors": [],
+    "failed": [],
+    "responses": []
+  }
+]

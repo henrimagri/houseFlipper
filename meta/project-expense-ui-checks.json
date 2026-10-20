@@ -1,0 +1,161 @@
+{
+  "checked_at": "2026-10-19",
+  "create_failure": {
+    "open": true,
+    "draft": true
+  },
+  "edit_failure": {
+    "open": true,
+    "draft": true
+  },
+  "expense_failure": {
+    "open": true,
+    "draft": true,
+    "notes": "Observação persistida QA"
+  },
+  "expense_persisted": true,
+  "delete_failure": {
+    "dialogClosed": true,
+    "projectVisible": true
+  },
+  "final": {
+    "dark": true,
+    "width": 375,
+    "scrollWidth": 375,
+    "baseVisible": true
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos"
+    },
+    {
+      "method": "GET",
+      "path": "/api/categorias-despesa"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos/1/resumo"
+    },
+    {
+      "method": "GET",
+      "path": "/api/propriedades"
+    },
+    {
+      "method": "POST",
+      "path": "/api/projetos"
+    },
+    {
+      "method": "POST",
+      "path": "/api/projetos"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos"
+    },
+    {
+      "method": "GET",
+      "path": "/api/categorias-despesa"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos/1/resumo"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos/2/resumo"
+    },
+    {
+      "method": "GET",
+      "path": "/api/despesas"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/projetos/2"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/projetos/2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos"
+    },
+    {
+      "method": "GET",
+      "path": "/api/categorias-despesa"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos/1/resumo"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos/2/resumo"
+    },
+    {
+      "method": "POST",
+      "path": "/api/despesas"
+    },
+    {
+      "method": "POST",
+      "path": "/api/despesas"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos"
+    },
+    {
+      "method": "GET",
+      "path": "/api/categorias-despesa"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos/1/resumo"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos/2/resumo"
+    },
+    {
+      "method": "GET",
+      "path": "/api/despesas"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/projetos/2"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/projetos/2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos"
+    },
+    {
+      "method": "GET",
+      "path": "/api/categorias-despesa"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos/1/resumo"
+    }
+  ],
+  "page_errors": [],
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "passed": true
+}

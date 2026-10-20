@@ -1,0 +1,23 @@
+{
+  "bug": "BUG 156",
+  "result": "passed",
+  "risk": [
+    "SSRF through redirects or configured private endpoints",
+    "memory exhaustion through oversized provider response"
+  ],
+  "controls": [
+    "public HTTPS endpoint policy",
+    "redirects disabled",
+    "content decoding disabled",
+    "2 MiB header, progress, and final-body limit"
+  ],
+  "focused_tests": {
+    "tests": 9,
+    "assertions": 68
+  },
+  "full_suite": {
+    "tests": 287,
+    "assertions": 1940
+  },
+  "checked_at": "2026-10-18"
+}

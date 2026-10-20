@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-10-20T17:09:47.734Z",
+  "results": [
+    {
+      "case": "organizer-focus-1366",
+      "value": "Planejar visita ao imóvel",
+      "active": true,
+      "overflow": false,
+      "passed": true
+    },
+    {
+      "case": "organizer-focus-390",
+      "value": "Planejar visita ao imóvel",
+      "active": true,
+      "overflow": false,
+      "passed": true
+    },
+    {
+      "case": "official-auction-sync",
+      "hasResult": true,
+      "hasAutomatic": true,
+      "overflow": false,
+      "passed": true
+    }
+  ]
+}

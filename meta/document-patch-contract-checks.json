@@ -1,0 +1,15 @@
+{
+  "bug": 115,
+  "related_tests": 11,
+  "result": "passed",
+  "checks": [
+    "description-only PATCH returns 200",
+    "category project and status are preserved",
+    "path original name MIME and size are preserved",
+    "physical file remains present",
+    "incomplete PUT remains rejected"
+  ],
+  "related_assertions": 92,
+  "full_suite_tests": 249,
+  "full_suite_assertions": 1692
+}

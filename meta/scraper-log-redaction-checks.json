@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-17",
+  "finding": "failed headless-browser process copied up to 500 characters of stderr into application logs",
+  "correction": {
+    "raw_stderr_removed": true,
+    "exit_code_preserved": true,
+    "stderr_length_preserved": true,
+    "stderr_sha256_preserved": true
+  },
+  "verification": {
+    "focused_suite": "1 test, 5 assertions passed",
+    "backend_suite": "270 tests, 1824 assertions passed",
+    "pint": "passed"
+  }
+}

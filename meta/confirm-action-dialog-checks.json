@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-17",
+  "component": "frontend/src/components/ConfirmActionDialog.tsx",
+  "screens": {
+    "fornecedores": {
+      "opened": true,
+      "cancelled_without_mutation": true,
+      "accessible_name": true,
+      "accessible_description": true,
+      "focus_returned_to_trigger": true
+    },
+    "documentos": {
+      "opened": true,
+      "cancelled_without_mutation": true,
+      "record_preserved": true
+    },
+    "calendario": {
+      "opened": true,
+      "cancelled_without_mutation": true,
+      "record_preserved": true
+    },
+    "oportunidades": {
+      "shared_dialog_implemented": true,
+      "native_confirm_absent": true,
+      "visual_check": "unavailable because local browser control was disabled"
+    },
+    "central_financeira": {
+      "shared_dialog_implemented": true,
+      "native_confirm_absent": true,
+      "visual_check": "unavailable because local browser control was disabled"
+    },
+    "tarefas": {
+      "shared_dialog_implemented": true,
+      "native_confirm_absent": true,
+      "visual_check": "unavailable because local browser control was disabled"
+    }
+  },
+  "verification": {
+    "frontend_tests": "43/43 passed",
+    "frontend_build": "passed, 2311 modules"
+  }
+}

@@ -161,13 +161,13 @@ export default function Despesas() {
 
   if (loading) return <div className="min-h-[50vh] grid place-items-center text-slate-500 dark:text-slate-400"><div className="text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto text-primary-600" /><p className="mt-3">Carregando despesas...</p></div></div>;
 
-  return <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-6">
+  return <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-6 overflow-x-hidden xl:grid-cols-[minmax(0,1fr)_340px]">
     <main className="space-y-6 min-w-0">
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div><h1 className="text-2xl font-semibold">Despesas</h1><p className="text-sm text-slate-500 dark:text-slate-400">Valores registrados na API para seus projetos e imóveis.</p></div>
-        <div className="flex gap-2">
-          <button type="button" onClick={exportCsv} disabled={!filtered.length} className="btn-secondary inline-flex items-center gap-2 disabled:opacity-50"><Download className="h-4 w-4" />Exportar CSV</button>
-          <button type="button" onClick={() => navigate('/projetos')} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-semibold inline-flex items-center gap-2"><Plus className="h-4 w-4" />Lançar em projeto</button>
+        <div className="flex w-full min-w-0 flex-col gap-2 sm:w-auto sm:flex-row">
+          <button type="button" onClick={exportCsv} disabled={!filtered.length} className="btn-secondary inline-flex items-center justify-center gap-2 disabled:opacity-50"><Download className="h-4 w-4" />Exportar CSV</button>
+          <button type="button" onClick={() => navigate('/app/house-flipper/projetos')} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700"><Plus className="h-4 w-4" />Lançar em projeto</button>
         </div>
       </header>
 
@@ -189,12 +189,12 @@ export default function Despesas() {
         <label className="text-xs text-slate-500 dark:text-slate-400">Buscar<span className="relative block mt-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" /><input className="input pl-9" value={search} onChange={event => setSearch(event.target.value)} placeholder="Descrição, projeto..." /></span></label>
       </section>
 
-      <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <section className="min-w-0 max-w-full overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
         <div className="border-b border-slate-200 dark:border-slate-800 px-4 pt-3 flex gap-5 overflow-x-auto" role="tablist" aria-label="Status da despesa">
           {([['todas', 'Todas'], ['pendente', 'A pagar'], ['atrasado', 'Vencidas'], ['pago', 'Pagas'], ['cancelado', 'Canceladas']] as Array<[Tab, string]>).map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`pb-3 whitespace-nowrap border-b-2 text-sm ${tab === id ? 'border-primary-600 text-primary-700 dark:text-primary-300 font-semibold' : 'border-transparent text-slate-500 dark:text-slate-400'}`}>{label} <span className="text-xs">({counts[id]})</span></button>)}
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="max-w-full overflow-x-auto overscroll-x-contain">
+          <table className="min-w-[52rem] w-full text-sm">
             <thead className="bg-slate-50 dark:bg-slate-950 text-xs uppercase text-slate-500 dark:text-slate-400"><tr><th className="text-left px-5 py-3">Data</th><th className="text-left px-3 py-3">Descrição</th><th className="text-left px-3 py-3">Categoria</th><th className="text-left px-3 py-3">Projeto</th><th className="text-left px-3 py-3">Pagamento</th><th className="text-right px-3 py-3">Valor</th><th className="text-left px-3 py-3">Status</th><th className="px-3 py-3"><span className="sr-only">Ações</span></th></tr></thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {visible.map(expense => { const info = statusInfo(expense.status_pagamento); const Icon = paymentIcon(expense.forma_pagamento); const project = expense.projeto_id ? projectById.get(expense.projeto_id) : undefined; return <tr key={expense.id} className={selectedId === expense.id ? 'bg-primary-50/60 dark:bg-primary-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'}>

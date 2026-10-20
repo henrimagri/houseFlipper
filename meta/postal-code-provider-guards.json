@@ -1,0 +1,23 @@
+{
+  "bug": "BUG 158",
+  "result": "passed",
+  "risk": [
+    "oversized postal-code provider response",
+    "redirected external request",
+    "provider fields incompatible with registration"
+  ],
+  "controls": [
+    "redirects and decoding disabled",
+    "64 KiB header, progress, and final-body limit",
+    "field bounds aligned with registration"
+  ],
+  "focused_tests": {
+    "assertions": 54,
+    "tests": 9
+  },
+  "full_suite": {
+    "assertions": 1962,
+    "tests": 293
+  },
+  "checked_at": "2026-10-18"
+}

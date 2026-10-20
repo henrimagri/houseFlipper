@@ -1,0 +1,34 @@
+{
+  "checked_at": "2026-10-17",
+  "result": "passed",
+  "theme": "dark",
+  "viewports": [
+    375,
+    768,
+    1440
+  ],
+  "routes": [
+    "/",
+    "/ia-inteligente",
+    "/importar-itbi",
+    "/leads",
+    "/projetos",
+    "/imoveis",
+    "/obras",
+    "/financeiro",
+    "/despesas",
+    "/tarefas",
+    "/fornecedores",
+    "/documentos",
+    "/relatorios",
+    "/calendario",
+    "/configuracoes",
+    "/ajuda"
+  ],
+  "checks": 48,
+  "horizontal_overflow_failures": 0,
+  "visible_alerts": 0,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "scope": "route shells and empty-account states; populated wide tables remain pending"
+}

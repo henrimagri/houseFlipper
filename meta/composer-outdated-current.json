@@ -1,0 +1,32 @@
+{
+    "locked": [
+        {
+            "name": "phpunit/phpunit",
+            "direct-dependency": true,
+            "homepage": "https://phpunit.de/",
+            "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.40",
+            "version": "12.5.40",
+            "release-age": "from this week",
+            "release-date": "2026-10-16T05:55:07+00:00",
+            "latest": "13.4.3",
+            "latest-status": "update-possible",
+            "latest-release-date": "2026-10-16T05:56:47+00:00",
+            "description": "The PHP Unit Testing framework.",
+            "abandoned": false
+        },
+        {
+            "name": "spatie/laravel-permission",
+            "direct-dependency": true,
+            "homepage": "https://github.com/spatie/laravel-permission",
+            "source": "https://github.com/spatie/laravel-permission/tree/7.4.2",
+            "version": "7.4.2",
+            "release-age": "4 months old",
+            "release-date": "2026-05-30T19:21:26+00:00",
+            "latest": "8.3.0",
+            "latest-status": "update-possible",
+            "latest-release-date": "2026-07-03T15:36:01+00:00",
+            "description": "Permission handling for Laravel 12 and up",
+            "abandoned": false
+        }
+    ]
+}

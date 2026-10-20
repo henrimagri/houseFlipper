@@ -1,0 +1,18 @@
+{
+  "bug": 101,
+  "result": "passed",
+  "related_tests": 17,
+  "related_assertions": 176,
+  "focused_tests": 2,
+  "focused_assertions": 22,
+  "full_suite_tests": 235,
+  "full_suite_assertions": 1561,
+  "checks": [
+    "direct completed-stage creation stores 100 percent",
+    "nested completed-stage creation stores 100 percent",
+    "explicit completed/50 pair returns 422",
+    "status-only reopening synchronizes progress",
+    "progress-only completion synchronizes status",
+    "explicit blocked/100 pair returns 422"
+  ]
+}

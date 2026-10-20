@@ -1,0 +1,13 @@
+{
+  "checked_at": "2026-10-18",
+  "source": "https://getcomposer.org/download/2.10.3/composer.phar",
+  "version": "2.10.3",
+  "sha256": "7a2d379d5b8ffdaa028580ef26494c36d2feef4b178d3dd1473a4dbc5e17c8d6",
+  "sha256_verified": true,
+  "audit_command": "composer audit --locked --format=json",
+  "audit_exit_code": 0,
+  "advisories": 0,
+  "abandoned": 0,
+  "validate_command": "composer validate --strict --no-check-publish",
+  "validate_exit_code": 0
+}

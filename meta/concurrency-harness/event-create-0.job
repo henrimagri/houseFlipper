@@ -1,0 +1,1 @@
+{"method":"POST","uri":"\/api\/eventos-calendario","body":{"projeto_id":1,"titulo":"Concurrent event","categoria":"obra","inicio_em":"2026-10-20 10:00:00"}}

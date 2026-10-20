@@ -1,0 +1,20 @@
+{
+  "result": "passed",
+  "denied": {
+    "/.user.ini": 404,
+    "/.htaccess": 404,
+    "/index.php": 404,
+    "/%2euser.ini": 404
+  },
+  "allowed": {
+    "/robots.txt": 200,
+    "/storage/audit-router-fixture.txt": 200,
+    "/api/auth/me": 401,
+    "/up": 200
+  },
+  "x_powered_by_present": false,
+  "storage_fixture_removed": true,
+  "tests": 5,
+  "assertions": 29,
+  "production_proxy_validation": "pending"
+}

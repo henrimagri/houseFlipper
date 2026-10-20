@@ -1,0 +1,22 @@
+{
+  "bug": "BUG 162",
+  "result": "passed",
+  "risk": [
+    "excessive image decode/render memory",
+    "unsafe original filename metadata"
+  ],
+  "controls": [
+    "12000 pixel maximum per side",
+    "40000000 total pixel maximum",
+    "basename/control-character/length normalization"
+  ],
+  "focused_tests": {
+    "tests": 21,
+    "assertions": 163
+  },
+  "full_suite": {
+    "tests": 300,
+    "assertions": 2259
+  },
+  "checked_at": "2026-10-18"
+}

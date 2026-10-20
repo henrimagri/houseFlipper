@@ -1,0 +1,17 @@
+{
+  "bug": 93,
+  "status": "fixed_and_tested",
+  "before": {
+    "closed_without_closing_date_status": 201,
+    "financial_inconsistency": "counted_in_realized_kpis_but_absent_from_monthly_performance"
+  },
+  "after": {
+    "closed_requires": ["data_fechamento"],
+    "deeded_requires": ["data_fechamento", "data_escritura"],
+    "create_without_milestone_status": 422,
+    "transition_without_milestone_status": 422,
+    "related_tests": "17 tests, 151 assertions passed",
+    "php_full_suite": "229 tests, 1480 assertions passed",
+    "pint": "passed globally"
+  }
+}

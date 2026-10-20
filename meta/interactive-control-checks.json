@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-17",
+  "scan_scope": "all frontend/src TSX files parsed with the TypeScript AST",
+  "finding": "dashboard project overflow button had no click handler, submit behavior or destination",
+  "correction": "accessible link opens /projetos?projeto={id}; project page selects the requested tenant-visible project after loading",
+  "regression": "every native button must have onClick or submit a containing form",
+  "verification": {
+    "frontend_tests": "49 tests passed",
+    "production_build": "2311 modules passed"
+  },
+  "remaining_limit": "Rendered interaction is still required to prove semantic handlers complete their intended operation."
+}

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\PlatformAdmin;
 use App\Notifications\ResetPasswordEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -22,6 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     protected $fillable = [
         'tenant_id',
+        'last_product_slug',
         'name',
         'email',
         'password',
@@ -59,5 +61,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function sendPasswordResetNotification($token): void
     {
         $this->notify(new ResetPasswordEmail((string) $token));
+    }
+
+    public function isPlatformAdmin(): bool
+    {
+        if (PlatformAdmin::query()->where('user_id', $this->id)->exists()) {
+            return true;
+        }
+
+        $allowlist = config('platform.admin_emails', []);
+
+        return in_array(mb_strtolower((string) $this->email), $allowlist, true);
     }
 }

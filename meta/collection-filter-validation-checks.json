@@ -1,0 +1,35 @@
+{
+  "bug": "BUG 78",
+  "status": "corrected",
+  "pre_fix": [
+    "unknown project status returned 200",
+    "inverted opportunity price range returned 200"
+  ],
+  "targeted": {
+    "tests": 2,
+    "passed": 2,
+    "assertions": 27
+  },
+  "related": {
+    "tests": 25,
+    "passed": 25,
+    "assertions": 248
+  },
+  "full_suite": {
+    "tests": 202,
+    "passed": 202,
+    "assertions": 1339,
+    "duration_ms": 10840
+  },
+  "rejected_fields": [
+    "project status",
+    "sale status",
+    "payment status",
+    "expense category type",
+    "opportunity status",
+    "property type",
+    "source",
+    "favorite boolean",
+    "inverted price range"
+  ]
+}

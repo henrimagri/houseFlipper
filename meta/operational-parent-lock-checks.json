@@ -1,0 +1,15 @@
+{
+  "bug": 104,
+  "result": "passed-sequentially",
+  "focused_tests": 2,
+  "focused_assertions": 10,
+  "full_suite_tests": 239,
+  "full_suite_assertions": 1575,
+  "checks": [
+    "task creation revalidates active project under lock",
+    "calendar event creation revalidates active project under lock",
+    "task and event updates lock old and new projects",
+    "existing project dependent archival still passes"
+  ],
+  "limitation": "multiprocess transactional-database execution remains pending"
+}

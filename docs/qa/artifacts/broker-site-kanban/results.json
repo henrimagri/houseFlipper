@@ -1,0 +1,49 @@
+{
+  "generatedAt": "2026-10-20T16:50:01.508Z",
+  "results": [
+    {
+      "route": "/app/onboarding/corretor",
+      "viewport": 1366,
+      "title": "Boas-vindas — Corretor",
+      "passed": true
+    },
+    {
+      "route": "/app/corretor/meu-site",
+      "viewport": 1366,
+      "title": "Meu site",
+      "passed": true
+    },
+    {
+      "route": "/app/corretor/comercial",
+      "viewport": 1366,
+      "title": "Kanban comercial",
+      "passed": true
+    },
+    {
+      "route": "/app/onboarding/corretor",
+      "viewport": 390,
+      "title": "Boas-vindas — Corretor",
+      "passed": true
+    },
+    {
+      "route": "/app/corretor/meu-site",
+      "viewport": 390,
+      "title": "Meu site",
+      "passed": true
+    },
+    {
+      "route": "/app/corretor/comercial",
+      "viewport": 390,
+      "title": "Kanban comercial",
+      "passed": true
+    },
+    {
+      "route": "/corretor/corretormauro",
+      "viewport": 1366,
+      "title": "Encontre seu próximo imóvel",
+      "hasCatalog": true,
+      "overflow": false,
+      "passed": true
+    }
+  ]
+}

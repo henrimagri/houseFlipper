@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-17",
+  "tenant": "visual-audit",
+  "records_per_module": 28,
+  "viewports": [
+    375,
+    768,
+    1440
+  ],
+  "routes": [
+    "/leads",
+    "/projetos",
+    "/imoveis",
+    "/obras",
+    "/financeiro",
+    "/despesas",
+    "/tarefas",
+    "/fornecedores",
+    "/documentos",
+    "/calendario"
+  ],
+  "verified": {
+    "expense_rows": 25,
+    "page_level_horizontal_displacement": false,
+    "visible_alerts": 0,
+    "opportunities": "1-10 of 28",
+    "documents_rows": 28
+  },
+  "limitations": [
+    "Internal create/edit forms remain pending across all three viewports"
+  ]
+}

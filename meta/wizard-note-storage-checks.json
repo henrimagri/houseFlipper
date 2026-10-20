@@ -1,0 +1,15 @@
+{
+  "bug": "BUG164",
+  "result": "passed",
+  "checked_at": "2026-10-18",
+  "scope": "Financial wizard note cache",
+  "before": "Malformed JSON or browser storage exceptions could prevent a valid analysis from loading or crash an effect.",
+  "protections": [
+    "read errors fall back to API notes",
+    "only bounded plain string records are accepted",
+    "write failures remain non-fatal"
+  ],
+  "regression": "frontend/tests/wizard-project-action-errors.test.mjs",
+  "frontend_tests": "66/66",
+  "build_modules": 2312
+}

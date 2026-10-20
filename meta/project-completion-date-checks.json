@@ -1,0 +1,19 @@
+{
+  "bug": 95,
+  "status": "fixed_and_tested",
+  "before": {
+    "completion_update_status": 200,
+    "submitted_actual_end_date": "2026-10-17",
+    "persisted_actual_end_date": null
+  },
+  "after": {
+    "completed_actual_end_date": "2026-10-17",
+    "reopened_actual_end_date": null,
+    "automatic_date_on_first_completion": true,
+    "rejects_actual_end_before_start": true,
+    "rejects_actual_end_for_non_completed_status": true,
+    "related_tests": "20 tests, 181 assertions passed",
+    "php_full_suite": "230 tests, 1497 assertions passed",
+    "pint": "passed globally"
+  }
+}

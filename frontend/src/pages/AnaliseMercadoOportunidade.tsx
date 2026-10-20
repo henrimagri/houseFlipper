@@ -546,7 +546,7 @@ function NeighborhoodContextSection({ context }: { context?: LocationContext | n
         <div>
           <h2 className="font-black text-lg">Entorno do bairro</h2>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">{context.message}</p>
-          <p className="text-xs text-gray-400 mt-2">O InvestFlip tenta Google Maps quando disponível e OpenStreetMap como fallback. Se a consulta oscilar, tente recarregar ou buscar apenas por bairro e cidade.</p>
+          <p className="text-xs text-gray-400 mt-2">A localização e os pontos do entorno usam OpenStreetMap. Se a consulta oscilar, tente recarregar ou buscar apenas por bairro e cidade.</p>
         </div>
       </div>
     </section>;

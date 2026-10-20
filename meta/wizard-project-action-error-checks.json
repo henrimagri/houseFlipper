@@ -1,0 +1,31 @@
+{
+  "checked_at": "2026-10-18",
+  "bug": 147,
+  "status": "passed",
+  "actions": [
+    "loadFinancingReference",
+    "updateStageBudget"
+  ],
+  "controls": [
+    "handled rejection",
+    "public error feedback",
+    "pending reset",
+    "disabled concurrent stage update",
+    "rejected draft rollback"
+  ],
+  "regression": "wizard-project-action-errors.test.mjs",
+  "frontend": {
+    "tests": 59,
+    "passed": 59,
+    "failed": 0,
+    "duration_ms": 648.1133
+  },
+  "build": {
+    "result": "passed",
+    "modules": 2312,
+    "entry_chunk_kb": 269.67,
+    "largest_chunk_kb": 421.58,
+    "warning": null,
+    "duration_seconds": 4.88
+  }
+}

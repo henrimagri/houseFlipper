@@ -1,0 +1,1 @@
+{"method":"POST","uri":"\/api\/despesas","body":{"categoria_despesa_id":1,"descricao":"Concurrent expense","valor":100,"data_despesa":"2026-10-19","propriedade_id":1,"projeto_id":1}}

@@ -1,0 +1,18 @@
+{
+  "bug": 106,
+  "result": "passed",
+  "specific_tests": 3,
+  "specific_assertions": 34,
+  "full_suite_tests": 240,
+  "full_suite_assertions": 1594,
+  "limit_characters": 5000,
+  "fields": [
+    "projetos.descricao",
+    "projetos_etapas.descricao",
+    "despesas.observacoes",
+    "vendas.observacoes",
+    "opportunities.description",
+    "opportunities.notes"
+  ],
+  "checks": ["422 per oversized field", "no partial database writes"]
+}

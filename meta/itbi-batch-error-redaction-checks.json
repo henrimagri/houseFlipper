@@ -1,0 +1,28 @@
+{
+  "checked_at": "2026-10-17",
+  "bug": 141,
+  "status": "passed",
+  "risk": "Unexpected parser, filesystem, or database exception messages could be persisted in the batch and printed by the CLI.",
+  "controls": [
+    "fixed public batch error message",
+    "structured log contains only batch id and exception class",
+    "CLI output omits exception message",
+    "original exception retained only as the internal previous cause"
+  ],
+  "focused": {
+    "command": "php artisan test tests/Feature/ItbiImportPipelineTest.php tests/Feature/ItbiImportCommandTest.php",
+    "tests": 11,
+    "assertions": 56,
+    "result": "passed"
+  },
+  "full_php_suite": {
+    "command": "php artisan test",
+    "tests": 271,
+    "assertions": 1832,
+    "result": "passed"
+  },
+  "format": {
+    "command": "vendor/bin/pint",
+    "result": "passed"
+  }
+}

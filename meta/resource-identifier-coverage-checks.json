@@ -1,0 +1,46 @@
+{
+  "checked_at": "2026-10-18T23:14:55.9476648-03:00",
+  "status": "passed",
+  "scope": {
+    "invalid_values": [
+      "not-a-number",
+      "-1",
+      "999999999999999999999999999999"
+    ],
+    "integer_controller_resources": [
+      "propriedades",
+      "projetos",
+      "despesas",
+      "vendas",
+      "tarefas",
+      "documentos",
+      "fornecedores",
+      "eventos-calendario"
+    ],
+    "model_bound_resources": [
+      "opportunities",
+      "investment-analyses"
+    ],
+    "related_resources": [
+      "financing-details",
+      "investment-costs",
+      "investment-results",
+      "propriedades/{id}/roi",
+      "projetos/{id}/resumo",
+      "projetos/{id}/etapas",
+      "projetos-etapas/{id}"
+    ]
+  },
+  "expected": "HTTP 404 without controller TypeError or database error",
+  "focused": {
+    "tests": 1,
+    "assertions": 75,
+    "status": "passed"
+  },
+  "full_php": {
+    "tests": 308,
+    "assertions": 2388,
+    "status": "passed"
+  },
+  "pint": "passed"
+}

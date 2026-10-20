@@ -1,0 +1,1 @@
+{"method":"POST","uri":"\/api\/tarefas","body":{"projeto_id":1,"titulo":"Concurrent task","prioridade":"media","status":"pendente"}}

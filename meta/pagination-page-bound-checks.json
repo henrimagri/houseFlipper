@@ -1,0 +1,15 @@
+{
+  "bug": 108,
+  "result": "passed",
+  "related_tests": 13,
+  "related_assertions": 142,
+  "full_suite_tests": 242,
+  "full_suite_assertions": 1605,
+  "page_range": [1, 1000000],
+  "per_page_range": [1, 100],
+  "checks": [
+    "signed 64-bit maximum page returns 422",
+    "validation occurs in common API pagination middleware",
+    "legitimate collection pagination remains passing"
+  ]
+}

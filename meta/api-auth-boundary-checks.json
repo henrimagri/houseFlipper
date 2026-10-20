@@ -1,0 +1,22 @@
+{
+  "result": "passed",
+  "scope": "all registered API routes",
+  "public_allowlist": 6,
+  "pre_verification_authenticated_routes": 6,
+  "invariants": [
+    "all remaining API routes require auth:sanctum, active-account, and verified-account",
+    "ITBI upload retains permission and dedicated throttle",
+    "document upload retains dedicated throttle",
+    "external market routes retain dedicated throttle",
+    "no raw request payload persistence sink found"
+  ],
+  "focused_tests": {
+    "tests": 29,
+    "assertions": 415
+  },
+  "full_suite": {
+    "tests": 299,
+    "assertions": 2249
+  },
+  "checked_at": "2026-10-18"
+}

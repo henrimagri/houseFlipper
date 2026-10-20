@@ -1,0 +1,20 @@
+{
+  "bug": 92,
+  "status": "fixed_and_tested",
+  "before": {
+    "proposal_counted_as_sale": true,
+    "cancelled_sale_counted_as_sale": true,
+    "observed_project_summary_has_sale": true
+  },
+  "after": {
+    "eligible_statuses": ["fechada", "escriturada"],
+    "proposal_and_cancelled_has_sale": false,
+    "proposal_and_cancelled_net_revenue": 0,
+    "finalized_sale_has_sale": true,
+    "finalized_sale_net_revenue": 160000,
+    "related_tests": "13 tests, 123 assertions passed",
+    "php_full_suite": "228 tests, 1468 assertions passed",
+    "typescript_build": "passed with 2308 modules",
+    "pint": "passed"
+  }
+}

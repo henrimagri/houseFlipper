@@ -1,0 +1,4 @@
+npm ci --ignore-scripts: passed
+npm run build: passed
+vite modules transformed: 2313
+checked_at: 2026-10-18

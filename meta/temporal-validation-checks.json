@@ -1,0 +1,22 @@
+{
+  "bug": 90,
+  "status": "fixed_and_tested",
+  "before": {
+    "inverted_stage_creation_status": 201,
+    "inverted_sale_creation_status": 201,
+    "inverted_partial_sale_update_status": 200
+  },
+  "rules": [
+    "stage_end_on_or_after_stage_start",
+    "sale_closing_on_or_after_proposal",
+    "sale_deed_on_or_after_closing_or_proposal",
+    "partial_update_uses_persisted_milestones"
+  ],
+  "after": {
+    "invalid_status": 422,
+    "valid_partial_update_status": 200,
+    "related_tests": "18 tests, 146 assertions passed",
+    "php_full_suite": "226 tests, 1450 assertions passed",
+    "pint": "passed"
+  }
+}

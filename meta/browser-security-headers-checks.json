@@ -1,0 +1,26 @@
+{
+  "result": "passed",
+  "development": {
+    "url": "http://127.0.0.1:5173/configuracoes",
+    "status": 200,
+    "headers": [
+      "Content-Security-Policy",
+      "Cross-Origin-Opener-Policy",
+      "Permissions-Policy",
+      "Referrer-Policy",
+      "X-Content-Type-Options",
+      "X-Frame-Options",
+      "X-Permitted-Cross-Domain-Policies"
+    ],
+    "authenticated_reload": "passed",
+    "console_errors_or_warnings": 0
+  },
+  "preview": {
+    "url": "http://127.0.0.1:4173/configuracoes",
+    "status": 200,
+    "script_inline_allowed": false,
+    "script_eval_allowed": false
+  },
+  "static_manifest_copied_to_dist": true,
+  "production_proxy_validation": "pending"
+}

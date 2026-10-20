@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-17",
+  "finding": "ITBI row and upload failures copied exception messages and the original upload filename into logs",
+  "correction": {
+    "row_log_uses_exception_type": true,
+    "upload_log_uses_filename_hash": true,
+    "exception_message_removed": true,
+    "original_filename_removed": true
+  },
+  "verification": {
+    "focused_suite": "9 tests, 48 assertions passed",
+    "backend_suite": "269 tests, 1819 assertions passed",
+    "pint": "passed"
+  }
+}

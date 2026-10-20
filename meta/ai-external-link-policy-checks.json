@@ -1,0 +1,28 @@
+{
+  "checked_at": "2026-10-18",
+  "bug": 152,
+  "status": "passed",
+  "layers": ["AI endpoint", "frontend link helper"],
+  "rejected_classes": [
+    "non-HTTPS scheme",
+    "credentials",
+    "localhost and .localhost",
+    ".local domain",
+    "loopback IP",
+    "private IP",
+    "link-local IP",
+    "carrier-grade NAT",
+    "benchmark and reserved ranges",
+    "non-standard port",
+    "IPv6 literal in frontend defense"
+  ],
+  "accepted_controls": [
+    "https://portal.example/anuncio?id=1",
+    "https://8.8.8.8/anuncio"
+  ],
+  "frontend_focused": { "tests": 3, "passed": 3 },
+  "backend_focused": { "tests": 3, "passed": 3, "assertions": 20 },
+  "frontend_full": { "tests": 63, "passed": 63, "failed": 0 },
+  "build": { "result": "passed", "modules": 2312 },
+  "pint": "passed"
+}

@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-17",
+  "verified": {
+    "document_create_database_failure_removes_new_file": true,
+    "document_delete_database_failure_restores_private_file": true,
+    "opportunity_create_update_failure_removes_only_new_photos": true,
+    "opportunity_delete_failure_restores_public_photos": true,
+    "project_delete_failure_restores_children": true,
+    "financial_mutation_failure_rolls_back_detail_and_aggregate": true,
+    "itbi_batch_create_failure_removes_new_upload": true,
+    "itbi_batch_create_failure_preserves_preexisting_hash_file": true
+  },
+  "limits": {
+    "abrupt_process_or_host_termination": "requires production-like filesystem and database recovery exercise"
+  },
+  "verification": {
+    "itbi_import_security": "8 tests, 43 assertions passed",
+    "backend_suite": "259 tests, 1767 assertions passed",
+    "pint": "passed"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "bug": "BUG166",
+  "result": "passed",
+  "checked_at": "2026-10-18",
+  "scope": "Financial score-guide preference",
+  "before": "A storage exception during render or dismissal could make the page unavailable or the guide impossible to close.",
+  "protections": [
+    "read failure defaults to showing the guide",
+    "write failure is non-fatal",
+    "UI dismissal occurs regardless of persistence"
+  ],
+  "regression": "frontend/tests/financial-action-errors.test.mjs",
+  "frontend_tests": "70/70",
+  "build_modules": 2313
+}

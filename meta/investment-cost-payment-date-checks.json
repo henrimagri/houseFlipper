@@ -1,0 +1,17 @@
+{
+  "bug": 98,
+  "status": "fixed_and_tested",
+  "before": {
+    "paid_cost_without_date_status": 201,
+    "persisted_paid_at": null
+  },
+  "after": {
+    "paid_without_date_uses_current_date": true,
+    "explicit_paid_at": "2026-10-16",
+    "edit_without_paid_at_preserves": "2026-10-16",
+    "pending_clears_paid_at": true,
+    "related_tests": "16 tests, 127 assertions passed",
+    "php_full_suite": "232 tests, 1518 assertions passed",
+    "pint": "passed globally"
+  }
+}

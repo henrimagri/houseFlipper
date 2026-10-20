@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-17",
+  "theme": "dark",
+  "viewports": [
+    375,
+    768,
+    1440
+  ],
+  "forms": [
+    {
+      "name": "opportunity",
+      "controls": 20,
+      "widths": [
+        280,
+        673,
+        705
+      ]
+    },
+    {
+      "name": "supplier",
+      "controls": 11,
+      "widths": [
+        322,
+        680,
+        680
+      ]
+    },
+    {
+      "name": "task",
+      "controls": 13,
+      "widths": [
+        307,
+        730,
+        760
+      ]
+    },
+    {
+      "name": "calendar_event",
+      "controls": 13,
+      "widths": [
+        322,
+        720,
+        720
+      ]
+    },
+    {
+      "name": "document",
+      "controls": 9,
+      "widths": [
+        337,
+        680,
+        680
+      ]
+    },
+    {
+      "name": "project",
+      "controls": 10,
+      "widths": [
+        343,
+        672,
+        672
+      ]
+    }
+  ],
+  "combinations": 18,
+  "controls_outside_viewport": 0,
+  "effective_page_overflow": 0,
+  "submitted": false,
+  "note": "Persistence flows covered by API suites; visual pass did not submit forms."
+}

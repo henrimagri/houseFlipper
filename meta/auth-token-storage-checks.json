@@ -1,0 +1,16 @@
+{
+  "bug": "BUG165",
+  "result": "passed",
+  "checked_at": "2026-10-18",
+  "scope": "Frontend bearer-token lifecycle",
+  "before": "Direct localStorage operations in eight consumers could throw and break authentication flows.",
+  "protections": [
+    "all consumers use one non-throwing helper",
+    "current SPA session falls back to memory",
+    "logout clears memory before attempting persistent removal",
+    "reload requires login when persistence is blocked"
+  ],
+  "runtime_test": "helper executed with getItem/setItem/removeItem throwing SecurityError",
+  "frontend_tests": "69/69",
+  "build_modules": 2313
+}

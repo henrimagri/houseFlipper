@@ -1,0 +1,36 @@
+{
+  "bug": "BUG 79",
+  "status": "corrected",
+  "risk": "low",
+  "before": {
+    "routes": 90,
+    "private_get_unsigned": 403,
+    "private_put_unsigned": 403,
+    "signed_routes": [
+      "storage.local",
+      "storage.local.upload"
+    ],
+    "consumer_found": false
+  },
+  "after": {
+    "routes": 88,
+    "storage_routes": 0,
+    "private_get": 404,
+    "private_put": 404,
+    "private_file_created": false,
+    "public_file_get": 200,
+    "public_file_body": "PUBLIC_ROUTE_OK"
+  },
+  "targeted": {
+    "suite": "SecurityRegressionTest",
+    "tests": 24,
+    "passed": 24,
+    "assertions": 141
+  },
+  "full_suite": {
+    "tests": 203,
+    "passed": 203,
+    "assertions": 1342,
+    "duration_ms": 11037
+  }
+}

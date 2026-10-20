@@ -1,0 +1,11 @@
+{
+  "result": "passed",
+  "removed_route": "GET /api/itbi-imports/upload-limits",
+  "http_status": 404,
+  "response_contains_memory_limit": false,
+  "response_contains_upload_max_filesize": false,
+  "current_route_count": 90,
+  "route_inventory_contains_removed_route": false,
+  "tests": 6,
+  "assertions": 34
+}

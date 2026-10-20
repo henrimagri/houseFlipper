@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-17",
+  "finding": "AI result rendered a placeholder hash link when source URL was missing and both AI views trusted the URL scheme",
+  "controls": {
+    "missing_link_hidden": true,
+    "https_only": true,
+    "embedded_credentials_rejected": true,
+    "noopener_noreferrer": true,
+    "list_and_detail_covered": true
+  },
+  "verification": {
+    "frontend_tests": "51 tests passed",
+    "production_build": "2312 modules passed"
+  }
+}

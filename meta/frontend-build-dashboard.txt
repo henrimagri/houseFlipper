@@ -1,0 +1,18 @@
+
+> houseflipper-frontend@0.1.0 build
+> tsc -b && vite build
+
+vite v6.4.4 building for production...
+transforming...
+✓ 2287 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     0.74 kB │ gzip:   0.40 kB
+dist/assets/index-pLo88U8R.css     64.72 kB │ gzip:  11.26 kB
+dist/assets/index-Blg6efVf.js   1,062.48 kB │ gzip: 284.56 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.62s

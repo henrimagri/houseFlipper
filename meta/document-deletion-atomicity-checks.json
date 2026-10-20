@@ -1,0 +1,22 @@
+{
+  "bug": "BUG 75",
+  "status": "corrected",
+  "pre_fix": "storage exception produced 500 after logical deletion path began",
+  "targeted": {
+    "tests": 9,
+    "passed": 9,
+    "assertions": 76
+  },
+  "full_suite": {
+    "tests": 196,
+    "passed": 196,
+    "assertions": 1285,
+    "duration_ms": 11027
+  },
+  "cases": [
+    "successful delete leaves no file or quarantine",
+    "storage read failure returns neutral 503 and preserves record",
+    "unmanaged path is rejected unchanged",
+    "database failure restores original file and active record"
+  ]
+}

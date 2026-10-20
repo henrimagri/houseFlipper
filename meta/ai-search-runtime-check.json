@@ -1,0 +1,33 @@
+{
+  "checked_at": "2026-10-16T19:30:58-03:00",
+  "environment": "local Windows; PHP development server and Vite",
+  "route": "/api/ai-property-search",
+  "query": {
+    "state": "SP",
+    "city": "São Paulo",
+    "neighborhood": "Perdizes",
+    "property_type": "apartment",
+    "limit": 250
+  },
+  "before": {
+    "http_status": 502,
+    "node_exit_code": 134,
+    "symptom": "Node aborted during CSPRNG initialization after the web SAPI filtered Windows runtime environment variables"
+  },
+  "after": {
+    "http_status": 200,
+    "items_collected": 36,
+    "type_compatible": 36,
+    "location_compatible": 36,
+    "valid_price": 36,
+    "results_rendered_first_page": 20,
+    "data_mutated": false
+  },
+  "automated_checks": {
+    "php_tests": 154,
+    "php_assertions": 866,
+    "node_tests": 16,
+    "frontend_build": "passed"
+  },
+  "screenshot": "ia-perdizes-corrigida.png"
+}

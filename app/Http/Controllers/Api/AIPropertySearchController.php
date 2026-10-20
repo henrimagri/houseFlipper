@@ -52,11 +52,22 @@ class AIPropertySearchController extends Controller
 
         $scraped = $this->scraper->scrape($city, $neighborhood, $limit, $state, $propertyType);
         $scraperDiagnostics = $this->publicDiagnostics($scraped['diagnostics'] ?? []);
-        $providerResponse = count($scraped['items'])
-            ? ['provider' => 'scraper', 'name' => $scraped['source_name'], 'items' => $scraped['items'], 'diagnostics' => $scraperDiagnostics]
-            : ($this->fetchNestoria($city, $neighborhood, $limit, $state, $propertyType) ?? $this->fetchMercadoLivre($query, $limit));
+        $providerResponses = collect();
+        if (count($scraped['items'])) {
+            $providerResponses->push(['provider' => 'scraper', 'name' => $scraped['source_name'], 'items' => $scraped['items'], 'diagnostics' => $scraperDiagnostics]);
+        }
 
-        if ($providerResponse === null) {
+        $mercadoLivre = $this->fetchMercadoLivre($query, min(50, $limit));
+        if ($mercadoLivre !== null) {
+            $mercadoLivre['diagnostics'] = [['source' => 'Mercado Livre', 'state' => 'connected', 'found' => count($mercadoLivre['items']), 'status' => 200]];
+            $providerResponses->push($mercadoLivre);
+        }
+
+        if ($providerResponses->isEmpty() && ($nestoria = $this->fetchNestoria($city, $neighborhood, $limit, $state, $propertyType)) !== null) {
+            $providerResponses->push($nestoria);
+        }
+
+        if ($providerResponses->isEmpty()) {
             return response()->json([
                 'message' => 'Nenhuma fonte de anúncios respondeu agora.',
                 'details' => 'Tente novamente em instantes ou configure uma credencial de conector oficial.',
@@ -64,21 +75,31 @@ class AIPropertySearchController extends Controller
             ], 502);
         }
 
-        $normalizedItems = collect($providerResponse['items'])
-            ->map(function (array $item) use ($providerResponse, $city, $neighborhood, $state): array {
-                $normalized = match ($providerResponse['provider']) {
-                    'scraper' => $item,
-                    'nestoria' => $this->normalizeNestoriaItem($item, $city, $neighborhood, $state),
-                    default => $this->normalizeMercadoLivreItem($item, $city, $neighborhood, $state),
-                };
-                $normalized['source_url'] = $this->validHttpUrl($normalized['source_url'] ?? null);
-                $normalized['thumbnail'] = $this->validImageUrl($normalized['thumbnail'] ?? null);
+        $normalizedItems = $providerResponses->flatMap(function (array $providerResponse) use ($city, $neighborhood, $state) {
+            return collect($providerResponse['items'])->map(function (array $item) use ($providerResponse, $city, $neighborhood, $state): array {
+                    $normalized = match ($providerResponse['provider']) {
+                        'scraper' => $item,
+                        'nestoria' => $this->normalizeNestoriaItem($item, $city, $neighborhood, $state),
+                        default => $this->normalizeMercadoLivreItem($item, $city, $neighborhood, $state),
+                    };
+                    $normalized['source_url'] = $this->validHttpUrl($normalized['source_url'] ?? null);
+                    $normalized['thumbnail'] = $this->validImageUrl($normalized['thumbnail'] ?? null);
 
-                return $normalized;
-            });
+                    return $normalized;
+                });
+        })->unique(fn (array $item) => $item['source_url'] ?: $item['source'].'|'.$item['title'].'|'.$item['asking_price'])->values();
         $typeMatchedItems = $normalizedItems->filter(fn (array $item) => $this->matchesRequestedPropertyType($item, $propertyType));
         $locationMatchedItems = $typeMatchedItems->filter(fn (array $item) => $this->matchesRequestedLocation($item, $city, $neighborhood, $state));
         $pricedItems = $locationMatchedItems->filter(fn (array $item) => $item['asking_price'] > 0);
+        $providerDiagnostics = $providerResponses
+            ->flatMap(fn (array $response) => $this->publicDiagnostics($response['diagnostics'] ?? []))
+            ->values()
+            ->all();
+        $sourceDiagnostics = $pricedItems->groupBy('source')->map(fn ($sourceItems, string $source) => [
+            'source' => $source,
+            'state' => 'connected',
+            'found' => $sourceItems->count(),
+        ])->values()->all();
         $pipelineDiagnostics = [
             ['source' => 'Itens coletados', 'found' => $normalizedItems->count()],
             ['source' => 'Tipo compatível', 'found' => $typeMatchedItems->count()],
@@ -114,10 +135,10 @@ class AIPropertySearchController extends Controller
             'valuation_model' => ['version' => PropertyValuationService::VERSION, 'type' => 'rules_and_comparables', 'trained_statistical_model' => false],
             'stats' => $stats,
             'source' => [
-                'name' => $providerResponse['name'],
-                'mode' => $providerResponse['provider'] === 'scraper' ? 'web_scraper' : 'public_api',
+                'name' => $providerResponses->pluck('name')->unique()->implode(' + '),
+                'mode' => $providerResponses->count() > 1 ? 'aggregate' : ($providerResponses->first()['provider'] === 'scraper' ? 'web_scraper' : 'public_api'),
                 'query' => $query,
-                'diagnostics' => array_merge($this->publicDiagnostics($providerResponse['diagnostics'] ?? $scraperDiagnostics), $pipelineDiagnostics),
+                'diagnostics' => array_merge($providerDiagnostics, $sourceDiagnostics, $pipelineDiagnostics),
             ],
         ]);
     }
@@ -367,6 +388,10 @@ class AIPropertySearchController extends Controller
 
                 if (isset($diagnostic['found']) && is_numeric($diagnostic['found'])) {
                     $public['found'] = max(0, min(250, (int) $diagnostic['found']));
+                }
+
+                if (in_array($diagnostic['state'] ?? null, ['connected', 'not_configured', 'local_fallback', 'unavailable'], true)) {
+                    $public['state'] = $diagnostic['state'];
                 }
 
                 if (array_key_exists('message', $diagnostic)) {

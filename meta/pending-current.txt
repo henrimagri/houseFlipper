@@ -1,0 +1,54 @@
+- [ ] Interrupção abrupta de processo/host: validar recuperação no filesystem e banco usados em produção.
+- [ ] Planilhas: ampliar corpus com arquivos reais variados de Excel/LibreOffice e divergências históricas autorizadas.
+- [ ] Importação: exercitar arquivos próximos de 256 MiB no banco/proxy/storage de produção.
+- [ ] CRUD visual de cada formulário; busca/filtros/paginação em todas as telas.
+- [ ] Menus, leitores de tela e contraste formal em toda a aplicação.
+- [ ] Interação visual completa: acionar todos os botões/links com fixtures para localizar controles sem efeito e páginas incompletas.
+- [ ] Erros de rede, loading e respostas de validação em todos os formulários.
+- [ ] Configuração produção, HTTPS, CSP/headers, arquivos públicos, logs e backups.
+- [ ] Repetir suíte e segunda revisão completa das alterações.
+- [ ] Renderizar e interagir com o alerta de importação parcial em navegador.
+- [ ] Validar capacidade/tempo/memória com volumes representativos autorizados; limites atuais não equivalem a medição.
+- [ ] Recuperação após interrupção abrupta e política de atualização de arquivo remoto.
+- [ ] DNS/pinagem, proxy, egress e limites reais de transferência; testes fake não comprovam esses controles.
+- [ ] Verificar interrupção real de transferência com handler/proxy de deploy e capacidade de memória/tempo.
+- [ ] Repetir no handler/proxy de deploy; teste local não prova DNS/egress ou capacidade.
+- [ ] Tema: concluir inspeção de todos os modais/tabelas e auditoria formal de contraste.
+- [ ] Resend real: configurar chave/remetente verificado e confirmar recebimento em caixa de teste.
+- [ ] IA: benchmark real, treino/validação/teste, temporalidade, deduplicação entre fontes, outliers e desempenho.
+- [ ] IA: formatos amplos de endereços, produção, polos/antimeridiano, volume e precisão em dados reais.
+- [ ] Fotos: galeria completa e comportamento do storage/CDN no servidor de produção.
+- [ ] Despesas UI: POST inválido/offline mantém modal, rascunho e erro; sucesso fecha e exibe registro único; observações persistidas na UI.
+- [ ] Despesas UI: dialog/foco/Escape/viewport, troca de projeto e totais em erro/carregamento com projeto descartável. Rota sem projetos recarregou sem erros de console.
+- [ ] `/despesas` com registro descartável: abrir detalhe, marcar como paga, baixar/conferir CSV e induzir falha offline no navegador.
+- [ ] Projetos: validar falha de rede nos fluxos visuais de criação, edição e exclusão.
+- [ ] Conversão UI: cliques/reload após resposta perdida, projeto indisponível, erro 409 e revisão/recuperação de legado.
+- [ ] Documentos UI com arquivo descartável: upload/reload/filtros/edição/download/hash/exclusão e falha offline.
+- [ ] Documentos em produção: antivírus/quarentena, criptografia em repouso, backup/retenção, storage distribuído e limites do proxy.
+- [ ] Relatórios UI com fixture: reconciliar venda/despesa/projeto, baixar/abrir CSV e induzir falha de API.
+- [ ] Relatórios avançados: filtros por período/projeto, módulos detalhados, trilha contábil e paginação de projetos.
+- [ ] Calendário UI com fixture: criar/recarregar/navegar/editar/excluir, evento multidiário e falha offline.
+- [ ] Calendário avançado: recorrência, lembretes, timezone configurável, visão semanal e conectores Google/Outlook.
+- [ ] Obras UI com fixture: conferir custos/datas, pesquisar, alterar etapa, recarregar, testar todos os badges e falha de resumo.
+- [ ] Obras: testar duas atualizações concorrentes da mesma etapa e definir política de conflito/última escrita.
+- [ ] Imóveis UI com fixture: criar/recarregar/buscar/filtrar/editar/limpar/excluir e induzir falha offline.
+- [ ] Concorrência: revalidação e locks de pais estão implementados; executar criação de projeto/despesa/documento/tarefa/evento simultânea à exclusão em processos separados e banco transacional.
+- [ ] Concorrência: competir atualização de projeto com exclusão dos imóveis de origem/destino e com exclusão do próprio projeto em banco transacional.
+- [ ] Financeiro UI com fixture: reconciliar aquisição/despesa cancelada/venda, atualizar e simular falha/recovery.
+- [ ] Financeiro: testar navegação/tabela com teclado e leitor de tela em viewport móvel e desktop.
+- [ ] Tarefas UI: excluir registro descartável, induzir falha offline e validar entrada de data com automação compatível com `input[type=date]`.
+- [ ] Tarefas: testar atualizações concorrentes e definir política de conflito/última escrita.
+- [ ] Configurações UI: validar navegação completa com leitor de tela real.
+- [ ] Integrações: implementar e testar DataZAP/FipeZAP, leilões, BCB/IBGE antes de alterar seus estados.
+- [ ] Monitoramento: definir health checks assíncronos por provedor sem causar chamadas externas ao abrir a página.
+- [ ] Recuperação com Resend real: configurar remetente/chave de teste, receber a mensagem, abrir o link e concluir a troca visual ponta a ponta.
+- [ ] Recuperação: revisar deliverability, bounce/complaint, alertas de troca e telemetria de abuso em produção.
+- [ ] Sessões em produção: validar cookies Secure/SameSite/domínio e encerramento real atrás do proxy HTTPS.
+- [ ] Deploy público: confirmar que proxy/CDN aplica ou preserva todos os headers e habilitar HSTS somente após HTTPS validado.
+- [ ] CSP: revisar novas integrações/origens sempre que scripts, imagens, fontes ou chamadas externas forem adicionados.
+- [ ] Infraestrutura de produção: confirmar bloqueio de dotfiles/backups e remoção de headers no proxy/Nginx/CDN; confirmar `APP_DEBUG=false` no ambiente implantado.
+- [ ] Deploy: alinhar limite de corpo do proxy com o contrato do upload e monitorar rejeições 413 sem expor memória/configuração interna.
+- [ ] Infraestrutura: bloquear egress para redes internas/metadados fora dos destinos necessários e monitorar tentativas negadas.
+- [ ] Infraestrutura: aplicar limites de memória/CPU/processos ao PHP e Chromium e alertar por timeouts/transferências negadas.
+- [ ] Produto financeiro: validar pesos/limiares do índice com especialistas e dataset histórico antes de alegar acurácia ou recomendação personalizada.
+- [ ] Financiamento futuro: somente reintroduzir comparação automática com fonte oficial/licenciada, data, produto, CET e atualização testados.

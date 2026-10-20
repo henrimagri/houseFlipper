@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-10-20T17:54:15.399Z",
+  "results": [
+    {
+      "viewport": {
+        "width": 1366,
+        "height": 900
+      },
+      "sources": [
+        "ZAP Imóveis",
+        "VivaReal",
+        "OLX",
+        "ImovelWeb",
+        "Chaves na Mão",
+        "Casa Mineira",
+        "Loft",
+        "QuintoAndar",
+        "Mercado Livre",
+        "Facebook Marketplace"
+      ],
+      "overflow": false,
+      "hasCredentialCopy": true,
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sources": [
+        "ZAP Imóveis",
+        "VivaReal",
+        "OLX",
+        "ImovelWeb",
+        "Chaves na Mão",
+        "Casa Mineira",
+        "Loft",
+        "QuintoAndar",
+        "Mercado Livre",
+        "Facebook Marketplace"
+      ],
+      "overflow": false,
+      "hasCredentialCopy": true,
+      "passed": true
+    }
+  ]
+}

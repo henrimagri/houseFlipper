@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-17",
+  "database": "MariaDB 11.4.10 isolated",
+  "port": 13308,
+  "fictional_fixture": true,
+  "concurrent_workers": 2,
+  "worker_statuses": [
+    201,
+    422
+  ],
+  "requests_overlapped": true,
+  "active_final_sales": 1,
+  "sale_values": [
+    150000
+  ],
+  "property_status": "vendida",
+  "passed": true,
+  "server_stopped": true,
+  "source_archive_sha256": "fb7c76f0804321ee373daa49145f2056d2d88f321b614130adeb05a1644ea003"
+}

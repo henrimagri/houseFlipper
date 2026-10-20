@@ -1,0 +1,24 @@
+{
+  "bug": "BUG 77",
+  "status": "corrected",
+  "pre_fix": "task remained visible after parent project returned 404",
+  "targeted": {
+    "tests": 10,
+    "passed": 10,
+    "assertions": 94
+  },
+  "full_suite": {
+    "tests": 200,
+    "passed": 200,
+    "assertions": 1312,
+    "duration_ms": 10636
+  },
+  "cases": [
+    "project and dependents changed in one transaction",
+    "tasks absent from collection",
+    "calendar events absent from window",
+    "stages tasks and events carry logical deletion flag",
+    "forced project failure rolls back all dependent flags",
+    "documents and expenses retained as history"
+  ]
+}

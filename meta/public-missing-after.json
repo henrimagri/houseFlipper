@@ -1,0 +1,12 @@
+[
+  {
+    "url": "http://127.0.0.1:8000/storage/audit-missing-probe.png",
+    "status": 403,
+    "location": ""
+  },
+  {
+    "url": "http://127.0.0.1:5173/storage/audit-missing-probe.png",
+    "status": 403,
+    "location": ""
+  }
+]

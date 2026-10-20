@@ -1,0 +1,15 @@
+{
+  "full_suite_tests": 248,
+  "related_assertions": 68,
+  "full_suite_assertions": 1678,
+  "result": "passed",
+  "bug": 114,
+  "related_tests": 5,
+  "checks": [
+    "title-only PATCH returns 200 and preserves category/range",
+    "end-only PATCH before stored start returns 422",
+    "start-only PATCH after stored end returns 422",
+    "rejected updates leave persisted range unchanged",
+    "incomplete PUT remains rejected"
+  ]
+}

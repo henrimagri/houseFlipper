@@ -1,0 +1,23 @@
+{
+  "bug": "BUG 76",
+  "status": "corrected",
+  "pre_fix": "DELETE returned 200 and hid a property with an active project",
+  "targeted": {
+    "tests": 6,
+    "passed": 6,
+    "assertions": 51
+  },
+  "full_suite": {
+    "tests": 198,
+    "passed": 198,
+    "assertions": 1299,
+    "duration_ms": 11385
+  },
+  "cases": [
+    "active project blocks with 409",
+    "active sale blocks with 409",
+    "active expense blocks with 409",
+    "soft-deleted dependencies allow deletion",
+    "cross-tenant access remains 404"
+  ]
+}

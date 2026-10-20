@@ -1,0 +1,33 @@
+{
+  "bug": "BUG 80",
+  "status": "corrected",
+  "risk": "high",
+  "removed_sources": [
+    "local_places hardcoded list",
+    "estimated_urban_profile generic places",
+    "partial-group synthetic filling"
+  ],
+  "failure_contract": {
+    "status": "unavailable",
+    "groups": [],
+    "invented_places": false
+  },
+  "partial_contract": {
+    "verified_transport": 1,
+    "unreported_categories": 0,
+    "synthetic_fill": false
+  },
+  "targeted": {
+    "suite": "NeighborhoodContextTest",
+    "tests": 2,
+    "passed": 2,
+    "assertions": 20,
+    "duration_ms": 581
+  },
+  "full_suite": {
+    "tests": 205,
+    "passed": 205,
+    "assertions": 1362,
+    "duration_ms": 11120
+  }
+}

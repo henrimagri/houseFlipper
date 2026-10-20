@@ -25,12 +25,6 @@ return [
         'min_neighborhood_transactions' => (int) env('AVM_MIN_NEIGHBORHOOD_TRANSACTIONS', 5),
     ],
 
-    'geocoding' => [
-        'google_enabled' => env('GOOGLE_GEOCODING_ENABLED', true),
-        'google_key' => env('GOOGLE_MAPS_API_KEY'),
-        'minimum_precision' => env('GEOCODING_MINIMUM_PRECISION', 'RANGE_INTERPOLATED'),
-    ],
-
     'column_aliases' => [
         'property_sql' => ['sql', 'numero do contribuinte', 'numero contribuinte', 'cadastro', 'n do cadastro', 'nº do cadastro', 'no do cadastro', 'setor quadra lote', 'contribuinte'],
         'transaction_date' => ['data transacao', 'data da transacao', 'data de transacao', 'data do recolhimento', 'data', 'competencia'],

@@ -30,7 +30,9 @@ class AiConversationService
             ['user_id' => $user->id],
             [
                 'tenant_id' => (int) $user->tenant_id,
-                'product_slug' => $this->entitlement->productsFor($user)[0] ?? 'house_flipper',
+                'product_slug' => app(\App\Support\ProductContext::class)->current()
+                    ?? $this->entitlement->productsFor($user)[0]
+                    ?? 'house_flipper',
                 'criteria' => ['required' => [], 'preferred' => []],
             ],
         );
@@ -38,7 +40,7 @@ class AiConversationService
 
     public function reply(User $user, AiSearchSession $session, string $message): array
     {
-        $this->entitlement->assert($user, 'conversational_search');
+        $this->entitlement->assert($user, 'conversational_search', $session->product_slug);
         $message = Str::of($message)->replaceMatches('/[\x00-\x1F\x7F]+/u', ' ')->squish()->limit(2000, '')->toString();
         $criteria = $this->interpreter->interpret($message, $session->criteria ?? []);
         $filters = $this->interpreter->toSearchFilters($criteria);

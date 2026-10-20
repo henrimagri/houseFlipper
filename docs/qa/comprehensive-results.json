@@ -1,0 +1,4629 @@
+[
+  {
+    "profile": "public",
+    "route": "/",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/",
+    "heading": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInteligência aplicada à operação imobiliária\nO mercado imobiliário evoluiu. Sua forma de trabalhar também.\n\nUma plataforma para descobrir oportunidades, organizar a carteira, conduzir atendimentos e analisar ",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/",
+    "heading": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nInteligência aplicada à operação imobiliária\nO mercado imobiliário evoluiu. Sua forma de trabalhar também.\n\nUma plataforma para descob",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/",
+    "heading": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nInteligência aplicada à operação imobiliária\nO mercado imobiliário evoluiu. Sua forma de trabalhar também.\n\nUma plataforma para descob",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/solucoes/corretor",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/solucoes/corretor",
+    "heading": "Encontre, capte e divulgue imóveis com muito mais organização.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\n\nPRODUTO CORRETOR\n\nEncontre, capte e divulgue imóveis com muito mais organização.\n\nUma solução para corretores que desejam transformar oportunidades imobiliárias em uma carteira comercial organizada.\n\nVer pla",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/solucoes/corretor",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/solucoes/corretor",
+    "heading": "Encontre, capte e divulgue imóveis com muito mais organização.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\n\nPRODUTO CORRETOR\n\nEncontre, capte e divulgue imóveis com muito mais organização.\n\nUma solução para corretores que desejam transformar",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/solucoes/corretor",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/solucoes/corretor",
+    "heading": "Encontre, capte e divulgue imóveis com muito mais organização.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\n\nPRODUTO CORRETOR\n\nEncontre, capte e divulgue imóveis com muito mais organização.\n\nUma solução para corretores que desejam transformar",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/solucoes/imobiliaria",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/solucoes/imobiliaria",
+    "heading": "Toda a operação da sua imobiliária em uma única plataforma.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\n\nPRODUTO IMOBILIÁRIA\n\nToda a operação da sua imobiliária em uma única plataforma.\n\nCentralize imóveis, corretores, atendimentos e negociações em um sistema organizado para sua equipe.\n\nSolicitar uma demonstra",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/solucoes/imobiliaria",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/solucoes/imobiliaria",
+    "heading": "Toda a operação da sua imobiliária em uma única plataforma.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\n\nPRODUTO IMOBILIÁRIA\n\nToda a operação da sua imobiliária em uma única plataforma.\n\nCentralize imóveis, corretores, atendimentos e nego",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/solucoes/imobiliaria",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/solucoes/imobiliaria",
+    "heading": "Toda a operação da sua imobiliária em uma única plataforma.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\n\nPRODUTO IMOBILIÁRIA\n\nToda a operação da sua imobiliária em uma única plataforma.\n\nCentralize imóveis, corretores, atendimentos e nego",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/solucoes/house-flipper",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/solucoes/house-flipper",
+    "heading": "Encontre oportunidades, planeje reformas e analise seus investimentos imobiliários.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\n\nPRODUTO HOUSE FLIPPER\n\nEncontre oportunidades, planeje reformas e analise seus investimentos imobiliários.\n\nUma plataforma desenvolvida para investidores que desejam organizar análises, projetos e custos de ",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/solucoes/house-flipper",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/solucoes/house-flipper",
+    "heading": "Encontre oportunidades, planeje reformas e analise seus investimentos imobiliários.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\n\nPRODUTO HOUSE FLIPPER\n\nEncontre oportunidades, planeje reformas e analise seus investimentos imobiliários.\n\nUma plataforma desenvolvi",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/solucoes/house-flipper",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/solucoes/house-flipper",
+    "heading": "Encontre oportunidades, planeje reformas e analise seus investimentos imobiliários.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\n\nPRODUTO HOUSE FLIPPER\n\nEncontre oportunidades, planeje reformas e analise seus investimentos imobiliários.\n\nUma plataforma desenvolvi",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/funcionalidades",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/funcionalidades",
+    "heading": "Funcionalidades por produto",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nFuncionalidades por produto\n\nLista gerada do catálogo. Recursos não listados não estão disponíveis.\n\nCorretor\n\nCaptação, carteira autorizada, vitrine pública e contatos.\n\nPesquisa conversacional\nRecomendações",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/funcionalidades",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/funcionalidades",
+    "heading": "Funcionalidades por produto",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nFuncionalidades por produto\n\nLista gerada do catálogo. Recursos não listados não estão disponíveis.\n\nCorretor\n\nCaptação, carteira auto",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/funcionalidades",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/funcionalidades",
+    "heading": "Funcionalidades por produto",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nFuncionalidades por produto\n\nLista gerada do catálogo. Recursos não listados não estão disponíveis.\n\nCorretor\n\nCaptação, carteira auto",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/comparar-produtos",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/comparar-produtos",
+    "heading": "Qual produto combina com o seu trabalho?",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nQual produto combina com o seu trabalho?\n\nA tabela usa as funcionalidades cadastradas no backend. Não é uma segunda lista de permissões.\n\nFuncionalidade\tCorretor\tImobiliária\tHouse Flipper\nCaptação individual\t",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/comparar-produtos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/comparar-produtos",
+    "heading": "Qual produto combina com o seu trabalho?",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nQual produto combina com o seu trabalho?\n\nA tabela usa as funcionalidades cadastradas no backend. Não é uma segunda lista de permissõe",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/comparar-produtos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/comparar-produtos",
+    "heading": "Qual produto combina com o seu trabalho?",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nQual produto combina com o seu trabalho?\n\nA tabela usa as funcionalidades cadastradas no backend. Não é uma segunda lista de permissõe",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/precos",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/precos",
+    "heading": "Planos por produto",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nPlanos por produto\n\nValores vêm do catálogo oficial. Checkout Mercado Pago/Stripe: not_wired.\n\nCorretor\nImobiliária\nHouse Flipper\n\nCORRETOR\n\nTeste 14 dias\n\nTeste sem cobrança\n\nTeste de 14 dias, uma vez por pr",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/precos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/precos",
+    "heading": "Planos por produto",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nPlanos por produto\n\nValores vêm do catálogo oficial. Checkout Mercado Pago/Stripe: not_wired.\n\nCorretor\nImobiliária\nHouse Flipper\n\nCOR",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/precos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/precos",
+    "heading": "Planos por produto",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nPlanos por produto\n\nValores vêm do catálogo oficial. Checkout Mercado Pago/Stripe: not_wired.\n\nCorretor\nImobiliária\nHouse Flipper\n\nCOR",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/sobre",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/sobre",
+    "heading": "Sobre a plataforma",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nSobre a plataforma\n\nFlipControl organiza o trabalho de corretores, imobiliárias e investidores em produtos separados, com a mesma conta. Não mesclamos assinaturas: cada produto entra só quando contratado ou e",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/sobre",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/sobre",
+    "heading": "Sobre a plataforma",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nSobre a plataforma\n\nFlipControl organiza o trabalho de corretores, imobiliárias e investidores em produtos separados, com a mesma cont",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/sobre",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/sobre",
+    "heading": "Sobre a plataforma",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nSobre a plataforma\n\nFlipControl organiza o trabalho de corretores, imobiliárias e investidores em produtos separados, com a mesma cont",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/contato",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/contato",
+    "heading": "Fale com vendas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nFale com vendas\n\nUse o formulário. Não publicamos telefone ou endereço enquanto esses dados não estiverem cadastrados.\n\nNome\nE-mail\nTelefone (opcional)\nProduto de interesse\nAinda não sei\nCorretor\nImobiliária\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/contato",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/contato",
+    "heading": "Fale com vendas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nFale com vendas\n\nUse o formulário. Não publicamos telefone ou endereço enquanto esses dados não estiverem cadastrados.\n\nNome\nE-mail\nTe",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/contato",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/contato",
+    "heading": "Fale com vendas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nFale com vendas\n\nUse o formulário. Não publicamos telefone ou endereço enquanto esses dados não estiverem cadastrados.\n\nNome\nE-mail\nTe",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/solicitar-demonstracao",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/solicitar-demonstracao",
+    "heading": "Solicitar demonstração",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nSolicitar demonstração\n\nA solicitação entra na fila interna. Não inicia assinatura paga.\n\nNome\nE-mail\nTelefone (opcional)\nProduto de interesse\nAinda não sei\nCorretor\nImobiliária\nHouse Flipper\nTipo de negócio\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/solicitar-demonstracao",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/solicitar-demonstracao",
+    "heading": "Solicitar demonstração",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nSolicitar demonstração\n\nA solicitação entra na fila interna. Não inicia assinatura paga.\n\nNome\nE-mail\nTelefone (opcional)\nProduto de i",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/solicitar-demonstracao",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/solicitar-demonstracao",
+    "heading": "Solicitar demonstração",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nSolicitar demonstração\n\nA solicitação entra na fila interna. Não inicia assinatura paga.\n\nNome\nE-mail\nTelefone (opcional)\nProduto de i",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/ajuda",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/ajuda",
+    "heading": "Ajuda",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nAjuda\n\nContas autenticadas também encontram ajuda operacional em /app/ajuda.\n\nO que é a plataforma?\n\nFlipControl reúne três produtos independentes para o mercado imobiliário: Corretor, Imobiliária e House Fli",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/ajuda",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/ajuda",
+    "heading": "Ajuda",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nAjuda\n\nContas autenticadas também encontram ajuda operacional em /app/ajuda.\n\nO que é a plataforma?\n\nFlipControl reúne três produtos i",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/ajuda",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/ajuda",
+    "heading": "Ajuda",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nAjuda\n\nContas autenticadas também encontram ajuda operacional em /app/ajuda.\n\nO que é a plataforma?\n\nFlipControl reúne três produtos i",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/termos",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/termos",
+    "heading": "Termos de uso",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nTermos de uso\n\nDocumento em elaboração. A conta dá acesso apenas aos produtos contratados ou em teste válido. Republicação de anúncios de terceiros exige autorização. Pagamentos recorrentes só valem quando o ",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/termos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/termos",
+    "heading": "Termos de uso",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nTermos de uso\n\nDocumento em elaboração. A conta dá acesso apenas aos produtos contratados ou em teste válido. Republicação de anúncios",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/termos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/termos",
+    "heading": "Termos de uso",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nTermos de uso\n\nDocumento em elaboração. A conta dá acesso apenas aos produtos contratados ou em teste válido. Republicação de anúncios",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/privacidade",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/privacidade",
+    "heading": "Política de privacidade",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nPolítica de privacidade\n\nColetamos nome, e-mail e, quando informados, telefone e mensagem para criar a conta ou atender solicitações comerciais. Finalidade: cadastro, autenticação, teste de produto e contato ",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/privacidade",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/privacidade",
+    "heading": "Política de privacidade",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nPolítica de privacidade\n\nColetamos nome, e-mail e, quando informados, telefone e mensagem para criar a conta ou atender solicitações c",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/privacidade",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/privacidade",
+    "heading": "Política de privacidade",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nInício\nSoluções\nFuncionalidades\nPlanos\nSobre\nContato\nEntrar\nComeçar agora\nPolítica de privacidade\n\nColetamos nome, e-mail e, quando informados, telefone e mensagem para criar a conta ou atender solicitações c",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/entrar",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/entrar",
+    "heading": "Uma conta para conduzir toda a sua operação.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\n\nACESSO SEGURO\n\nBem-vindo de volta\n\nEntre para continuar no produto autorizado para sua conta.\n\nE-mail\nSenha\nEsqueci minha senha\nLembrar meu e-mail neste dispositivo\nEntrar\n\nAinda não tem conta? Criar conta\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/entrar",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/entrar",
+    "heading": "Uma conta para conduzir toda a sua operação.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "Sistema\nFlipControl\n\nSEU ESPAÇO DE TRABALHO\n\nUma conta para conduzir toda a sua operação.\n\nAcesse apenas os produtos contratados, com permissões próprias e dados separados por operação.\n\nConta única\nProdutos independente",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/entrar",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/entrar",
+    "heading": "Uma conta para conduzir toda a sua operação.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "Sistema\nFlipControl\n\nSEU ESPAÇO DE TRABALHO\n\nUma conta para conduzir toda a sua operação.\n\nAcesse apenas os produtos contratados, com permissões próprias e dados separados por operação.\n\nConta única\nProdutos independente",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/cadastro",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/cadastro",
+    "heading": "Sua operação imobiliária começa com o produto certo.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\n\nSUA CONTA FLIPCONTROL\n\nCriar conta\n\nEtapa 1 de 5. O produto escolhido não libera os demais.\n\nCorretor\n\nCaptação, carteira e site próprio.\n\nImobiliária\n\nCRM, equipe, filiais e operação.\n\nHouse Flipper\n\nAnális",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/cadastro",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/cadastro",
+    "heading": "Sua operação imobiliária começa com o produto certo.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "Sistema\nFlipControl\n\nCOMECE COM CLAREZA\n\nSua operação imobiliária começa com o produto certo.\n\nCrie uma conta, escolha seu primeiro produto e mantenha cada operação separada por assinatura e permissão.\n\nConta única\nProdu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/cadastro",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/cadastro",
+    "heading": "Sua operação imobiliária começa com o produto certo.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "Sistema\nFlipControl\n\nCOMECE COM CLAREZA\n\nSua operação imobiliária começa com o produto certo.\n\nCrie uma conta, escolha seu primeiro produto e mantenha cada operação separada por assinatura e permissão.\n\nConta única\nProdu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/recuperar-senha",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/recuperar-senha",
+    "heading": "Retome o acesso com segurança.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nRecuperar senha\n\nInforme o e-mail da conta para receber o link de redefinição.\n\nE-mail\nEnviar instruções\nVoltar ao login",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/recuperar-senha",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/recuperar-senha",
+    "heading": "Retome o acesso com segurança.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "Sistema\nFlipControl\n\nRECUPERAÇÃO PROTEGIDA\n\nRetome o acesso com segurança.\n\nO processo mantém uma resposta uniforme para proteger a existência das contas e envia instruções somente quando aplicável.\n\nConta única\nProdutos",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/recuperar-senha",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/recuperar-senha",
+    "heading": "Retome o acesso com segurança.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "Sistema\nFlipControl\n\nRECUPERAÇÃO PROTEGIDA\n\nRetome o acesso com segurança.\n\nO processo mantém uma resposta uniforme para proteger a existência das contas e envia instruções somente quando aplicável.\n\nConta única\nProdutos",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/redefinir-senha",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/redefinir-senha",
+    "heading": "Crie uma senha forte e exclusiva.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nLink inválido\n\nO link está incompleto ou expirou. Solicite uma nova redefinição.\n\nSolicitar novo link",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/redefinir-senha",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/redefinir-senha",
+    "heading": "Crie uma senha forte e exclusiva.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "Sistema\nFlipControl\n\nNOVA CREDENCIAL\n\nCrie uma senha forte e exclusiva.\n\nA alteração encerra as sessões anteriores e protege sua conta com uma nova credencial.\n\nConta única\nProdutos independentes\nPermissões por assinatur",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/redefinir-senha",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/redefinir-senha",
+    "heading": "Crie uma senha forte e exclusiva.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "Sistema\nFlipControl\n\nNOVA CREDENCIAL\n\nCrie uma senha forte e exclusiva.\n\nA alteração encerra as sessões anteriores e protege sua conta com uma nova credencial.\n\nConta única\nProdutos independentes\nPermissões por assinatur",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/confirmar-email",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/confirmar-email",
+    "heading": "Só falta validar seu e-mail.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "FlipControl\nConfirme seu e-mail\n\nUse o link recebido por e-mail para confirmar sua conta.\n\nEntrar na conta",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/confirmar-email",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/confirmar-email",
+    "heading": "Só falta validar seu e-mail.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "Sistema\nFlipControl\n\nCONFIRMAÇÃO DE IDENTIDADE\n\nSó falta validar seu e-mail.\n\nA confirmação protege sua conta e libera apenas os produtos vinculados à sua assinatura.\n\nConta única\nProdutos independentes\nPermissões por as",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/confirmar-email",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/confirmar-email",
+    "heading": "Só falta validar seu e-mail.",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "Sistema\nFlipControl\n\nCONFIRMAÇÃO DE IDENTIDADE\n\nSó falta validar seu e-mail.\n\nA confirmação protege sua conta e libera apenas os produtos vinculados à sua assinatura.\n\nConta única\nProdutos independentes\nPermissões por as",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/rota-inexistente",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/rota-inexistente",
+    "heading": "Página não encontrada",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "Erro 404\n\nPágina não encontrada\n\nO endereço pode ter mudado ou estar incompleto. Confira o link ou volte para uma página conhecida.\n\nVoltar\nIr para o início",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/rota-inexistente",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/rota-inexistente",
+    "heading": "Página não encontrada",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "Erro 404\n\nPágina não encontrada\n\nO endereço pode ter mudado ou estar incompleto. Confira o link ou volte para uma página conhecida.\n\nVoltar\nIr para o início",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "public",
+    "route": "/rota-inexistente",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 304,
+    "exception": "",
+    "url": "/rota-inexistente",
+    "heading": "Página não encontrada",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "Erro 404\n\nPágina não encontrada\n\nO endereço pode ter mudado ou estar incompleto. Confira o link ou volte para uma página conhecida.\n\nVoltar\nIr para o início",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/inicio",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/inicio",
+    "heading": "Olá, Corretor",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nOlá, Corretor\n\nUma conta, três sistemas. Só entra o que estiver contratado.\n\nCorretor\n\nCaptação, carteira autorizada, vitrine pública e contatos.\n\nTRIAL\n\nAbrir sistema\nImobiliária\n\nCRM, atendimento, equipes, filiais e",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/inicio",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/inicio",
+    "heading": "Olá, Corretor",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nConta\n\nCorretor Demo\n\nCONTA\n\nInício\nProdutos\nAssinaturas\nConfigurações\nAjuda\nRecolher\nPesquisar\n⌘ K\nCtrl K\nConta e assinaturas\n\nConta\n\nSistema\nCD\nOlá, Corretor\n\nUma conta, três sistemas. Só entra o que estiver contra",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/inicio",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/inicio",
+    "heading": "Olá, Corretor",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nConta\n\nCorretor Demo\n\nCONTA\n\nInício\nProdutos\nAssinaturas\nConfigurações\nAjuda\nRecolher\nPesquisar\n⌘ K\nCtrl K\nConta e assinaturas\n\nConta\n\nSistema\nCD\nOlá, Corretor\n\nUma conta, três sistemas. Só entra o que estiver contra",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/produtos",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/produtos",
+    "heading": "Catálogo",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nCatálogo\n\nTeste local de 14 dias por produto. Assinatura paga exige Mercado Pago ou Stripe configurados — hoje: not_wired.\n\nCorretor\n\nCaptação, carteira autorizada, vitrine pública e contatos.\n\nTeste 14 dias\nGrátis\nCo",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/produtos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/produtos",
+    "heading": "Catálogo",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nConta\n\nCorretor Demo\n\nCONTA\n\nInício\nProdutos\nAssinaturas\nConfigurações\nAjuda\nRecolher\nPesquisar\n⌘ K\nCtrl K\nConta e assinaturas\n\nConta\n\nSistema\nCD\nCatálogo\n\nTeste local de 14 dias por produto. Assinatura paga exige Me",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/produtos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/produtos",
+    "heading": "Catálogo",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nConta\n\nCorretor Demo\n\nCONTA\n\nInício\nProdutos\nAssinaturas\nConfigurações\nAjuda\nRecolher\nPesquisar\n⌘ K\nCtrl K\nConta e assinaturas\n\nConta\n\nSistema\nCD\nCatálogo\n\nTeste local de 14 dias por produto. Assinatura paga exige Me",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/assinaturas",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/assinaturas",
+    "heading": "Assinaturas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\n\nCONTA\n\nAssinaturas\n\nPlanos, períodos de teste, recursos e limites de cada sistema.\n\nContratação assistida\n\nMercado Pago e Stripe ainda não estão configurados. Nenhuma cobrança será simulada; a contratação paga segue ",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/assinaturas",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/assinaturas",
+    "heading": "Assinaturas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nConta\n\nCorretor Demo\n\nCONTA\n\nInício\nProdutos\nAssinaturas\nConfigurações\nAjuda\nRecolher\nPesquisar\n⌘ K\nCtrl K\nConta e assinaturas\n\nConta\n\nSistema\nCD\n\nCONTA\n\nAssinaturas\n\nPlanos, períodos de teste, recursos e limites de ",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/assinaturas",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/assinaturas",
+    "heading": "Assinaturas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nConta\n\nCorretor Demo\n\nCONTA\n\nInício\nProdutos\nAssinaturas\nConfigurações\nAjuda\nRecolher\nPesquisar\n⌘ K\nCtrl K\nConta e assinaturas\n\nConta\n\nSistema\nCD\n\nCONTA\n\nAssinaturas\n\nPlanos, períodos de teste, recursos e limites de ",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/configuracoes",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/configuracoes",
+    "heading": "Configurações",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\n\nCONTA\n\nConfigurações\n\nPerfil, preferências, segurança e integrações da sua conta.\n\nPerfil\nSegurança\nAparência\nSessões\nIntegrações\nAssinaturas\nPerfil e preferências\n\nDados exibidos na conta e comunicações que deseja r",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/configuracoes",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/configuracoes",
+    "heading": "Configurações",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nConta\n\nCorretor Demo\n\nCONTA\n\nInício\nProdutos\nAssinaturas\nConfigurações\nAjuda\nRecolher\nPesquisar\n⌘ K\nCtrl K\nConta e assinaturas\n\nConta\n\nSistema\nCD\n\nCONTA\n\nConfigurações\n\nPerfil, preferências, segurança e integrações d",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/configuracoes",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/configuracoes",
+    "heading": "Configurações",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nConta\n\nCorretor Demo\n\nCONTA\n\nInício\nProdutos\nAssinaturas\nConfigurações\nAjuda\nRecolher\nPesquisar\n⌘ K\nCtrl K\nConta e assinaturas\n\nConta\n\nSistema\nCD\n\nCONTA\n\nConfigurações\n\nPerfil, preferências, segurança e integrações d",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/ajuda",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/ajuda",
+    "heading": "Central de ajuda",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nCentral de ajuda\n\nAtalhos para os fluxos principais do HouseFlipper e orientações sobre o que cada área registra.\n\nCadastrar uma oportunidade\n\nRegistre o imóvel, endereço, valores e fotos para começar a análise.\n\nAbri",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/ajuda",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/ajuda",
+    "heading": "Central de ajuda",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nConta\n\nCorretor Demo\n\nCONTA\n\nInício\nProdutos\nAssinaturas\nConfigurações\nAjuda\nRecolher\nPesquisar\n⌘ K\nCtrl K\nConta e assinaturas\n\nConta\n\nSistema\nCD\nCentral de ajuda\n\nAtalhos para os fluxos principais do HouseFlipper e ",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/ajuda",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/ajuda",
+    "heading": "Central de ajuda",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nConta\n\nCorretor Demo\n\nCONTA\n\nInício\nProdutos\nAssinaturas\nConfigurações\nAjuda\nRecolher\nPesquisar\n⌘ K\nCtrl K\nConta e assinaturas\n\nConta\n\nSistema\nCD\nCentral de ajuda\n\nAtalhos para os fluxos principais do HouseFlipper e ",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/dashboard",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/dashboard",
+    "heading": "Minha operação",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nMinha operação\n\nNúmeros reais da sua conta. Período 2026-09-20 a 2026-10-20.\n\nDe\nAté\nImóveis na carteira\n0\nPublicados\n0\nCaptações pendentes\n0\nLeads recebidos\n1\nVisitas agendadas\n0\nPropostas abertas\n0\nMapa\n\n0 pontos da",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/dashboard",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/dashboard",
+    "heading": "Minha operação",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/dashboard",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/dashboard",
+    "heading": "Minha operação",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/pesquisar",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/pesquisar",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nLeads & Oportunidades\n\nEncontre, acompanhe e analise imóveis com potencial de flip.\n\nNova Oportunidade\nOportunidades\n0\nTotal cadastradas\nEm análise\n0\nAguardando análise\nFavoritos\n0\nImóveis favoritos\nDescartados\n0\nOpor",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/pesquisar",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/pesquisar",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/pesquisar",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/pesquisar",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/favoritos",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/favoritos",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nLeads & Oportunidades\n\nEncontre, acompanhe e analise imóveis com potencial de flip.\n\nNova Oportunidade\nOportunidades\n0\nTotal cadastradas\nEm análise\n0\nAguardando análise\nFavoritos\n0\nImóveis favoritos\nDescartados\n0\nOpor",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/favoritos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/favoritos",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/favoritos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/favoritos",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/captacao",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/captacao",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nLeads & Oportunidades\n\nEncontre, acompanhe e analise imóveis com potencial de flip.\n\nNova Oportunidade\nOportunidades\n0\nTotal cadastradas\nEm análise\n0\nAguardando análise\nFavoritos\n0\nImóveis favoritos\nDescartados\n0\nOpor",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/captacao",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/captacao",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/captacao",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/captacao",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/carteira",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/carteira",
+    "heading": "Carteira comercial",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nCarteira comercial\n\nSó entram imóveis com autorização de comercialização.\n\nID da autorização concedida\nAdicionar à carteira\nBuscar\nStatus\nTodos\ndraft\nready\npublished\npaused\nsold\nrented\nwithdrawn\nOrdenar\nAtualização\nPr",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/carteira",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/carteira",
+    "heading": "Carteira comercial",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/carteira",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/carteira",
+    "heading": "Carteira comercial",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/carteira/1",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/carteira/1",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\n← Carteira\nImóvel da carteira não encontrado.\n0",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/carteira/1",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/carteira/1",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/carteira/1",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/carteira/1",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/meu-site",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/meu-site",
+    "heading": "Página pública do corretor",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nPágina pública do corretor\n\nEstado: Ativa · visível\n\nEndereço: /c/corretor-demo\n\nVisualizações: 0\n\nMercado Pago: not_wired · Stripe: not_wired\n\nSlug\nNome profissional\nCRECI\nTelefone\nWhatsApp\nInstagram\nCor primária\nCor",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/meu-site",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/meu-site",
+    "heading": "Página pública do corretor",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/meu-site",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/meu-site",
+    "heading": "Página pública do corretor",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/marketing",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/marketing",
+    "heading": "Carteira comercial",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nCarteira comercial\n\nSó entram imóveis com autorização de comercialização.\n\nID da autorização concedida\nAdicionar à carteira\nBuscar\nStatus\nTodos\ndraft\nready\npublished\npaused\nsold\nrented\nwithdrawn\nOrdenar\nAtualização\nPr",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/marketing",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/marketing",
+    "heading": "Carteira comercial",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/marketing",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/marketing",
+    "heading": "Carteira comercial",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/leads",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/leads",
+    "heading": "Clientes e leads",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nClientes e leads\n\n1 contato nesta visualização. Site público e cadastro manual usam a mesma base.\n\nNovo cliente\nBuscar\nStatus\nTodos os status\nnew\ncontacted\nqualified\nvisit\nproposal\nwon\nlost\nOrigem\nTodas as origens\nCad",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/leads",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/leads",
+    "heading": "Clientes e leads",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/leads",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/leads",
+    "heading": "Clientes e leads",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/agenda",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/agenda",
+    "heading": "Calendário",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nCalendário\n\nCompromissos reais da sua conta e dos seus projetos.\n\nAtualizar\nNovo evento\nHoje\nOutubro De 2026\nDom\nSeg\nTer\nQua\nQui\nSex\nSáb\n27\n28\n29\n30\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/agenda",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/agenda",
+    "heading": "Calendário",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/agenda",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/agenda",
+    "heading": "Calendário",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/propostas",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/propostas",
+    "heading": "Propostas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nPropostas\nCriar rascunho\nNenhuma proposta.\n0",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/propostas",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/propostas",
+    "heading": "Propostas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/propostas",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/propostas",
+    "heading": "Propostas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/mapa",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/mapa",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\nImóveis\nCalor de leads\nPreço m²\nOportunidades\nLiquidez\nLeilões\nHouse Flipper\nCaptação\n3D on\nDesenhar área\nBuscar\nFiltrar\n\nProvedor: openfreemap. Edifícios 3D: disponíveis neste tileset. Google Photorealistic 3D não es",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/mapa",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/mapa",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/mapa",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/mapa",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/ia",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/ia",
+    "heading": "IA Inteligente",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "CD\n\nASSISTENTE DE BUSCA\n\nIA Inteligente\n\nConverse em português ou use o radar por filtros. A coleta é o scraper e a carteira da conta; nenhum anúncio é inventado.\n\nConversar\nRadar por filtros\n\nCONSULTOR IMOBILIÁRIO\n\nBusc",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/ia",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/ia",
+    "heading": "IA Inteligente",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "corretor",
+    "route": "/app/corretor/ia",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/corretor/ia",
+    "heading": "IA Inteligente",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nCorretor\n\nCorretor Demo\n\nOPERAÇÃO\n\nVisão geral\n\nCAPTAÇÃO\n\nPesquisar imóveis\nFavoritos\nCaptações\n\nCARTEIRA\n\nMinha carteira\nMeu site\nMarketing\n\nCOMERCIAL\n\nClientes\nAgenda\nPropostas\n\nINTELIGÊNCIA\n\nMapa inteligente\nConsu",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/dashboard",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/dashboard",
+    "heading": "Imobiliária Demo",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nImobiliária Demo\n\nPainel executivo. Indicadores e gráficos usam o mesmo período e filtros.\n\nDe\nAté\nFilial\nTodas\nCorretor\nTodos\nImobiliária Demo\nImóveis cadastrados\n0\nDisponíveis\n0\nLeads novos\n0\nAtendimentos abertos\n1\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/dashboard",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/dashboard",
+    "heading": "Imobiliária Demo",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/dashboard",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/dashboard",
+    "heading": "Imobiliária Demo",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/imoveis",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/imoveis",
+    "heading": "Carteira comercial",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nCarteira comercial\n\nSó entram imóveis com autorização de comercialização.\n\nID da autorização concedida\nAdicionar à carteira\nBuscar\nStatus\nTodos\ndraft\nready\npublished\npaused\nsold\nrented\nwithdrawn\nOrdenar\nAtualização\nPr",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/imoveis",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/imoveis",
+    "heading": "Carteira comercial",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/imoveis",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/imoveis",
+    "heading": "Carteira comercial",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/imoveis/1",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/imoveis/1",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\n← Carteira\nImóvel da carteira não encontrado.\nvisita",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/imoveis/1",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/imoveis/1",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/imoveis/1",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/imoveis/1",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/clientes",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/clientes",
+    "heading": "Clientes e leads",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nClientes e leads\n\n0 contatos nesta visualização. Site público e cadastro manual usam a mesma base.\n\nNovo cliente\nBuscar\nStatus\nTodos os status\nnew\ncontacted\nqualified\nvisit\nproposal\nwon\nlost\nOrigem\nTodas as origens\nCa",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/clientes",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/clientes",
+    "heading": "Clientes e leads",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/clientes",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/clientes",
+    "heading": "Clientes e leads",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/proprietarios",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/proprietarios",
+    "heading": "Proprietários",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nProprietários\n\n0 contatos nesta visualização. Site público e cadastro manual usam a mesma base.\n\nNovo proprietário\nBuscar\nStatus\nTodos os status\nnew\ncontacted\nqualified\nvisit\nproposal\nwon\nlost\nOrigem\nTodas as origens\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/proprietarios",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/proprietarios",
+    "heading": "Proprietários",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/proprietarios",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/proprietarios",
+    "heading": "Proprietários",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/atendimentos",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/atendimentos",
+    "heading": "Central de atendimento",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nCentral de atendimento\n\nRegistros internos. WhatsApp permanece not_wired — nada é enviado para o aplicativo.\n\nAtendimentos\nConversa\nDetalhes\nCriar\nBuscar\nTodos\nNovos\nAguardando cliente\nEm atendimento\nPendentes\nEncerra",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/atendimentos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/atendimentos",
+    "heading": "Central de atendimento",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/atendimentos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/atendimentos",
+    "heading": "Central de atendimento",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/captacoes",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/captacoes",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nLeads & Oportunidades\n\nEncontre, acompanhe e analise imóveis com potencial de flip.\n\nNova Oportunidade\nOportunidades\n0\nTotal cadastradas\nEm análise\n0\nAguardando análise\nFavoritos\n0\nImóveis favoritos\nDescartados\n0\nOpor",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/captacoes",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/captacoes",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/captacoes",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/captacoes",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/crm",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/crm",
+    "heading": "Funil comercial",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nFunil comercial\n\nArraste o card para mudar a etapa. A alteração é persistida. Teclado: selecione o card e use os botões da coluna.\n\nCriar\nBuscar\nNOVO LEAD\n3\nQA CLI Deal\n\nsem cliente · Imobiliária Demo\n\nsem imóvel\n\nNOR",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/crm",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/crm",
+    "heading": "Funil comercial",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/crm",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/crm",
+    "heading": "Funil comercial",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/roleta",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/roleta",
+    "heading": "Roleta de leads",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nRoleta de leads\n\nNão atribui usuários inativos nem de outra organização. A decisão fica registrada.\n\nEstratégia\nround_robin\nteam\nbranch\nneighborhood\navailability\nspecialty\nID do contato\nSalvar configuração\nDistribuir\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/roleta",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/roleta",
+    "heading": "Roleta de leads",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/roleta",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/roleta",
+    "heading": "Roleta de leads",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/propostas",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/propostas",
+    "heading": "Propostas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nPropostas\nCriar rascunho\nNenhuma proposta.\nvisita",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/propostas",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/propostas",
+    "heading": "Propostas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/propostas",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/propostas",
+    "heading": "Propostas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/equipes",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/equipes",
+    "heading": "Imobiliária Demo",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nImobiliária Demo\nVincular\nImobiliária Demo · owner · active\nvisita",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/equipes",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/equipes",
+    "heading": "Imobiliária Demo",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/equipes",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/equipes",
+    "heading": "Imobiliária Demo",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/filiais",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/filiais",
+    "heading": "Filiais",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nFiliais\nCriar\nNenhuma filial. A operação usa a organização inteira até haver unidades.\nvisita",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/filiais",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/filiais",
+    "heading": "Filiais",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/filiais",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/filiais",
+    "heading": "Filiais",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/comissoes",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/comissoes",
+    "heading": "Comissões",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nComissões\n\nValores projetados nunca são marcados como pagos automaticamente.\n\n% corretor\n% imobiliária\nSalvar regra\nNenhuma comissão projetada. Feche um negócio no CRM.\nvisita",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/comissoes",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/comissoes",
+    "heading": "Comissões",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/comissoes",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/comissoes",
+    "heading": "Comissões",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/contratos",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/contratos",
+    "heading": "Contratos",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\n\nORGANIZAÇÃO\n\nContratos\n\nRegistro operacional de contratos e vencimentos da imobiliária.\n\nNovo contrato\nBuscar\nStatus\nTodos\nRascunho\nAtivo\nPróximo do vencimento\nConcluído\nCancelado\nNenhum contrato cadastrado\n\nCadastre",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/contratos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/contratos",
+    "heading": "Contratos",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/contratos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/contratos",
+    "heading": "Contratos",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/site",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/site",
+    "heading": "Site da imobiliária",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nSite da imobiliária\n\nEditor por blocos. A publicação em /i/{slug} exige assinatura com public_listing.\n\nEndereço público\nNome comercial\nHeadline\nApresentação\nCor principal\nCor de destaque\nTelefone\nWhatsApp\n\nEncontre o",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/site",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/site",
+    "heading": "Site da imobiliária",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/site",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/site",
+    "heading": "Site da imobiliária",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/mapa",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/mapa",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nImóveis\nCalor de leads\nPreço m²\nOportunidades\nLiquidez\nLeilões\nHouse Flipper\nCaptação\n3D on\nDesenhar área\nBuscar\nFiltrar\n\nProvedor: openfreemap. Edifícios 3D: disponíveis neste tileset. Google Photorealistic 3D não es",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/mapa",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/mapa",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/mapa",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/mapa",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/relatorios",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/relatorios",
+    "heading": "Imobiliária Demo",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "ID\nImobiliária Demo\n\nPainel executivo. Indicadores e gráficos usam o mesmo período e filtros.\n\nDe\nAté\nFilial\nTodas\nCorretor\nTodos\nImobiliária Demo\nImóveis cadastrados\n0\nDisponíveis\n0\nLeads novos\n0\nAtendimentos abertos\n1\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/relatorios",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/relatorios",
+    "heading": "Imobiliária Demo",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "imobiliaria",
+    "route": "/app/imobiliaria/relatorios",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/imobiliaria/relatorios",
+    "heading": "Imobiliária Demo",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nImobiliária\n\nImobiliária Demo\n\nGESTÃO\n\nDashboard\nRelatórios\n\nESTOQUE\n\nImóveis\nCaptações\n\nCRM\n\nClientes\nProprietários\nAtendimentos\nFunil\nPropostas\n\nORGANIZAÇÃO\n\nEquipes\nFiliais\nComissões\nRoleta\nContratos\n\nDIVULGAÇÃO\n\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/dashboard",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/dashboard",
+    "heading": "Análise de investimentos",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nAnálise de investimentos\n\nProjeções usam premissas cadastradas (aquisição, orçamento e valor alvo). Lucro e ROI realizados usam vendas fechadas. Não há promessa de rentabilidade.\n\nOportunidades analisadas\n2\n0 favorita",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/dashboard",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/dashboard",
+    "heading": "Análise de investimentos",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/dashboard",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/dashboard",
+    "heading": "Análise de investimentos",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/oportunidades",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/oportunidades",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nLeads & Oportunidades\n\nEncontre, acompanhe e analise imóveis com potencial de flip.\n\nNova Oportunidade\nOportunidades\n2\nTotal cadastradas\nEm análise\n0\nAguardando análise\nFavoritos\n0\nImóveis favoritos\nDescartados\n0\nOpor",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/oportunidades",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/oportunidades",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/oportunidades",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/oportunidades",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/ia",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/ia",
+    "heading": "IA Inteligente",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\n\nASSISTENTE DE BUSCA\n\nIA Inteligente\n\nConverse em português ou use o radar por filtros. A coleta é o scraper e a carteira da conta; nenhum anúncio é inventado.\n\nConversar\nRadar por filtros\n\nCONSULTOR IMOBILIÁRIO\n\nBusc",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/ia",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/ia",
+    "heading": "IA Inteligente",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/ia",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/ia",
+    "heading": "IA Inteligente",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/leiloes",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/leiloes",
+    "heading": "Leilões e vendas públicas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nLeilões e vendas públicas\n\nCatálogo rastreável formado somente por arquivos oficiais importados. A modalidade exibida vem da fonte e pode representar venda direta, licitação ou leilão.\n\nFontes oficiais\n\nBaixe o arquiv",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/leiloes",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/leiloes",
+    "heading": "Leilões e vendas públicas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/leiloes",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/leiloes",
+    "heading": "Leilões e vendas públicas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/mapa",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/mapa",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nImóveis\nCalor de leads\nPreço m²\nOportunidades\nLiquidez\nLeilões\nHouse Flipper\nCaptação\n3D on\nDesenhar área\nBuscar\nFiltrar\n\nProvedor: openfreemap. Edifícios 3D: disponíveis neste tileset. Google Photorealistic 3D não es",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/mapa",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/mapa",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/mapa",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/mapa",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/analises",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/analises",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nLeads & Oportunidades\n\nEncontre, acompanhe e analise imóveis com potencial de flip.\n\nNova Oportunidade\nOportunidades\n2\nTotal cadastradas\nEm análise\n0\nAguardando análise\nFavoritos\n0\nImóveis favoritos\nDescartados\n0\nOpor",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/analises",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/analises",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/analises",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/analises",
+    "heading": "Leads & Oportunidades",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/simulador",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/simulador",
+    "heading": "Financeiro",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nCONTROLE FINANCEIRO\nFinanceiro\n\nVisão acumulada dos investimentos, vendas e resultados persistidos na sua conta.\n\nAtualizar\n\nValores acumulados. Lucro e ROI realizados consideram apenas vendas fechadas ou escrituradas",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/simulador",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/simulador",
+    "heading": "Financeiro",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/simulador",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/simulador",
+    "heading": "Financeiro",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/imoveis",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/imoveis",
+    "heading": "Imóveis",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nPATRIMÔNIO DA CONTA\nImóveis\n\nConsulte e mantenha os dados reais dos imóveis vinculados às suas operações.\n\nAtualizar\nNovo imóvel\n\nImóveis cadastrados\n\n1\n\nRegistros ativos da conta\n\nEm prospecção\n\n1\n\nEm avaliação\n\nEm r",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/imoveis",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/imoveis",
+    "heading": "Imóveis",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/imoveis",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/imoveis",
+    "heading": "Imóveis",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/imoveis/1/3d",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/imoveis/1/3d",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nImóvel não encontrado.\nTentar novamente\n09/2026",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/imoveis/1/3d",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/imoveis/1/3d",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/imoveis/1/3d",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/imoveis/1/3d",
+    "heading": "",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/projetos",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/projetos",
+    "heading": "Projetos",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nGESTÃO DA OPERAÇÃO\nProjetos\n\nAcompanhe as oportunidades que viraram execução: obra, orçamento, custos e resultado.\n\nNovo projeto manual\nNenhum projeto ainda\n\nQuando uma análise financeira virar projeto, ela aparecerá ",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/projetos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/projetos",
+    "heading": "Projetos",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/projetos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/projetos",
+    "heading": "Projetos",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/projetos-3d",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/projetos-3d",
+    "heading": "Imóveis",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nPATRIMÔNIO DA CONTA\nImóveis\n\nConsulte e mantenha os dados reais dos imóveis vinculados às suas operações.\n\nAtualizar\nNovo imóvel\n\nImóveis cadastrados\n\n1\n\nRegistros ativos da conta\n\nEm prospecção\n\n1\n\nEm avaliação\n\nEm r",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/projetos-3d",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/projetos-3d",
+    "heading": "Imóveis",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/projetos-3d",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/projetos-3d",
+    "heading": "Imóveis",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/reformas",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/reformas",
+    "heading": "Obras",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nEXECUÇÃO DOS PROJETOS\nObras\n\nAcompanhe custos, prazos e etapas usando os dados cadastrados nos seus projetos.\n\nAtualizar\nNova obra\n\nObras cadastradas\n\n0\n\n0 em andamento\n\nCom prazo vencido\n\n0\n\nSem conclusão registrada\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/reformas",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/reformas",
+    "heading": "Obras",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/reformas",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/reformas",
+    "heading": "Obras",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/financeiro",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/financeiro",
+    "heading": "Financeiro",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nCONTROLE FINANCEIRO\nFinanceiro\n\nVisão acumulada dos investimentos, vendas e resultados persistidos na sua conta.\n\nAtualizar\n\nValores acumulados. Lucro e ROI realizados consideram apenas vendas fechadas ou escrituradas",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/financeiro",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/financeiro",
+    "heading": "Financeiro",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/financeiro",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/financeiro",
+    "heading": "Financeiro",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/despesas",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/despesas",
+    "heading": "Despesas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nDespesas\n\nValores registrados na API para seus projetos e imóveis.\n\nExportar CSV\nLançar em projeto\nTotal válido\nR$ 0,00\nPago\nR$ 0,00\nA pagar\nR$ 0,00\nVencido\nR$ 0,00\nProjeto\nTodos\nCategoria\nTodas\nAquisição\nCartório\nCom",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/despesas",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/despesas",
+    "heading": "Despesas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/despesas",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/despesas",
+    "heading": "Despesas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/obras",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/obras",
+    "heading": "Obras",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nEXECUÇÃO DOS PROJETOS\nObras\n\nAcompanhe custos, prazos e etapas usando os dados cadastrados nos seus projetos.\n\nAtualizar\nNova obra\n\nObras cadastradas\n\n0\n\n0 em andamento\n\nCom prazo vencido\n\n0\n\nSem conclusão registrada\n",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/obras",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/obras",
+    "heading": "Obras",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/obras",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/obras",
+    "heading": "Obras",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/tarefas",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/tarefas",
+    "heading": "Tarefas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nEXECUÇÃO DA OPERAÇÃO\nTarefas\n\nOrganize atividades reais por projeto, etapa, prioridade, prazo e responsável.\n\nAtualizar\nNova tarefa\n\nTarefas cadastradas\n\n0\n\nRegistros ativos da conta\n\nEm andamento\n\n0\n\nExecução iniciad",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/tarefas",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/tarefas",
+    "heading": "Tarefas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/tarefas",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/tarefas",
+    "heading": "Tarefas",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/fornecedores",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/fornecedores",
+    "heading": "Fornecedores",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nFornecedores\n\nCadastre e consulte contatos vinculados à sua conta.\n\nNovo fornecedor\nCadastrados\n0\nAtivos\n0\nCategorias\n0\nAvaliação média\nSem avaliações\nBuscar\nCategoria\nTodas\nStatus\nTodos\nAtivos\nInativos\nNenhum fornece",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/fornecedores",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/fornecedores",
+    "heading": "Fornecedores",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/fornecedores",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/fornecedores",
+    "heading": "Fornecedores",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/documentos",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/documentos",
+    "heading": "Documentos",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nDocumentos\n\nArquivos privados vinculados à sua conta e aos seus projetos.\n\nNovo documento\nDocumentos\n0\nEspaço utilizado\n0 B\nEm revisão\n0\nVencem em 30 dias\n0\nBuscar\nProjeto\nTodos\nCategoria\nTodas\nStatus\nTodos\nAtivo\nEm r",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/documentos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/documentos",
+    "heading": "Documentos",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/documentos",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/documentos",
+    "heading": "Documentos",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/relatorios",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/relatorios",
+    "heading": "Relatórios",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nRelatórios\n\nIndicadores acumulados da conta e trilha contábil filtrável pelos mesmos registros persistidos.\n\nAtualizar\nExportar resumo\n\nO painel permanece acumulado. A trilha abaixo usa o período e o projeto seleciona",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/relatorios",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/relatorios",
+    "heading": "Relatórios",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/relatorios",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/relatorios",
+    "heading": "Relatórios",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/calendario",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/calendario",
+    "heading": "Calendário",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nCalendário\n\nCompromissos reais da sua conta e dos seus projetos.\n\nAtualizar\nNovo evento\nHoje\nOutubro De 2026\nDom\nSeg\nTer\nQua\nQui\nSex\nSáb\n27\n28\n29\n30\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/calendario",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/calendario",
+    "heading": "Calendário",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/calendario",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/calendario",
+    "heading": "Calendário",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/importar-itbi",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/importar-itbi",
+    "heading": "Importar ITBI",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nDADOS REAIS DE MERCADO\nImportar ITBI\n\nEnvie a planilha pública da Prefeitura para alimentar vendas reais, preço/m² e futuramente o AVM.\n\nUpload da planilha\n\nFormatos aceitos: ODS, CSV e XLSX.\n\nA importação da base com",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/importar-itbi",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/importar-itbi",
+    "heading": "Importar ITBI",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/importar-itbi",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/importar-itbi",
+    "heading": "Importar ITBI",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/analises-financeiras/1",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/analises-financeiras/1",
+    "heading": "Central Financeira do Investimento",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nVoltar às oportunidades\nCentral Financeira do Investimento\n\nPerdizes | 94m² | 2 Dormitórios | 2 Suítes | Quintal | 2 Vagas | São Paulo · São Paulo - SP\n\nANÁLISE DE MERCADO\nPerdizes | 94m² | 2 Dormitórios | 2 Suítes | ",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/analises-financeiras/1",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/analises-financeiras/1",
+    "heading": "Central Financeira do Investimento",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/analises-financeiras/1",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/analises-financeiras/1",
+    "heading": "Central Financeira do Investimento",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/analises-financeiras/1/wizard",
+    "mode": {
+      "width": 375,
+      "height": 812,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/analises-financeiras/1/wizard",
+    "heading": "Compra",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "AD\nSair e continuar depois\nEtapa 1 de 6\nPerdizes | 94m² | 2 Dormitórios | 2 Suítes | Quintal | 2 Vagas | São Paulo\nSão Paulo · Score 80\nOpportunity Score\n1\nCompra\n2\nFinanciamento\n3\nReforma\n4\nCustos\n5\nVenda\n6\nResultado\n0%",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/analises-financeiras/1/wizard",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "light"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/analises-financeiras/1/wizard",
+    "heading": "Compra",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "profile": "house_flipper",
+    "route": "/app/house-flipper/analises-financeiras/1/wizard",
+    "mode": {
+      "width": 1366,
+      "height": 768,
+      "theme": "dark"
+    },
+    "mainStatus": 200,
+    "exception": "",
+    "url": "/app/house-flipper/analises-financeiras/1/wizard",
+    "heading": "Compra",
+    "overflowX": false,
+    "dialogs": 0,
+    "busy": 0,
+    "text": "HF\n\nHouse Flipper\n\nAdmin Demo\n\nINVESTIMENTO\n\nDashboard\nOportunidades\nMapa\nLeilões\n\nANÁLISE\n\nIA Inteligente\nAnálises\nSimulador\nImportar ITBI\n\nEXECUÇÃO\n\nImóveis\nProjetos\nObras\nReformas\nProjetos 3D\n\nCONTROLE\n\nFinanceiro\nDes",
+    "errors": [],
+    "failed": [],
+    "badResponses": []
+  },
+  {
+    "operation": "profile-menu-product-switcher",
+    "beforeSwitcher": 0,
+    "open": true,
+    "switchers": 1,
+    "bodyLocked": false
+  }
+]

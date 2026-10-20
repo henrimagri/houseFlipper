@@ -1,0 +1,21 @@
+{
+  "bug": "BUG 74",
+  "status": "corrected",
+  "policy": "active opportunity photos remain public by link; deleted local photos are removed",
+  "targeted": {
+    "tests": 15,
+    "passed": 15,
+    "assertions": 75
+  },
+  "full_suite": {
+    "tests": 193,
+    "passed": 193,
+    "assertions": 1270,
+    "duration_ms": 11215
+  },
+  "cases": [
+    "local public photo and metadata removed",
+    "unmanaged local path returns neutral 503 without changes",
+    "database failure restores public photo and records"
+  ]
+}

@@ -1,0 +1,10 @@
+✔ clearing an optional field is sent explicitly rather than omitted (19.3891ms)
+✔ zero and accented text are preserved in the multipart payload (0.164ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 122.1446

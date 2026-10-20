@@ -1,0 +1,22 @@
+{
+  "checked_at": "2026-10-18",
+  "composer": {
+    "version": "2.10.3",
+    "advisories": 0,
+    "abandoned": 0,
+    "manifest_validation": "passed",
+    "direct_major_updates_available": 2,
+    "update_candidates": [
+      "phpunit/phpunit 12.5.40 -> 13.4.3",
+      "spatie/laravel-permission 7.4.2 -> 8.3.0"
+    ]
+  },
+  "npm": {
+    "checked_at": "2026-10-18",
+    "dependencies": 249,
+    "vulnerabilities": 0,
+    "compatible_patches_applied": 2,
+    "direct_major_updates_available": 9
+  },
+  "result": "passed"
+}

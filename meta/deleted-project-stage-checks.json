@@ -1,0 +1,18 @@
+{
+  "bug": 94,
+  "status": "fixed_and_tested",
+  "before": {
+    "active_stages": 1,
+    "project_detail_returned_stages": 2,
+    "deleted_stage_recalculated": true
+  },
+  "after": {
+    "project_detail_returned_stages": 1,
+    "project_summary_returned_stages": 1,
+    "returned_stage_is_active": true,
+    "deleted_stage_recalculated": false,
+    "related_tests": "16 tests, 152 assertions passed",
+    "php_full_suite": "229 tests, 1486 assertions passed",
+    "pint": "passed globally"
+  }
+}

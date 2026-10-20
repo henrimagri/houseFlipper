@@ -1,0 +1,49 @@
+{
+  "checked_at": "2026-10-18T23:02:59.8163920-03:00",
+  "scope": "segunda revisão estática e regressão consolidada",
+  "backend": {
+    "tests": 306,
+    "passed": 306,
+    "assertions": 2330
+  },
+  "frontend": {
+    "tests": 73,
+    "passed": 73
+  },
+  "build": {
+    "modules": 2313,
+    "status": "passed"
+  },
+  "php": {
+    "changed_or_new_files_linted": 191,
+    "syntax_failures": 0,
+    "pint": "passed",
+    "composer_manifest": "valid",
+    "composer_advisories": 0,
+    "composer_abandoned": 0,
+    "config_cache": "passed"
+  },
+  "npm": {
+    "dependencies": 249,
+    "vulnerabilities_total": 0
+  },
+  "routes": {
+    "route_records": 88,
+    "distinct_api_paths": 59,
+    "documented_api_paths": 59,
+    "missing_paths": 0,
+    "stale_paths": 0
+  },
+  "diff": {
+    "check": "passed",
+    "notes": [
+      "Avisos CRLF preexistentes em Calendario.tsx, Dashboard.tsx, Documentos.tsx e Fornecedores.tsx; nenhuma violação de whitespace."
+    ]
+  },
+  "static_review": {
+    "debug_dump_or_fixme_hits": 0,
+    "request_all_hits": 0,
+    "wildcard_cors_hits": 0
+  },
+  "limitation": "A interação visual do alerta de importação parcial continua pendente porque o navegador local está desativado nas configurações do Work."
+}

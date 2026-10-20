@@ -1,0 +1,50 @@
+{
+  "checked_at": "2026-10-18T23:06:09.0147938-03:00",
+  "bug": 176,
+  "status": "fixed_and_verified",
+  "affected_routes": [
+    "GET /api/tarefas/{tarefa}",
+    "DELETE /api/tarefas/{tarefa}",
+    "PUT|PATCH /api/tarefas/{tarefa}"
+  ],
+  "before": {
+    "request": "GET /api/tarefas/not-a-number",
+    "status": 500,
+    "exception": "TypeError: TarefaController::show() expected int, string given"
+  },
+  "fix": {
+    "middleware": "ValidateResourceIdentifiers",
+    "numeric_parameters_added": [
+      "tarefa",
+      "tokenId"
+    ],
+    "accepted_domain": "positive representable integers only"
+  },
+  "regression": {
+    "invalid_values": [
+      "not-a-number",
+      "-1",
+      "999999999999999999999999999999"
+    ],
+    "methods": [
+      "GET",
+      "DELETE"
+    ],
+    "specific_test": {
+      "tests": 1,
+      "assertions": 42,
+      "status": "passed"
+    },
+    "related": {
+      "tests": 35,
+      "assertions": 533,
+      "status": "passed"
+    },
+    "full_suite": {
+      "tests": 306,
+      "assertions": 2336,
+      "status": "passed"
+    },
+    "pint": "passed"
+  }
+}

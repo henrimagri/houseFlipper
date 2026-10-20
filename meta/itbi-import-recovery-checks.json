@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-17",
+  "verified": {
+    "batch_claim_is_atomic": true,
+    "already_processing_batch_is_rejected_without_reset": true,
+    "transaction_identity_lookup_uses_database_lock": true,
+    "failed_batch_retries_from_local_file": true,
+    "partial_batch_retries_without_duplicates": true,
+    "stale_processing_requires_explicit_minimum_age": true,
+    "fresh_processing_batch_is_not_recovered": true,
+    "invalid_recovery_window_is_rejected": true,
+    "same_batch_parallel_mariadb_run": true
+  },
+  "limits": {
+    "near_256_mib_upload": "pending production proxy and capacity exercise"
+  },
+  "verification": {
+    "focused_import_and_command": "10 tests, 48 assertions passed",
+    "backend_suite": "264 tests, 1787 assertions passed",
+    "pint": "passed",
+    "concurrency_evidence": "itbi-concurrency-mariadb.json: two overlapping workers, completed/rejected_processing, 500 unique rows"
+  }
+}

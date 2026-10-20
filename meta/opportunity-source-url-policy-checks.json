@@ -1,0 +1,22 @@
+{
+  "checked_at": "2026-10-18",
+  "bug": 154,
+  "status": "passed",
+  "layers": ["request validation", "resource output", "sessionStorage cache"],
+  "unsafe_inputs_rejected": 8,
+  "legacy_private_url_omitted": true,
+  "public_https_persisted": true,
+  "focused": {
+    "opportunity_tests": 20,
+    "opportunity_assertions": 153,
+    "frontend_tests": 4,
+    "pint": "passed"
+  },
+  "full": {
+    "php_tests": 283,
+    "php_assertions": 1905,
+    "frontend_tests": 64,
+    "build": "passed",
+    "modules": 2312
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-17",
+  "scope": "HTTP request validation",
+  "controls": {
+    "persisted_money_matches_decimal_capacity": true,
+    "bounded_domain_integers": true,
+    "pagination_page_bounded": true,
+    "date_input_max_characters": 40,
+    "date_rule_regression_scans_all_form_requests": true,
+    "date_rule_regression_scans_shared_query_middleware": true,
+    "date_rule_regression_scans_calendar_filter_controller": true
+  },
+  "verification": {
+    "focused_date_test": "1 test, 1 assertion passed",
+    "backend_suite": "257 tests, 1748 assertions passed",
+    "pint": "passed"
+  }
+}

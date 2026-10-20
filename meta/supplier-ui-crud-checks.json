@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-17",
+  "tenant_id": 3,
+  "record_id": 29,
+  "name": "QA CRUD Fornecedor 20261017",
+  "steps": {
+    "create": true,
+    "reload_after_create": true,
+    "search": true,
+    "open_details": true,
+    "edit": true,
+    "reload_after_edit": true,
+    "category_filter": true,
+    "active_filter": true,
+    "delete": true,
+    "custom_delete_dialog_open_cancel": true,
+    "delete_dialog_named_and_described": true,
+    "delete_dialog_focus_restored": true
+  },
+  "persisted": {
+    "contact": "Contato CRUD Editado",
+    "rating": 4.9,
+    "active": true,
+    "deleted": true
+  },
+  "combined_filter_results": 1,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "pending": ["offline failure"]
+}

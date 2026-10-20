@@ -1,0 +1,22 @@
+{
+  "bug": 88,
+  "status": "fixed_and_tested",
+  "before": {
+    "property_area_100000000": 201,
+    "market_analysis_out_of_domain_payload": 200
+  },
+  "limits": {
+    "persisted_area_m2": 99999999.99,
+    "market_area_m2": 99999999.99,
+    "market_room_or_parking_count": 100,
+    "market_asking_price": 999999999999,
+    "market_selected_unknown_keys": "rejected"
+  },
+  "after": {
+    "schema_bound_tests": "2 tests, 16 assertions passed",
+    "related_tests": "26 tests, 159 assertions passed",
+    "php_full_suite": "222 tests, 1427 assertions passed",
+    "typescript_build": "passed with 2308 modules",
+    "pint": "passed"
+  }
+}

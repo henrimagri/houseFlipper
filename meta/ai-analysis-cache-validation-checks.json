@@ -1,0 +1,17 @@
+{
+  "bug": "BUG167",
+  "result": "passed",
+  "checked_at": "2026-10-18",
+  "scope": "AI market-analysis cache loading",
+  "before": "A session-storage exception skipped a valid local fallback and schema-invalid JSON reached rendering.",
+  "protections": [
+    "each storage is read and parsed independently",
+    "cached id must match the route",
+    "subject and every comparable satisfy the minimum item schema",
+    "comparables capped at 250 and diagnostics at 25",
+    "metadata and diagnostic source lengths are bounded"
+  ],
+  "regression": "frontend/tests/ai-analysis-cache.test.mjs",
+  "frontend_tests": "72/72",
+  "build_modules": 2313
+}

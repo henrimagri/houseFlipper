@@ -1,0 +1,16 @@
+{
+  "bug": "BUG171",
+  "result": "passed",
+  "checked_at": "2026-10-18",
+  "scope": "Investment-analysis resource and financial mutation response data minimization",
+  "before": "The resource and mutation endpoints serialized complete Eloquent models, exposing ownership and internal foreign keys.",
+  "protections": [
+    "analysis attributes use an explicit public allowlist",
+    "financing, costs, and result relations use independent allowlists",
+    "user_id, deleted_at, and investment_analysis_id are omitted",
+    "fields required by the financial UI remain available"
+  ],
+  "focused_tests": "12/106",
+  "full_php_tests": "303/2299",
+  "pint": "passed"
+}

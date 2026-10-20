@@ -1,0 +1,14 @@
+{
+  "bug": 107,
+  "result": "passed",
+  "specific_tests": 4,
+  "specific_assertions": 42,
+  "full_suite_tests": 241,
+  "full_suite_assertions": 1602,
+  "checks": [
+    "stage order above signed 32-bit integer returns 422",
+    "AI search price above domain monetary ceiling returns 422",
+    "no project or stage is partially persisted",
+    "external property search is not invoked for invalid input"
+  ]
+}

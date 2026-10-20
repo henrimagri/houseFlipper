@@ -9,6 +9,22 @@ return [
         'disable_sandbox' => env('SCRAPER_DISABLE_SANDBOX', false),
     ],
 
+    'apify' => [
+        'token' => env('APIFY_API_TOKEN'),
+        'request_timeout' => env('APIFY_REQUEST_TIMEOUT', 55),
+        'actor_timeout' => env('APIFY_ACTOR_TIMEOUT', 45),
+        'max_results_per_provider' => env('APIFY_MAX_RESULTS_PER_PROVIDER', 25),
+        'providers' => [
+            'zap' => ['label' => 'ZAP Imóveis', 'actor_id' => env('APIFY_ACTOR_ZAP', 'avorio/zap-imoveis-scraper')],
+            'vivareal' => ['label' => 'VivaReal', 'actor_id' => env('APIFY_ACTOR_VIVAREAL', 'scrapers_lat/vivareal-scraper')],
+            'imovelweb' => ['label' => 'ImovelWeb', 'actor_id' => env('APIFY_ACTOR_IMOVELWEB', 'piotrv1001/imovelweb-listings-scraper')],
+            'loft' => ['label' => 'Loft', 'actor_id' => env('APIFY_ACTOR_LOFT', 'gio21/loft-scraper')],
+            'quintoandar' => ['label' => 'QuintoAndar', 'actor_id' => env('APIFY_ACTOR_QUINTOANDAR', 'solidcode/quintoandar-scraper')],
+            'facebook' => ['label' => 'Facebook Marketplace', 'actor_id' => env('APIFY_ACTOR_FACEBOOK', 'apify/facebook-marketplace-scraper')],
+            'casamineira' => ['label' => 'Casa Mineira', 'actor_id' => env('APIFY_ACTOR_CASA_MINEIRA')],
+        ],
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
@@ -31,10 +47,6 @@ return [
 
     'mercadolivre' => [
         'token' => env('MERCADO_LIVRE_ACCESS_TOKEN'),
-    ],
-
-    'google_maps' => [
-        'key' => env('GOOGLE_MAPS_API_KEY'),
     ],
 
     'openstreetmap' => [
@@ -105,6 +117,16 @@ return [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
+    ],
+
+    'mercado_pago' => [
+        'access_token' => env('MERCADO_PAGO_ACCESS_TOKEN'),
+        'webhook_secret' => env('MERCADO_PAGO_WEBHOOK_SECRET'),
+    ],
+
+    'stripe' => [
+        'secret' => env('STRIPE_SECRET'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
 ];

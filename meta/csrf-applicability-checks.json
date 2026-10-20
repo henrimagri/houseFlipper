@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-17",
+  "authentication_transport": "sanctum personal access token via Authorization Bearer",
+  "frontend_credentials": false,
+  "cors_supports_credentials": false,
+  "web_session_login_route": false,
+  "csrf_assessment": "not applicable to the current authentication flow; mandatory reassessment if cookie authentication is introduced",
+  "evidence": [
+    "frontend/src/lib/api.ts",
+    "frontend/src/pages/Login.tsx",
+    "app/Services/AuthService.php",
+    "routes/api.php",
+    "config/cors.php"
+  ]
+}

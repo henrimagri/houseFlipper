@@ -1,0 +1,1 @@
+{"method":"PATCH","uri":"\/api\/projetos-etapas\/1","body":{"orcamento":2100,"status":"em_andamento","progresso_pct":35}}

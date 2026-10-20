@@ -42,6 +42,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'active-account' => EnsureActiveAccount::class,
             'verified-account' => EnsureVerifiedAccount::class,
+            'product' => \App\Http\Middleware\EnsureProductAccess::class,
+            'platform-admin' => \App\Http\Middleware\EnsurePlatformAdmin::class,
         ]);
         $middleware->prependToPriorityList([ThrottleRequests::class, SubstituteBindings::class, Authorize::class], EnsureVerifiedAccount::class);
         $middleware->prependToPriorityList(EnsureVerifiedAccount::class, EnsureActiveAccount::class);

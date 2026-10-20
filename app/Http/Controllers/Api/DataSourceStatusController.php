@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ItbiImportBatch;
+use App\Models\AuctionListing;
 use App\Models\RealEstateTransaction;
 use App\Support\ExecutableLocator;
 use App\Support\ExternalUrlPolicy;
@@ -29,7 +30,6 @@ class DataSourceStatusController extends Controller
             $this->portalStatus(),
             $this->item('datazap', 'Mercado', 'DataZAP AVM', 'unavailable', 'API comercial não utilizada. O índice público vem de BCB IVG-R, anúncios do radar e ITBI em dados abertos.'),
             $this->item('fipezap', 'Mercado', 'FipeZAP', 'unavailable', 'API comercial não utilizada. O índice público vem de BCB IVG-R, anúncios do radar e ITBI em dados abertos.'),
-            $this->googleStatus(),
             $this->openStreetMapStatus(),
             $this->item(
                 'itbi_local',
@@ -60,9 +60,8 @@ class DataSourceStatusController extends Controller
                 config('services.prefeituras.endpoint'),
                 'Sem endpoint próprio. Catálogos CKAN públicos são consultados quando existirem para a cidade.',
             ),
-            $this->item('caixa_leiloes', 'Leilões', 'Caixa', 'not_implemented', 'Conector ainda não implementado.'),
-            $this->item('mega_leiloes', 'Leilões', 'Mega Leilões', 'not_implemented', 'Conector ainda não implementado.'),
-            $this->item('superbid', 'Leilões', 'Superbid', 'not_implemented', 'Conector ainda não implementado.'),
+            $this->item('caixa_leiloes', 'Leilões', 'CAIXA — imóveis à venda', Schema::hasTable('auction_listings') && AuctionListing::where('provider', 'caixa')->exists() ? 'connected' : 'no_data', 'Importação manual de arquivo oficial disponível; nenhuma API privada é utilizada.'),
+            $this->item('vendasgov', 'Leilões', 'VendasGov', Schema::hasTable('auction_listings') && AuctionListing::where('provider', 'vendasgov')->exists() ? 'connected' : 'no_data', 'Importação manual de planilha oficial disponível; editais permanecem vinculados à fonte.'),
             $this->item('bcb_sgs', 'Dados econômicos', 'SELIC/CDI', 'available', 'API pública do BCB SGS (séries 11 e 12), sem chave. BrasilAPI entra como fallback.'),
             $this->item('inflation_indexes', 'Dados econômicos', 'INCC/IPCA', 'available', 'API pública do BCB SGS (IPCA 433, INCC-DI 192 e IVG-R 21340), sem chave.'),
         ]]);
@@ -83,22 +82,6 @@ class DataSourceStatusController extends Controller
             $runtimeReady
                 ? 'Runtime local encontrado; a disponibilidade de cada portal é confirmada somente durante a busca.'
                 : 'Runtime local de Node, navegador ou script do coletor não foi encontrado.',
-        );
-    }
-
-    private function googleStatus(): array
-    {
-        $configured = (bool) config('real_estate_data.geocoding.google_enabled')
-            && trim((string) config('services.google_maps.key')) !== '';
-
-        return $this->item(
-            'google_maps',
-            'Geolocalização',
-            'Google Maps/Places',
-            $configured ? 'configured' : 'pending',
-            $configured
-                ? 'Credencial configurada; a disponibilidade é confirmada durante a consulta.'
-                : 'Credencial não configurada; o sistema usa os fallbacks disponíveis.',
         );
     }
 

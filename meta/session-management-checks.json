@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-17",
+  "routes": [
+    "GET /api/auth/sessions",
+    "DELETE /api/auth/sessions/{tokenId}",
+    "POST /api/auth/logout-all"
+  ],
+  "security": {
+    "only_owner_tokens_listed": true,
+    "current_token_identified": true,
+    "foreign_token_revoke_returns_404": true,
+    "foreign_token_preserved": true,
+    "single_other_token_revoked": true,
+    "current_token_remains_valid_after_other_revoke": true,
+    "logout_all_revokes_all_tokens": true,
+    "revoked_current_token_rejected": true
+  },
+  "interface": {
+    "location": "/configuracoes",
+    "lists_devices": true,
+    "marks_current_session": true,
+    "shows_created_last_used_and_expiry": true,
+    "can_revoke_one": true,
+    "can_logout_all": true,
+    "uses_accessible_confirmation": true,
+    "visual_check": "unavailable because local browser control was disabled"
+  },
+  "verification": {
+    "focused_backend": "3 tests, 17 assertions passed",
+    "backend_suite": "256 tests, 1747 assertions passed",
+    "frontend_suite": "43 tests passed",
+    "frontend_build": "passed, 2311 modules"
+  }
+}

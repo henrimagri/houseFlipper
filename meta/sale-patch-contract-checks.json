@@ -1,0 +1,15 @@
+{
+  "bug": 110,
+  "result": "passed",
+  "related_tests": 24,
+  "related_assertions": 224,
+  "full_suite_tests": 244,
+  "full_suite_assertions": 1622,
+  "checks": [
+    "PATCH with observations only returns 200",
+    "sale value is preserved",
+    "property relationship is preserved",
+    "status and buyer are preserved",
+    "incomplete PUT returns 422 for property and value"
+  ]
+}

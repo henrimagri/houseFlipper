@@ -1,0 +1,80 @@
+{
+  "checked_at": "2026-10-18T23:11:30.6000604-03:00",
+  "bug": 177,
+  "status": "fixed_and_verified",
+  "before": {
+    "database": "SQLite",
+    "fixture": "one valid row plus street_name of 181 characters",
+    "batch_status": "completed",
+    "impact": "value exceeded VARCHAR(180) and result could differ on strict MariaDB/MySQL"
+  },
+  "fix": {
+    "validation_layer": "ItbiTransactionNormalizerService before per-row transaction",
+    "string_limits": [
+      "source_name",
+      "property_sql",
+      "property_type",
+      "transaction_nature",
+      "street_type",
+      "street_name",
+      "street_number",
+      "address_complement",
+      "address_reference",
+      "neighborhood",
+      "district",
+      "city",
+      "state",
+      "zip_code",
+      "financing_type",
+      "registry_office",
+      "registry_registration",
+      "normalized_address"
+    ],
+    "numeric_limits": [
+      "declared_transaction_value",
+      "tax_base_value",
+      "land_area_m2",
+      "built_area_m2",
+      "private_area_m2",
+      "calculation_area_m2",
+      "price_m2"
+    ],
+    "text_byte_limits": [
+      "iptu_use_description",
+      "iptu_pattern_description"
+    ],
+    "invalid_rows": "isolated and counted without rolling back valid rows"
+  },
+  "after": {
+    "fixture_batch_status": "completed_with_errors",
+    "imported_rows": 1,
+    "failed_rows": 1,
+    "oversized_row_persisted": false
+  },
+  "tests": {
+    "focused_import_and_normalizer": {
+      "tests": 14,
+      "assertions": 84,
+      "status": "passed"
+    },
+    "import_pipeline_group": {
+      "tests": 37,
+      "assertions": 154,
+      "status": "passed"
+    },
+    "full_php": {
+      "tests": 308,
+      "assertions": 2355,
+      "status": "passed"
+    },
+    "frontend": {
+      "tests": 73,
+      "status": "passed"
+    },
+    "build": {
+      "modules": 2313,
+      "status": "passed"
+    },
+    "pint": "passed"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "bug": "BUG174",
+  "result": "passed",
+  "checked_at": "2026-10-18",
+  "scope": "Frontend direct dependency refresh and reproducible install",
+  "updated": [
+    "@types/react 18.3.28 -> 18.3.31",
+    "postcss 8.5.30 -> 8.5.31"
+  ],
+  "protections": [
+    "clean npm ci completed with --ignore-scripts",
+    "full and production audit report zero vulnerabilities",
+    "frontend tests passed after clean install",
+    "production build passed after clean install",
+    "major-version migrations remain explicit and separate"
+  ],
+  "major_update_candidates": 9,
+  "frontend_tests": "73/73",
+  "build_modules": 2313,
+  "npm_dependencies": 249,
+  "npm_vulnerabilities": 0
+}

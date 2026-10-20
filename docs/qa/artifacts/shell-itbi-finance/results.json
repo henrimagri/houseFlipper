@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-10-20T16:32:27.074Z",
+  "results": [
+    {
+      "case": "registered-location",
+      "passed": true
+    },
+    {
+      "case": "fixed-sidebar-and-google-removal",
+      "before": {
+        "top": 0,
+        "height": 768
+      },
+      "after": {
+        "top": 0,
+        "height": 768
+      },
+      "passed": true
+    },
+    {
+      "case": "itbi-file-selection",
+      "filenameVisible": true,
+      "button": "Permissão de operador necessária",
+      "passed": true
+    },
+    {
+      "case": "financial-analysis-1366",
+      "title": "Central financeira",
+      "completeAction": true,
+      "overflow": false,
+      "tabs": 5,
+      "passed": true
+    },
+    {
+      "case": "financial-analysis-390",
+      "title": "Central financeira",
+      "completeAction": true,
+      "overflow": false,
+      "tabs": 5,
+      "passed": true
+    }
+  ]
+}

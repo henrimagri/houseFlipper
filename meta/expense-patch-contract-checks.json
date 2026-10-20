@@ -1,0 +1,15 @@
+{
+  "bug": 112,
+  "result": "passed",
+  "related_tests": 21,
+  "related_assertions": 211,
+  "full_suite_tests": 246,
+  "full_suite_assertions": 1647,
+  "checks": [
+    "PATCH with observations only returns 200",
+    "description value project and stage are preserved",
+    "stage from another effective project returns 422",
+    "rejected relationship leaves database unchanged",
+    "incomplete PUT still requires core financial fields"
+  ]
+}

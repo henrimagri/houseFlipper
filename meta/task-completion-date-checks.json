@@ -1,0 +1,17 @@
+{
+  "bug": 96,
+  "status": "fixed_and_tested",
+  "before": {
+    "original_completion_date": "2026-10-10",
+    "edit_omitted_completion_date": true,
+    "completion_date_after_edit": "2026-10-17"
+  },
+  "after": {
+    "completion_date_after_edit": "2026-10-10",
+    "title_edit_persisted": true,
+    "reopen_clears_completion_date": true,
+    "related_tests": "16 tests, 179 assertions passed",
+    "php_full_suite": "230 tests, 1500 assertions passed",
+    "pint": "passed globally"
+  }
+}

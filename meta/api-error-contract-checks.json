@@ -1,0 +1,27 @@
+{
+  "result": "passed",
+  "without_accept": {
+    "invalid_login": {
+      "status": 422,
+      "content_type": "application/json",
+      "redirected": false,
+      "validation_errors_preserved": true
+    },
+    "unknown_api_route": {
+      "status": 404,
+      "content_type": "application/json",
+      "internal_diagnostics_present": false
+    }
+  },
+  "server_error_with_debug": {
+    "status": 500,
+    "body": {
+      "message": "Server Error"
+    },
+    "private_marker_present": false,
+    "absolute_path_present": false
+  },
+  "security_headers_on_errors": true,
+  "tests": 4,
+  "assertions": 54
+}

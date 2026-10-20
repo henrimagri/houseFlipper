@@ -1,0 +1,16 @@
+{
+  "bug": "BUG168",
+  "result": "passed",
+  "checked_at": "2026-10-18",
+  "scope": "Cached AI-analysis thumbnail browser egress",
+  "before": "A cache-tampered thumbnail was assigned directly to img src.",
+  "protections": [
+    "URL is revalidated at the rendering sink",
+    "only public credential-free default-port HTTPS is accepted",
+    "unsafe values render a placeholder",
+    "referrer policy remains no-referrer"
+  ],
+  "regression": "frontend/tests/external-url.test.mjs",
+  "frontend_tests": "73/73",
+  "build_modules": 2313
+}

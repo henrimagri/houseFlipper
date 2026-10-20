@@ -1,0 +1,20 @@
+{
+  "bug": 120,
+  "result": "passed",
+  "route": "/ia-inteligente",
+  "viewports": [
+    375,
+    768,
+    1265,
+    1440
+  ],
+  "horizontal_overflow": false,
+  "neighborhood_options": 10,
+  "dark_theme": "passed",
+  "mobile_menu": "passed",
+  "console_errors": 0,
+  "console_warnings": 0,
+  "frontend_tests": 40,
+  "modules_transformed": 2309,
+  "chunk_warning": false
+}

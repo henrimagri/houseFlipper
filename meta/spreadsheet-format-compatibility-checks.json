@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-17",
+  "verified": {
+    "csv_utf8_bom": true,
+    "csv_utf16_little_endian_bom": true,
+    "csv_windows_1252_fallback": true,
+    "csv_quoted_delimiter": true,
+    "csv_missing_and_trailing_cells": true,
+    "ods_repeated_rows_and_expansion_limits": true,
+    "xlsx_default_namespace": true,
+    "xlsx_shared_strings_and_rich_text": true,
+    "xlsx_inline_strings": true,
+    "xml_size_dtd_and_column_limits": true
+  },
+  "limits": {
+    "broad_real_world_corpus": "still requires authorized Excel and LibreOffice samples"
+  },
+  "verification": {
+    "spreadsheet_and_pipeline": "16 tests, 33 assertions passed",
+    "backend_suite": "262 tests, 1771 assertions passed",
+    "pint": "passed"
+  }
+}

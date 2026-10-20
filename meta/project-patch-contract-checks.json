@@ -1,0 +1,16 @@
+{
+  "bug": 109,
+  "result": "passed",
+  "related_tests": 10,
+  "related_assertions": 78,
+  "full_suite_tests": 243,
+  "full_suite_assertions": 1611,
+  "checks": [
+    "PATCH with name only returns 200",
+    "omitted description is preserved",
+    "omitted property relationship is preserved",
+    "omitted budget is preserved",
+    "POST and PUT retain complete-resource requirements",
+    "nested replacement remains prohibited"
+  ]
+}

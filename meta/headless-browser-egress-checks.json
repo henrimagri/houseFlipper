@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-17",
+  "application_controls": {
+    "sandbox_enabled_by_default": true,
+    "sandbox_opt_out_explicit_only": true,
+    "downloads_denied_via_cdp": true,
+    "main_frame_navigation_https_allowlisted": true,
+    "detail_enrichment_https_allowlisted": true,
+    "private_and_mixed_dns_targets_blocked": true
+  },
+  "remaining_infrastructure_limit": "Chromium DNS and network egress must also be restricted and monitored by the production host/container firewall.",
+  "verification": {
+    "frontend_tests": "46 tests passed",
+    "node_syntax": "passed",
+    "production_build": "2311 modules passed"
+  }
+}

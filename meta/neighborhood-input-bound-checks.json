@@ -1,0 +1,15 @@
+{
+  "bug": 118,
+  "after_status": 422,
+  "full_suite_tests": 252,
+  "full_suite_assertions": 1722,
+  "checks": [
+    "unknown selected key is rejected",
+    "area above decimal domain is rejected",
+    "invalid input triggers no outbound HTTP request"
+  ],
+  "related_tests": 3,
+  "before_status": 200,
+  "result": "passed",
+  "related_assertions": 25
+}

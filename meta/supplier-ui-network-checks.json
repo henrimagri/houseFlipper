@@ -1,0 +1,46 @@
+{
+  "checked_at": "2026-10-18",
+  "viewport": {
+    "width": 375,
+    "height": 812
+  },
+  "focus_on_first_field": true,
+  "failed_state": {
+    "dialogOpen": true,
+    "alert": "Falha simulada ao salvar.",
+    "values": [
+      "Fornecedor Persistido",
+      "Materiais",
+      "Contato Teste",
+      "(11) 99999-0000",
+      "fornecedor@example.test",
+      "4.5"
+    ],
+    "notes": "Rascunho preservado após falha",
+    "submitDisabled": false,
+    "scrollWidth": 375,
+    "width": 375
+  },
+  "recovered_state": {
+    "dialogOpen": false,
+    "notice": "Fornecedor cadastrado.",
+    "supplierCards": 1,
+    "scrollWidth": 375,
+    "width": 375
+  },
+  "delete_failure_state": {
+    "dialogOpen": false,
+    "alert": "Falha simulada ao excluir.Tentar novamente",
+    "supplierCards": 1,
+    "scrollWidth": 375,
+    "width": 375
+  },
+  "post_attempts": 2,
+  "delete_attempts": 1,
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "page_errors": [],
+  "passed": true
+}

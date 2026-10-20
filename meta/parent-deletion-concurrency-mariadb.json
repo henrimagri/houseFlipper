@@ -1,0 +1,236 @@
+{
+  "database": "MariaDB isolated",
+  "scenarios": [
+    {
+      "phase": "project-create",
+      "variant": "natural",
+      "statuses": [
+        404,
+        200
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "source_deleted": true,
+        "active_projects": 0
+      },
+      "passed": true
+    },
+    {
+      "phase": "project-create",
+      "variant": "mutation-first",
+      "statuses": [
+        201,
+        409
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "source_deleted": false,
+        "active_projects": 1
+      },
+      "passed": true
+    },
+    {
+      "phase": "expense-create",
+      "variant": "natural",
+      "statuses": [
+        404,
+        200
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_deleted": true,
+        "active_expenses": 0
+      },
+      "passed": true
+    },
+    {
+      "phase": "expense-create",
+      "variant": "mutation-first",
+      "statuses": [
+        201,
+        409
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_deleted": false,
+        "active_expenses": 1
+      },
+      "passed": true
+    },
+    {
+      "phase": "document-create",
+      "variant": "natural",
+      "statuses": [
+        422,
+        200
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_deleted": true,
+        "active_documents": 0,
+        "stored_files": 0
+      },
+      "passed": true
+    },
+    {
+      "phase": "document-create",
+      "variant": "mutation-first",
+      "statuses": [
+        201,
+        409
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_deleted": false,
+        "active_documents": 1,
+        "stored_files": 1
+      },
+      "passed": true
+    },
+    {
+      "phase": "task-create",
+      "variant": "natural",
+      "statuses": [
+        404,
+        200
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_deleted": true,
+        "active_tasks": 0
+      },
+      "passed": true
+    },
+    {
+      "phase": "task-create",
+      "variant": "mutation-first",
+      "statuses": [
+        201,
+        200
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_deleted": true,
+        "active_tasks": 0
+      },
+      "passed": true
+    },
+    {
+      "phase": "event-create",
+      "variant": "natural",
+      "statuses": [
+        404,
+        200
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_deleted": true,
+        "active_events": 0
+      },
+      "passed": true
+    },
+    {
+      "phase": "event-create",
+      "variant": "mutation-first",
+      "statuses": [
+        201,
+        200
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_deleted": true,
+        "active_events": 0
+      },
+      "passed": true
+    },
+    {
+      "phase": "move-source-delete",
+      "variant": "natural",
+      "statuses": [
+        200,
+        409
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_property": 2,
+        "source_deleted": false,
+        "destination_deleted": false
+      },
+      "passed": true
+    },
+    {
+      "phase": "move-source-delete",
+      "variant": "mutation-first",
+      "statuses": [
+        200,
+        200
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_property": 2,
+        "source_deleted": true,
+        "destination_deleted": false
+      },
+      "passed": true
+    },
+    {
+      "phase": "move-destination-delete",
+      "variant": "natural",
+      "statuses": [
+        404,
+        200
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_property": 1,
+        "source_deleted": false,
+        "destination_deleted": true
+      },
+      "passed": true
+    },
+    {
+      "phase": "move-destination-delete",
+      "variant": "mutation-first",
+      "statuses": [
+        200,
+        409
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_property": 2,
+        "source_deleted": false,
+        "destination_deleted": false
+      },
+      "passed": true
+    },
+    {
+      "phase": "project-update-delete",
+      "variant": "natural",
+      "statuses": [
+        404,
+        200
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_deleted": true,
+        "project_name": "Parent race project"
+      },
+      "passed": true
+    },
+    {
+      "phase": "project-update-delete",
+      "variant": "mutation-first",
+      "statuses": [
+        200,
+        200
+      ],
+      "requests_overlapped": true,
+      "details": {
+        "project_deleted": true,
+        "project_name": "Concurrent renamed project"
+      },
+      "passed": true
+    }
+  ],
+  "passed": true
+}

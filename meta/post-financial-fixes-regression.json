@@ -1,0 +1,31 @@
+{
+  "checked_at": "2026-10-18",
+  "status": "passed",
+  "scope": "regression after BUG 147 through BUG 149",
+  "php": {
+    "tests": 273,
+    "passed": 273,
+    "assertions": 1863,
+    "duration_ms": 283053
+  },
+  "frontend": {
+    "tests": 61,
+    "passed": 61,
+    "failed": 0
+  },
+  "build": {
+    "result": "passed",
+    "modules": 2312,
+    "entry_chunk_kb": 269.67,
+    "largest_chunk_kb": 421.58
+  },
+  "npm_audit": {
+    "result": "passed",
+    "dependencies": 249,
+    "vulnerabilities": 0
+  },
+  "composer_audit_this_run": {
+    "result": "not_executed",
+    "reason": "Composer executable unavailable; prior lockfile evidence retained without claiming a new run"
+  }
+}

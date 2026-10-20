@@ -1,0 +1,27 @@
+{
+  "checked_at": "2026-10-19T06:50:00-03:00",
+  "status": "passed",
+  "scope": "relatórios avançados: trilha contábil filtrada com tenant, paginação e exportação do mesmo conjunto",
+  "endpoint": "GET /api/reports/ledger",
+  "dashboard_compatible": true,
+  "focused_php": {
+    "filter": "FinancialLedgerTest|CollectionFilterValidationTest|DashboardTest",
+    "tests": 9,
+    "passed": 9,
+    "assertions": 122
+  },
+  "full_php": {
+    "tests": 321,
+    "passed": 321,
+    "assertions": 2881
+  },
+  "frontend": {
+    "tests": 81,
+    "passed": 81
+  },
+  "build": {
+    "modules": 2314,
+    "status": "passed"
+  },
+  "pint": "passed"
+}

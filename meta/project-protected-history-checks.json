@@ -1,0 +1,17 @@
+{
+  "bug": 102,
+  "result": "passed",
+  "focused_tests": 3,
+  "focused_assertions": 21,
+  "full_suite_tests": 236,
+  "full_suite_assertions": 1569,
+  "checks": [
+    "active project expense blocks deletion with 409",
+    "active project document blocks deletion with 409",
+    "blocked deletion preserves project",
+    "archived protected records allow deletion",
+    "operational dependent archival still passes",
+    "failed deletion rollback still passes"
+  ],
+  "limitation": "concurrent dependent creation versus project deletion still requires multiprocess transactional-database verification"
+}

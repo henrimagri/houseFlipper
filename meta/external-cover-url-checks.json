@@ -1,0 +1,34 @@
+{
+  "checked_at": "2026-10-17",
+  "bug": 142,
+  "status": "passed",
+  "risk": "External cover images accepted mixed-content URLs, embedded credentials, localhost, and private literal addresses.",
+  "rejected": [
+    "http",
+    "userinfo",
+    "localhost",
+    "private IPv4",
+    "reserved IPv4",
+    "local domain",
+    "nonstandard port"
+  ],
+  "accepted": "public HTTPS URL on port 443 with query string",
+  "focused": {
+    "command": "php artisan test tests/Feature/OpportunityTest.php",
+    "tests": 19,
+    "assertions": 124,
+    "result": "passed"
+  },
+  "full_php_suite": {
+    "command": "php artisan test",
+    "tests": 273,
+    "assertions": 1863,
+    "result": "passed"
+  },
+  "format": {
+    "command": "vendor/bin/pint --test",
+    "result": "passed"
+  },
+  "limitation": "DNS is not pinned for browser-loaded images; deployment CSP and client network isolation remain complementary controls.",
+  "legacy_response_filter": "passed: unsafe existing external photo omitted from cover_url, photos, and serialized response"
+}

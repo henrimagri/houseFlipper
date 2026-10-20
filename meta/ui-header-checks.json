@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-16",
+  "browser": "Codex in-app browser",
+  "viewport": "narrow responsive layout",
+  "passed": [
+    "Novo Projeto opens /projetos?novo=1",
+    "empty property state disables project creation",
+    "project dialog Escape closes and removes query",
+    "empty property action opens /leads?novo=1 with Nova oportunidade dialog",
+    "opportunity Cancel closes and removes query",
+    "activities panel shows real empty state and no fixed badge",
+    "help button opens /ajuda",
+    "help page renders in dark theme without observed overlap"
+  ],
+  "screenshots": ["ajuda-mobile.png", "novo-projeto-mobile.png"],
+  "limitations": [
+    "manual project success was covered by API integration test, not browser, because demo account had no property",
+    "network failure states and broad viewport/browser matrix remain pending"
+  ]
+}

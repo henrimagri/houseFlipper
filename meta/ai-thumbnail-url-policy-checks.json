@@ -1,0 +1,23 @@
+{
+  "checked_at": "2026-10-18",
+  "bug": 151,
+  "status": "passed",
+  "endpoint": "/api/ai-property-search",
+  "rejected_thumbnail_classes": [
+    "data URL",
+    "HTTP",
+    "credentials",
+    "localhost",
+    "loopback IP",
+    "private IP",
+    ".local domain",
+    "non-standard port"
+  ],
+  "accepted_control": "https://images.example.test:443/item.jpg",
+  "focused_tests": {
+    "tests": 3,
+    "passed": 3,
+    "assertions": 20
+  },
+  "pint": "passed"
+}

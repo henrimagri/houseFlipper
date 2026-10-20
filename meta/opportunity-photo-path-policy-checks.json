@@ -1,0 +1,16 @@
+{
+  "bug": "BUG169",
+  "result": "passed",
+  "checked_at": "2026-10-18",
+  "scope": "Opportunity local-photo path serialization and deletion",
+  "before": "Any non-HTTP database path was published below /storage although deletion trusted only opportunities/.",
+  "protections": [
+    "one shared managed-path policy",
+    "only safe segments under opportunities/ are accepted",
+    "traversal and foreign namespaces are omitted from cover and gallery",
+    "external URLs still use ExternalImageUrlPolicy"
+  ],
+  "focused_tests": "22/170",
+  "full_php_tests": "301/2266",
+  "pint": "passed"
+}

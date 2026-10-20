@@ -1,0 +1,22 @@
+{
+  "bug": "BUG 157",
+  "result": "passed",
+  "risk": [
+    "SSRF through configurable geospatial endpoints",
+    "memory exhaustion through oversized geospatial responses"
+  ],
+  "controls": [
+    "public HTTPS endpoint policy",
+    "redirects and decoding disabled",
+    "2 MiB header, progress, and final-body limit"
+  ],
+  "focused_tests": {
+    "tests": 7,
+    "assertions": 37
+  },
+  "full_suite": {
+    "tests": 291,
+    "assertions": 1952
+  },
+  "checked_at": "2026-10-18"
+}

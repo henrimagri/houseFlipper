@@ -1,0 +1,22 @@
+{
+  "checked_at": "2026-10-18",
+  "bug": 153,
+  "status": "passed",
+  "before": { "tests": 9, "failed": 6, "confirmed_bypass": true },
+  "rejected_variants": [
+    "IPv4 decimal integer",
+    "IPv4 hexadecimal integer",
+    "IPv4 octal",
+    "IPv4 abbreviated",
+    "zero host",
+    "IPv6 loopback",
+    "IPv4-mapped IPv6 loopback"
+  ],
+  "after": {
+    "policy_tests": { "tests": 9, "passed": 9, "assertions": 10 },
+    "frontend_focused": { "tests": 3, "passed": 3 },
+    "integration": { "tests": 22, "passed": 22, "assertions": 144 },
+    "php_full": { "tests": 282, "passed": 282, "assertions": 1876 },
+    "pint": "passed"
+  }
+}

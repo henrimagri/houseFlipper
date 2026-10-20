@@ -1,0 +1,36 @@
+{
+  "checked_at": "2026-10-19",
+  "failed": {
+    "detail": true,
+    "pending": true
+  },
+  "paid": true,
+  "csv": {
+    "file": "despesas-2026-10-19.csv",
+    "bom": true,
+    "neutralized": true,
+    "has_value": true
+  },
+  "final": {
+    "dark": true,
+    "width": 375,
+    "scrollWidth": 734,
+    "overflowX": "clip",
+    "rootWidth": 375
+  },
+  "requests": [
+    "GET /api/categorias-despesa",
+    "GET /api/dashboard",
+    "GET /api/auth/me",
+    "GET /api/despesas",
+    "GET /api/projetos",
+    "GET /api/categorias-despesa",
+    "PUT /api/despesas/21",
+    "PUT /api/despesas/21",
+    "GET /api/despesas",
+    "GET /api/projetos",
+    "GET /api/categorias-despesa"
+  ],
+  "errors": [],
+  "passed": true
+}

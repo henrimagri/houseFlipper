@@ -1,0 +1,14 @@
+{
+  "result": "passed",
+  "related_tests": 16,
+  "full_suite_assertions": 1717,
+  "related_assertions": 89,
+  "full_suite_tests": 251,
+  "bug": 117,
+  "checks": [
+    "price-only PATCH returns 200",
+    "title property type source city and notes are preserved",
+    "existing cover photo and gallery count are preserved",
+    "incomplete PUT remains rejected"
+  ]
+}

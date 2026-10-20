@@ -1,0 +1,18 @@
+{
+  "bug": "BUG 160",
+  "result": "passed",
+  "risk": "operator-controlled import filename disclosed to ordinary verified users",
+  "controls": [
+    "field-level authorization with import-itbi ability",
+    "shared transaction data preserved"
+  ],
+  "focused_tests": {
+    "tests": 10,
+    "assertions": 55
+  },
+  "full_suite": {
+    "tests": 296,
+    "assertions": 1991
+  },
+  "checked_at": "2026-10-18"
+}

@@ -1,0 +1,25 @@
+{
+    "small": {
+        "bytes": 4096,
+        "passed": true
+    },
+    "headers": {
+        "blocked": true,
+        "reason": [
+            "An error was encountered during the on_headers event",
+            "An error was encountered during the on_headers event",
+            "Resposta ITBI excede o limite de transferência."
+        ],
+        "passed": true
+    },
+    "chunked": {
+        "blocked": true,
+        "reason": [
+            "An error was encountered during the progress event",
+            "An error was encountered during the progress event",
+            "Resposta ITBI excede o limite de transferência."
+        ],
+        "passed": true
+    },
+    "passed": true
+}

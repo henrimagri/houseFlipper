@@ -1,0 +1,18 @@
+{
+  "bug": "BUG 161",
+  "result": "passed",
+  "risk": "configuration status contradicted enforced outbound URL policy",
+  "controls": [
+    "shared ExternalUrlPolicy for runtime status",
+    "private/local endpoints reported unavailable"
+  ],
+  "focused_tests": {
+    "assertions": 30,
+    "tests": 4
+  },
+  "full_suite": {
+    "assertions": 1996,
+    "tests": 297
+  },
+  "checked_at": "2026-10-18"
+}

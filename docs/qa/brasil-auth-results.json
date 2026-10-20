@@ -1,0 +1,342 @@
+{
+  "generatedAt": "2026-10-20T15:42:16.387Z",
+  "results": [
+    {
+      "route": "/",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "overflow": false,
+      "minTap": 3,
+      "title": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "states": 27,
+      "capitals": 27,
+      "previews": 3,
+      "previewDisclaimer": 3,
+      "nationalCopy": true,
+      "globeDisclosure": true,
+      "routeFlows": 1,
+      "movingSignals": 27,
+      "canvases": 1,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "overflow": false,
+      "minTap": 3,
+      "title": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "states": 27,
+      "capitals": 27,
+      "previews": 3,
+      "previewDisclaimer": 3,
+      "nationalCopy": true,
+      "globeDisclosure": true,
+      "routeFlows": 1,
+      "movingSignals": 27,
+      "canvases": 1,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "states": 27,
+      "capitals": 27,
+      "previews": 3,
+      "previewDisclaimer": 3,
+      "nationalCopy": true,
+      "globeDisclosure": true,
+      "routeFlows": 1,
+      "movingSignals": 27,
+      "canvases": 1,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "overflow": false,
+      "minTap": 1,
+      "title": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "states": 27,
+      "capitals": 27,
+      "previews": 3,
+      "previewDisclaimer": 3,
+      "nationalCopy": true,
+      "globeDisclosure": true,
+      "routeFlows": 1,
+      "movingSignals": 27,
+      "canvases": 1,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "states": 27,
+      "capitals": 27,
+      "previews": 3,
+      "previewDisclaimer": 3,
+      "nationalCopy": true,
+      "globeDisclosure": true,
+      "routeFlows": 1,
+      "movingSignals": 27,
+      "canvases": 1,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/login",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Uma conta para conduzir toda a sua operação.",
+      "passwordType": "text",
+      "remember": true,
+      "forgot": true,
+      "splitLayout": true,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/login",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Uma conta para conduzir toda a sua operação.",
+      "passwordType": "text",
+      "remember": true,
+      "forgot": true,
+      "splitLayout": true,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/login",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Uma conta para conduzir toda a sua operação.",
+      "passwordType": "text",
+      "remember": true,
+      "forgot": true,
+      "splitLayout": true,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/login",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Uma conta para conduzir toda a sua operação.",
+      "passwordType": "text",
+      "remember": true,
+      "forgot": true,
+      "splitLayout": true,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/login",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Uma conta para conduzir toda a sua operação.",
+      "passwordType": "text",
+      "remember": true,
+      "forgot": true,
+      "splitLayout": true,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/cadastro",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Sua operação imobiliária começa com o produto certo.",
+      "step": "2",
+      "strength": "Força da senha: 5 de 5",
+      "textPasswords": 2,
+      "hasFiveSteps": true,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/cadastro",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Sua operação imobiliária começa com o produto certo.",
+      "step": "2",
+      "strength": "Força da senha: 5 de 5",
+      "textPasswords": 2,
+      "hasFiveSteps": true,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/cadastro",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Sua operação imobiliária começa com o produto certo.",
+      "step": "2",
+      "strength": "Força da senha: 5 de 5",
+      "textPasswords": 2,
+      "hasFiveSteps": true,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/cadastro",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Sua operação imobiliária começa com o produto certo.",
+      "step": "2",
+      "strength": "Força da senha: 5 de 5",
+      "textPasswords": 2,
+      "hasFiveSteps": true,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/cadastro",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Sua operação imobiliária começa com o produto certo.",
+      "step": "2",
+      "strength": "Força da senha: 5 de 5",
+      "textPasswords": 2,
+      "hasFiveSteps": true,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/esqueci-senha",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Retome o acesso com segurança.",
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/esqueci-senha",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Retome o acesso com segurança.",
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/redefinir-senha",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Crie uma senha forte e exclusiva.",
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/redefinir-senha",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Crie uma senha forte e exclusiva.",
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/confirmar-email",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Só falta validar seu e-mail.",
+      "errors": [],
+      "passed": true
+    },
+    {
+      "route": "/confirmar-email",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "overflow": false,
+      "minTap": 0,
+      "title": "Só falta validar seu e-mail.",
+      "errors": [],
+      "passed": true
+    }
+  ]
+}

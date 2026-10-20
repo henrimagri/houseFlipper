@@ -1,0 +1,14 @@
+{
+  "full_suite_tests": 250,
+  "related_assertions": 47,
+  "checks": [
+    "rating-only PATCH returns 200",
+    "name and category are preserved",
+    "contact email and active status are preserved",
+    "incomplete PUT remains rejected"
+  ],
+  "full_suite_assertions": 1703,
+  "result": "passed",
+  "related_tests": 5,
+  "bug": 116
+}

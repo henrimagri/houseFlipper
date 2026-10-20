@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-17",
+  "verified": {
+    "cancelled_expense_excluded_from_project_stage_roi_dashboard": true,
+    "deleted_expense_recalculates_project_and_stage": true,
+    "deleted_expense_excluded_from_roi_and_dashboard": true,
+    "cancelled_or_deleted_sale_clears_property_sold_state": true,
+    "deleted_stages_excluded_from_budget_and_summary": true,
+    "deleted_projects_hide_operational_children": true,
+    "transaction_failures_roll_back_deletion_and_recalculation": true
+  },
+  "verification": {
+    "focused_expense_transition": "1 test, 18 assertions passed",
+    "backend_suite": "257 tests, 1758 assertions passed"
+  }
+}

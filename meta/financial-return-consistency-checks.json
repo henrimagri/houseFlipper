@@ -1,0 +1,35 @@
+{
+  "bug": 87,
+  "status": "fixed_and_tested",
+  "formula": {
+    "monthly_percentage": "((1 + total_roi_percentage / 100) ** (1 / months) - 1) * 100",
+    "annualized_percentage": "((1 + total_roi_percentage / 100) ** (12 / months) - 1) * 100"
+  },
+  "regressions": [
+    {
+      "total_roi_percentage": 100,
+      "months": 12,
+      "monthly_percentage": 5.9463,
+      "annualized_percentage": 100
+    },
+    {
+      "total_roi_percentage": 21,
+      "months": 6,
+      "monthly_percentage": 3.228,
+      "annualized_percentage": 46.41
+    },
+    {
+      "total_roi_percentage": -100,
+      "months": 8,
+      "monthly_percentage": -100,
+      "annualized_percentage": -100
+    }
+  ],
+  "verification": {
+    "frontend": "40 tests passed",
+    "investment_analysis": "10 tests, 73 assertions passed",
+    "php_full_suite": "220 tests, 1411 assertions passed",
+    "typescript_build": "passed with 2308 modules",
+    "pint": "passed"
+  }
+}

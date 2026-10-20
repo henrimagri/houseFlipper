@@ -1,0 +1,20 @@
+[
+  {
+    "url": "http://127.0.0.1:8000/storage/audit-photo-probe.png",
+    "getStatus": 200,
+    "type": "image/png",
+    "bytes": 68,
+    "sha256Matched": true,
+    "headStatus": 200,
+    "headBodyBytes": 0
+  },
+  {
+    "url": "http://127.0.0.1:5173/storage/audit-photo-probe.png",
+    "getStatus": 200,
+    "type": "image/png",
+    "bytes": 68,
+    "sha256Matched": true,
+    "headStatus": 200,
+    "headBodyBytes": 0
+  }
+]

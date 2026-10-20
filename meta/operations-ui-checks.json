@@ -1,0 +1,45 @@
+{
+  "checked_at": "2026-10-19",
+  "works": {
+    "visible": true,
+    "dark": true
+  },
+  "stage_failure_visible": true,
+  "finance_preserved": true,
+  "report_preserved": true,
+  "csv": {
+    "file": "relatorio-resumo-2026-10-19.csv",
+    "bom": true,
+    "invested": true,
+    "revenue": true
+  },
+  "layout": {
+    "width": 375,
+    "rootWidth": 375,
+    "dark": true
+  },
+  "requests": [
+    "GET /api/dashboard",
+    "GET /api/auth/me",
+    "GET /api/projetos",
+    "GET /api/projetos/1/resumo",
+    "PATCH /api/projetos-etapas/11",
+    "PATCH /api/projetos-etapas/11",
+    "GET /api/projetos",
+    "GET /api/projetos/1/resumo",
+    "GET /api/projetos",
+    "GET /api/projetos/1/resumo",
+    "GET /api/dashboard",
+    "GET /api/auth/me",
+    "GET /api/dashboard",
+    "GET /api/dashboard",
+    "GET /api/dashboard",
+    "GET /api/dashboard",
+    "GET /api/dashboard",
+    "GET /api/auth/me",
+    "GET /api/dashboard",
+    "GET /api/dashboard"
+  ],
+  "errors": [],
+  "passed": true
+}

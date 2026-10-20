@@ -1,0 +1,30 @@
+{
+  "checked_at": "2026-10-18",
+  "bug": 146,
+  "status": "passed",
+  "actions": [
+    "reloadFinancingReference",
+    "selectFinancingSimulation"
+  ],
+  "controls": [
+    "try/catch",
+    "validation message",
+    "pending reset in finally",
+    "disabled comparator controls"
+  ],
+  "regression": "financial-action-errors.test.mjs",
+  "frontend": {
+    "tests": 57,
+    "passed": 57,
+    "failed": 0,
+    "duration_ms": 658.3309
+  },
+  "build": {
+    "result": "passed",
+    "modules": 2312,
+    "entry_chunk_kb": 269.67,
+    "largest_chunk_kb": 421.58,
+    "warning": null,
+    "duration_seconds": 4.8
+  }
+}

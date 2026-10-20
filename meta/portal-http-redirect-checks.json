@@ -1,0 +1,35 @@
+{
+  "bug": "BUG 83",
+  "status": "corrected",
+  "risk": "high",
+  "surface": "PHP portal HTML fallback",
+  "redirects": {
+    "automatic": false,
+    "maximum": 3,
+    "allowed_hosts": "explicit exact portal list",
+    "scheme": "HTTPS only",
+    "credentials": false
+  },
+  "dns": {
+    "all_addresses_must_be_public": true,
+    "empty_or_mixed_result": "blocked"
+  },
+  "targeted": {
+    "tests": 11,
+    "passed": 11,
+    "assertions": 15,
+    "duration_ms": 331
+  },
+  "integration": {
+    "private_redirect_requests": 1,
+    "private_redirect_blocked": true,
+    "allowed_redirect_requests": 2,
+    "allowed_redirect_status": 200
+  },
+  "full_suite": {
+    "tests": 217,
+    "passed": 217,
+    "assertions": 1381,
+    "duration_ms": 11321
+  }
+}

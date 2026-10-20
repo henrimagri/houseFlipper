@@ -1,0 +1,21 @@
+{
+  "bug": 89,
+  "status": "fixed_and_tested",
+  "route": "PUT|PATCH /api/projetos/{id}",
+  "before": {
+    "nested_update_status": 200,
+    "simple_fields_changed": true,
+    "stages_changed": false,
+    "result": "partial_success_without_warning"
+  },
+  "after": {
+    "nested_update_status": 422,
+    "validation_errors": ["etapas", "orcamento_categorias"],
+    "project_preserved": true,
+    "stage_preserved": true,
+    "manual_project_tests": "3 tests, 24 assertions passed",
+    "related_tests": "25 tests, 209 assertions passed",
+    "php_full_suite": "223 tests, 1434 assertions passed",
+    "pint": "passed"
+  }
+}

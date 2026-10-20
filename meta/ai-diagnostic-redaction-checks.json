@@ -1,0 +1,19 @@
+{
+  "bug": "BUG 155",
+  "result": "passed",
+  "risk": "upstream diagnostic information disclosure",
+  "controls": [
+    "maximum 25 diagnostics",
+    "bounded status and found",
+    "fixed public error message"
+  ],
+  "focused_tests": {
+    "assertions": 24,
+    "tests": 3
+  },
+  "full_suite": {
+    "assertions": 1909,
+    "tests": 283
+  },
+  "checked_at": "2026-10-18"
+}

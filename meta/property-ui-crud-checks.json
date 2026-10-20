@@ -1,0 +1,73 @@
+{
+  "checked_at": "2026-10-19",
+  "focused": true,
+  "failed": {
+    "open": true,
+    "draft": true
+  },
+  "final": {
+    "dark": true,
+    "width": 375,
+    "scrollWidth": 375,
+    "empty": true
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/propriedades"
+    },
+    {
+      "method": "POST",
+      "path": "/api/propriedades"
+    },
+    {
+      "method": "POST",
+      "path": "/api/propriedades"
+    },
+    {
+      "method": "GET",
+      "path": "/api/propriedades"
+    },
+    {
+      "method": "GET",
+      "path": "/api/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/propriedades"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/propriedades/31"
+    },
+    {
+      "method": "GET",
+      "path": "/api/propriedades"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/propriedades/31"
+    },
+    {
+      "method": "GET",
+      "path": "/api/propriedades"
+    }
+  ],
+  "page_errors": [],
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "passed": true
+}

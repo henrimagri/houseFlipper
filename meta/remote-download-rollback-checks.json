@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-17",
+  "controls": {
+    "https_host_allowlist_each_redirect": true,
+    "redirect_limit": 3,
+    "size_checked_on_headers_progress_and_final_body": true,
+    "storage_write_result_checked": true,
+    "new_file_removed_on_database_failure": true,
+    "preexisting_content_addressed_file_preserved": true,
+    "failed_batch_does_not_reference_removed_file": true
+  },
+  "verification": {
+    "focused_suite": "9 tests, 36 assertions passed",
+    "backend_suite": "268 tests, 1814 assertions passed",
+    "pint": "passed"
+  },
+  "remaining_limit": "Abrupt host failure and production proxy/storage behavior require deployment-level exercises."
+}

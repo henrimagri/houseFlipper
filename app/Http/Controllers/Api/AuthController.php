@@ -5,14 +5,22 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Services\Ai\ProductEntitlement;
 use App\Services\AuthService;
 use App\Services\RegistrationVerificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    public function __construct(private readonly AuthService $authService) {}
+    public function __construct(
+        private readonly AuthService $authService,
+        private readonly ProductEntitlement $entitlement,
+    ) {}
 
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -57,6 +65,7 @@ class AuthController extends Controller
             ],
             'token' => $result['token'],
             'requires_email_verification' => $result['user']->requires_email_verification && ! $result['user']->hasVerifiedEmail(),
+            ...$this->entitlement->sessionPayload($result['user']),
         ]);
     }
 
@@ -78,12 +87,89 @@ class AuthController extends Controller
             'requires_email_verification' => $user->requires_email_verification && ! $user->hasVerifiedEmail(),
             'email_verified' => $user->hasVerifiedEmail(),
             'registration_profile' => $user->registration_profile,
+            'avatar_url' => $user->registration_profile['avatar_url'] ?? null,
             'tenant' => $user->tenant ? [
                 'id' => $user->tenant->id,
                 'nome' => $user->tenant->nome,
                 'slug' => $user->tenant->slug,
             ] : null,
+            ...$this->entitlement->sessionPayload($user),
         ]);
+    }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'phone' => ['nullable', 'string', 'regex:/^\d{10,11}$/'],
+            'preferences' => ['sometimes', 'array:email_notifications,product_updates'],
+            'preferences.email_notifications' => ['sometimes', 'boolean'],
+            'preferences.product_updates' => ['sometimes', 'boolean'],
+        ]);
+
+        $user = $request->user();
+        $profile = is_array($user->registration_profile) ? $user->registration_profile : [];
+        $profile['phone'] = $data['phone'] ?? null;
+        $profile['preferences'] = array_merge(
+            ['email_notifications' => true, 'product_updates' => true],
+            is_array($profile['preferences'] ?? null) ? $profile['preferences'] : [],
+            $data['preferences'] ?? [],
+        );
+        $user->forceFill(['name' => trim($data['name']), 'registration_profile' => $profile])->save();
+
+        return response()->json(['message' => 'Perfil atualizado.', 'user' => [
+            'name' => $user->name,
+            'email' => $user->email,
+            'registration_profile' => $user->registration_profile,
+        ]]);
+    }
+
+    public function updatePassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'string', 'max:72'],
+            'password' => ['required', 'confirmed', Password::min(12), 'max:72'],
+        ]);
+        if (! Hash::check($data['current_password'], $request->user()->password)) {
+            throw ValidationException::withMessages(['current_password' => 'A senha atual não confere.']);
+        }
+        $request->user()->forceFill(['password' => Hash::make($data['password'])])->save();
+
+        return response()->json(['message' => 'Senha alterada.']);
+    }
+
+    public function updateAvatar(Request $request): JsonResponse
+    {
+        $data = $request->validate(['avatar' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:min_width=80,min_height=80,max_width=3000,max_height=3000']]);
+        $directory = public_path('uploads/avatars');
+        if (! is_dir($directory)) mkdir($directory, 0755, true);
+        $name = Str::uuid().'.'.$data['avatar']->extension();
+        $data['avatar']->move($directory, $name);
+
+        $user = $request->user();
+        $profile = is_array($user->registration_profile) ? $user->registration_profile : [];
+        $old = $profile['avatar_url'] ?? null;
+        $profile['avatar_url'] = '/uploads/avatars/'.$name;
+        $user->forceFill(['registration_profile' => $profile])->save();
+        if (is_string($old) && preg_match('#^/uploads/avatars/[a-f0-9-]+\.(?:jpe?g|png|webp)$#i', $old)) {
+            $oldPath = public_path(ltrim($old, '/'));
+            if (is_file($oldPath)) @unlink($oldPath);
+        }
+
+        return response()->json(['message' => 'Foto atualizada.', 'avatar_url' => $profile['avatar_url']]);
+    }
+
+    public function switchProduct(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'product' => ['required', 'string', 'max:40'],
+        ]);
+        $slug = app(\App\Support\ProductContext::class)->normalize($data['product']);
+        abort_if(! $slug, 422, 'Produto inválido.');
+        abort_unless($this->entitlement->canAccessProduct($request->user(), $slug), 403, 'Este produto não está liberado para a conta.');
+        $request->user()->forceFill(['last_product_slug' => $slug])->save();
+
+        return response()->json(['last_product_slug' => $slug]);
     }
 
     public function sessions(Request $request): JsonResponse
@@ -105,5 +191,12 @@ class AuthController extends Controller
         $this->authService->logoutAll($request->user(), $request);
 
         return response()->json(['message' => 'Todas as sessões foram encerradas']);
+    }
+
+    public function logoutOthers(Request $request): JsonResponse
+    {
+        $count = $this->authService->logoutOthers($request->user());
+
+        return response()->json(['message' => 'Outras sessões encerradas', 'revoked' => $count]);
     }
 }

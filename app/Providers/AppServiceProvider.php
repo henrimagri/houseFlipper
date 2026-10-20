@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Contracts\ItbiDatasetProviderInterface;
+use App\Models\CommercializationAuthorization;
 use App\Models\User;
 use App\Services\RealEstateData\SaoPauloItbiDatasetProvider;
 use App\Services\ResendTransportFactory;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -33,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
             Http::globalOptions(['verify' => $caBundle]);
         }
         Mail::extend('resend', fn (array $config) => app(ResendTransportFactory::class)->make($config));
+        Route::bind('capture', fn (string $value) => CommercializationAuthorization::query()->findOrFail($value));
         RateLimiter::for('verification', fn (Request $request) => [
             Limit::perMinute(1)->by('verify-user:'.$request->user()->id),
             Limit::perHour(5)->by('verify-hour:'.$request->user()->id),
@@ -67,5 +70,15 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(10)->by('password-reset-ip:'.$request->ip()),
             Limit::perMinute(5)->by('password-reset-account:'.hash('sha256', mb_strtolower(is_string($request->input('email')) ? $request->input('email') : ''))),
         ]);
+        RateLimiter::for('public-leads', fn (Request $request) => [
+            Limit::perHour(8)->by('public-lead-ip:'.$request->ip()),
+            Limit::perDay(30)->by('public-lead-ip-day:'.$request->ip()),
+        ]);
+        RateLimiter::for('saas-leads', fn (Request $request) => [
+            Limit::perMinute(4)->by('saas-lead-ip:'.$request->ip()),
+            Limit::perHour(8)->by('saas-lead-hour:'.$request->ip()),
+            Limit::perDay(20)->by('saas-lead-day:'.$request->ip()),
+        ]);
+        RateLimiter::for('billing-webhook', fn (Request $request) => Limit::perMinute(60)->by('billing-webhook:'.$request->ip()));
     }
 }

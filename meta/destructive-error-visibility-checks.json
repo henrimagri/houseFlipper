@@ -1,0 +1,27 @@
+{
+  "checked_at": "2026-10-18",
+  "bug": 144,
+  "status": "passed",
+  "affected": [
+    "Calendario.tsx",
+    "Documentos.tsx",
+    "Tarefas.tsx"
+  ],
+  "regression": "destructive-error-visibility.test.mjs",
+  "handlers_checked": 9,
+  "pages_checked": 7,
+  "representative_browser_check": "supplier-ui-network-checks.json",
+  "frontend": {
+    "tests": 53,
+    "passed": 53,
+    "failed": 0,
+    "duration_ms": 22487.5196
+  },
+  "build": {
+    "result": "passed",
+    "modules": 2312,
+    "entry_chunk_kb": 269.67,
+    "largest_chunk_kb": 421.58,
+    "warning": null
+  }
+}

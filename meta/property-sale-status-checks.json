@@ -1,0 +1,19 @@
+{
+  "bug": 100,
+  "status": "fixed_and_tested_locally",
+  "before": {
+    "create_sold_without_final_sale_status": 201,
+    "property_status_user_editable_independently": true
+  },
+  "after": {
+    "create_sold_without_final_sale_status": 422,
+    "downgrade_with_final_sale_status": 422,
+    "mark_sold_without_final_sale_status": 422,
+    "edit_while_preserving_valid_sold_status": 200,
+    "property_row_lock": true,
+    "related_tests": "20 tests, 196 assertions passed",
+    "php_full_suite": "234 tests, 1543 assertions passed",
+    "pint": "passed globally",
+    "residual_limit": "specific multiprocess MariaDB race not executed"
+  }
+}

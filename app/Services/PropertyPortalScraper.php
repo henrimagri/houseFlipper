@@ -33,7 +33,10 @@ class PropertyPortalScraper
         'www.facebook.com', 'facebook.com', 'm.facebook.com',
     ];
 
-    public function __construct(private readonly RemoteUrlPolicy $urlPolicy) {}
+    public function __construct(
+        private readonly RemoteUrlPolicy $urlPolicy,
+        private readonly ApifyPropertySearchService $apify,
+    ) {}
 
     public function scrape(string $city, string $neighborhood, int $limit = 250, string $state = 'SP', string $propertyType = 'apartment'): array
     {
@@ -41,31 +44,31 @@ class PropertyPortalScraper
         $state = strtoupper(trim($state)) ?: 'SP';
         $propertyType = in_array($propertyType, ['apartment', 'house', 'commercial'], true) ? $propertyType : 'apartment';
         $region = trim($neighborhood.' '.$city) ?: 'São Paulo';
+        $cloud = $this->apify->search($city, $neighborhood, $state, $propertyType, $limit);
         $headless = $this->scrapeWithHeadlessBrowser($city, $neighborhood, $limit, $state, $propertyType);
+        $collected = collect($cloud['items'])->merge($headless['items']);
 
-        if (count($headless['items']) > 0) {
+        if ($collected->isNotEmpty()) {
             return [
-                'items' => collect($headless['items'])
+                'items' => $collected
                     ->filter(fn (array $item) => $this->rawItemMatchesLocation($item, $city, $neighborhood, $state))
                     ->map(fn (array $item) => $this->normalizeHeadlessItem($item, $city, $neighborhood, $state))
+                    ->unique(fn (array $item) => $item['source_url'] ?: $item['source'].'|'.$item['title'].'|'.$item['asking_price'])
                     ->sortByDesc('score')
                     ->take($limit)
                     ->values()
                     ->all(),
-                'diagnostics' => $headless['diagnostics'],
-                'source_name' => 'Web Scraper Headless: ZAP, VivaReal, OLX, ImovelWeb, Chaves na Mão, Casa Mineira, Loft, QuintoAndar, Mercado Livre e Facebook Marketplace',
+                'diagnostics' => array_merge($cloud['diagnostics'], $headless['diagnostics']),
+                'source_name' => 'Apify + coleta local: portais imobiliários brasileiros',
             ];
         }
 
         $targets = $this->targets($city, $neighborhood, $region, $state, $propertyType);
         $items = collect();
-        $diagnostics = $headless['diagnostics'];
+        $diagnostics = array_merge($cloud['diagnostics'], $headless['diagnostics']);
+        $perSourceLimit = max(1, (int) ceil($limit / count($targets)));
 
         foreach ($targets as $target) {
-            if ($items->count() >= $limit) {
-                break;
-            }
-
             $result = $this->fetch($target['url']);
             if (! $result['ok']) {
                 $diagnostics[] = ['source' => $target['name'], 'status' => $result['status'], 'message' => $result['message']];
@@ -74,7 +77,7 @@ class PropertyPortalScraper
             }
 
             $parsed = $this->parseHtml($result['body'], $target, $city, $neighborhood, $state)
-                ->take(max(0, $limit - $items->count()));
+                ->take($perSourceLimit);
 
             $diagnostics[] = ['source' => $target['name'], 'status' => $result['status'], 'found' => $parsed->count()];
             $items = $items->merge($parsed);
@@ -187,20 +190,26 @@ class PropertyPortalScraper
         $stateSlug = strtolower($state);
         $regionQuery = urlencode(trim($region));
         $terms = $this->propertyTerms($propertyType);
-        $zapLocation = $neighborhoodSlug ? "{$stateSlug}+{$citySlug}+{$neighborhoodSlug}" : "{$stateSlug}+{$citySlug}";
-        $pathLocation = $neighborhoodSlug ? "{$citySlug}/{$neighborhoodSlug}" : $citySlug;
-        $dashLocation = $neighborhoodSlug ? "{$neighborhoodSlug}-{$citySlug}" : $citySlug;
+        $saoPauloZones = [
+            'perdizes' => 'zona-oeste', 'pinheiros' => 'zona-oeste', 'lapa' => 'zona-oeste',
+            'moema' => 'zona-sul', 'vila-mariana' => 'zona-sul', 'itaim-bibi' => 'zona-sul', 'brooklin' => 'zona-sul', 'campo-belo' => 'zona-sul',
+            'tatuape' => 'zona-leste', 'santana' => 'zona-norte',
+        ];
+        $zoneSlug = $citySlug === 'sao-paulo' ? ($saoPauloZones[$neighborhoodSlug] ?? null) : null;
+        $zapPlace = implode('+', array_filter([$stateSlug, $citySlug, $zoneSlug, $neighborhoodSlug]));
+        $vivaPlace = implode('/', array_filter([$stateSlug, $citySlug, $zoneSlug, $neighborhoodSlug]));
+        $dashLocation = $neighborhoodSlug ? "{$neighborhoodSlug}-{$citySlug}" : "{$citySlug}-{$stateSlug}";
 
         return [
             [
                 'name' => 'ZAP Imóveis',
                 'source_key' => 'zap',
-                'url' => "https://www.zapimoveis.com.br/venda/{$terms['zap']}/{$zapLocation}/",
+                'url' => "https://www.zapimoveis.com.br/venda/{$terms['zap']}/{$zapPlace}/",
             ],
             [
                 'name' => 'VivaReal',
                 'source_key' => 'vivareal',
-                'url' => "https://www.vivareal.com.br/venda/{$stateSlug}/{$pathLocation}/{$terms['vivareal']}/",
+                'url' => "https://www.vivareal.com.br/venda/{$vivaPlace}/{$terms['vivareal']}/",
             ],
             [
                 'name' => 'OLX',
@@ -210,7 +219,7 @@ class PropertyPortalScraper
             [
                 'name' => 'ImovelWeb',
                 'source_key' => 'other',
-                'url' => "https://www.imovelweb.com.br/{$terms['imovelweb']}-venda-{$dashLocation}-{$stateSlug}.html",
+                'url' => "https://www.imovelweb.com.br/{$terms['imovelweb']}-venda-{$dashLocation}.html",
             ],
             [
                 'name' => 'Chaves na Mão',
@@ -220,22 +229,22 @@ class PropertyPortalScraper
             [
                 'name' => 'Casa Mineira',
                 'source_key' => 'realtor',
-                'url' => "https://www.casamineira.com.br/venda/{$terms['casamineira']}/{$citySlug}_{$stateSlug}",
+                'url' => "https://www.casamineira.com.br/venda/{$terms['casamineira']}/".($neighborhoodSlug ? "{$neighborhoodSlug}_" : '')."{$citySlug}_{$stateSlug}",
             ],
             [
                 'name' => 'Loft',
                 'source_key' => 'other',
-                'url' => "https://loft.com.br/venda/imoveis/{$stateSlug}/{$citySlug}/{$terms['loft']}",
+                'url' => "https://loft.com.br/venda/{$terms['loft']}/{$stateSlug}/{$citySlug}/".($neighborhoodSlug ? "{$neighborhoodSlug}_{$citySlug}_{$stateSlug}" : "{$citySlug}_{$stateSlug}"),
             ],
             [
                 'name' => 'QuintoAndar',
                 'source_key' => 'quintoandar',
-                'url' => "https://www.quintoandar.com.br/comprar/imovel/{$citySlug}-{$stateSlug}-brasil/{$terms['quintoandar']}",
+                'url' => 'https://www.quintoandar.com.br/comprar/imovel/'.($neighborhoodSlug ? "{$neighborhoodSlug}-" : '')."{$citySlug}-{$stateSlug}-brasil/{$terms['quintoandar']}",
             ],
             [
                 'name' => 'Mercado Livre',
                 'source_key' => 'other',
-                'url' => 'https://lista.mercadolivre.com.br/imoveis/'.$terms['mercadolivre'].'-venda-'.$this->slug($region.' '.$state),
+                'url' => 'https://lista.mercadolivre.com.br/'.$terms['mercadolivre'].'-'.$this->slug($neighborhood.' '.$city),
             ],
             [
                 'name' => 'Facebook Marketplace',

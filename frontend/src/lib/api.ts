@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { clearAuthToken, getAuthToken } from '@/lib/authToken';
 import { isPublicAuthRequest, shouldClearSessionAfterUnauthorized } from '@/lib/authRequest';
+import { productFromPath, readStoredProduct } from '@/lib/products';
 
 const api = axios.create({
   baseURL: '/api',
@@ -12,6 +13,12 @@ api.interceptors.request.use((config) => {
   if (token && !isPublicAuthRequest(config.url)) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  const product = typeof window !== 'undefined'
+    ? (productFromPath(window.location.pathname) ?? readStoredProduct())
+    : null;
+  if (product) {
+    config.headers['X-Product-Context'] = product;
+  }
   return config;
 });
 
@@ -20,8 +27,9 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 && shouldClearSessionAfterUnauthorized(error.config?.url, error.config?.headers?.Authorization)) {
       clearAuthToken();
-      if (!['/login', '/cadastro', '/confirmar-email', '/esqueci-senha', '/redefinir-senha'].includes(window.location.pathname)) {
-        window.location.href = '/login';
+      const path = window.location.pathname;
+      if (path.startsWith('/app') || path.startsWith('/platform')) {
+        window.location.href = '/entrar';
       }
     }
     if (error.response?.status === 403 && error.response?.data?.code === 'email_verification_required' && window.location.pathname !== '/confirmar-email') {

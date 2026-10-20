@@ -1,0 +1,32 @@
+{
+  "checked_at": "2026-10-18",
+  "bug": 148,
+  "status": "passed",
+  "actions": [
+    "addFinancingSimulation",
+    "addCost",
+    "saveResult"
+  ],
+  "controls": [
+    "pending entered before request",
+    "handled rejection",
+    "pending restored in finally",
+    "submission controls disabled",
+    "form values retained on failure"
+  ],
+  "regression": "financial-action-errors.test.mjs",
+  "frontend": {
+    "tests": 60,
+    "passed": 60,
+    "failed": 0,
+    "duration_ms": 662.4352
+  },
+  "build": {
+    "result": "passed",
+    "modules": 2312,
+    "entry_chunk_kb": 269.67,
+    "largest_chunk_kb": 421.58,
+    "warning": null,
+    "duration_seconds": 4.8
+  }
+}

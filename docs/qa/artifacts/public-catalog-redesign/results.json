@@ -1,0 +1,197 @@
+{
+  "generatedAt": "2026-10-20T16:14:48.116Z",
+  "results": [
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812,
+        "theme": "light"
+      },
+      "overflow": false,
+      "title": "Tudo o que sua operação precisa, no produto certo.",
+      "featureCards": 3,
+      "featureRows": 55,
+      "featureIcons": 110,
+      "pricingCards": 0,
+      "sevenDayCopy": 0,
+      "technicalCheckoutCopy": false,
+      "visibleHeadings": true,
+      "route": "/funcionalidades",
+      "planValues": [],
+      "discountedValues": [],
+      "errors": [],
+      "failures": [],
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1366,
+        "height": 768,
+        "theme": "light"
+      },
+      "overflow": false,
+      "title": "Tudo o que sua operação precisa, no produto certo.",
+      "featureCards": 3,
+      "featureRows": 55,
+      "featureIcons": 110,
+      "pricingCards": 0,
+      "sevenDayCopy": 0,
+      "technicalCheckoutCopy": false,
+      "visibleHeadings": true,
+      "route": "/funcionalidades",
+      "planValues": [],
+      "discountedValues": [],
+      "errors": [],
+      "failures": [],
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1366,
+        "height": 768,
+        "theme": "dark"
+      },
+      "overflow": false,
+      "title": "Tudo o que sua operação precisa, no produto certo.",
+      "featureCards": 3,
+      "featureRows": 55,
+      "featureIcons": 110,
+      "pricingCards": 0,
+      "sevenDayCopy": 0,
+      "technicalCheckoutCopy": false,
+      "visibleHeadings": true,
+      "route": "/funcionalidades",
+      "planValues": [],
+      "discountedValues": [],
+      "errors": [],
+      "failures": [],
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812,
+        "theme": "light"
+      },
+      "overflow": false,
+      "title": "Escolha o plano para a sua forma de trabalhar.",
+      "featureCards": 0,
+      "featureRows": 0,
+      "featureIcons": 0,
+      "pricingCards": 2,
+      "sevenDayCopy": 4,
+      "technicalCheckoutCopy": false,
+      "visibleHeadings": true,
+      "route": "/precos",
+      "planValues": [
+        "R$ 149",
+        "R$ 499",
+        "R$ 249"
+      ],
+      "discountedValues": [
+        {
+          "monthly": "R$ 149",
+          "quarterly": "R$ 134,10",
+          "annual": "R$ 119,20"
+        },
+        {
+          "monthly": "R$ 499",
+          "quarterly": "R$ 449,10",
+          "annual": "R$ 399,20"
+        },
+        {
+          "monthly": "R$ 249",
+          "quarterly": "R$ 224,10",
+          "annual": "R$ 199,20"
+        }
+      ],
+      "errors": [],
+      "failures": [],
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1366,
+        "height": 768,
+        "theme": "light"
+      },
+      "overflow": false,
+      "title": "Escolha o plano para a sua forma de trabalhar.",
+      "featureCards": 0,
+      "featureRows": 0,
+      "featureIcons": 0,
+      "pricingCards": 2,
+      "sevenDayCopy": 4,
+      "technicalCheckoutCopy": false,
+      "visibleHeadings": true,
+      "route": "/precos",
+      "planValues": [
+        "R$ 149",
+        "R$ 499",
+        "R$ 249"
+      ],
+      "discountedValues": [
+        {
+          "monthly": "R$ 149",
+          "quarterly": "R$ 134,10",
+          "annual": "R$ 119,20"
+        },
+        {
+          "monthly": "R$ 499",
+          "quarterly": "R$ 449,10",
+          "annual": "R$ 399,20"
+        },
+        {
+          "monthly": "R$ 249",
+          "quarterly": "R$ 224,10",
+          "annual": "R$ 199,20"
+        }
+      ],
+      "errors": [],
+      "failures": [],
+      "passed": true
+    },
+    {
+      "viewport": {
+        "width": 1366,
+        "height": 768,
+        "theme": "dark"
+      },
+      "overflow": false,
+      "title": "Escolha o plano para a sua forma de trabalhar.",
+      "featureCards": 0,
+      "featureRows": 0,
+      "featureIcons": 0,
+      "pricingCards": 2,
+      "sevenDayCopy": 4,
+      "technicalCheckoutCopy": false,
+      "visibleHeadings": true,
+      "route": "/precos",
+      "planValues": [
+        "R$ 149",
+        "R$ 499",
+        "R$ 249"
+      ],
+      "discountedValues": [
+        {
+          "monthly": "R$ 149",
+          "quarterly": "R$ 134,10",
+          "annual": "R$ 119,20"
+        },
+        {
+          "monthly": "R$ 499",
+          "quarterly": "R$ 449,10",
+          "annual": "R$ 399,20"
+        },
+        {
+          "monthly": "R$ 249",
+          "quarterly": "R$ 224,10",
+          "annual": "R$ 199,20"
+        }
+      ],
+      "errors": [],
+      "failures": [],
+      "passed": true
+    }
+  ]
+}

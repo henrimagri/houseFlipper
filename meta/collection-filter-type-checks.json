@@ -1,0 +1,28 @@
+{
+  "checked_at": "2026-10-18T23:16:58.0215250-03:00",
+  "status": "passed",
+  "protection": "ValidatePagination rejects arrays for scalar query filters before controllers and query builders",
+  "endpoints": [
+    "/api/projetos?status[]=em_andamento",
+    "/api/vendas?propriedade_id[]=1",
+    "/api/despesas?data_inicio[]=2026-01-01",
+    "/api/categorias-despesa?tipo[]=obra",
+    "/api/fornecedores?busca[]=audit",
+    "/api/documentos?categoria[]=contrato",
+    "/api/opportunities?city[]=Sao Paulo",
+    "/api/reports/ledger?data_inicio[]=2026-01-01",
+    "/api/reports/ledger?projeto_id[]=1"
+  ],
+  "expected": "422 with field-specific validation error",
+  "focused": {
+    "tests": 1,
+    "assertions": 21,
+    "status": "passed"
+  },
+  "full_php": {
+    "tests": 309,
+    "assertions": 2409,
+    "status": "passed"
+  },
+  "pint": "passed"
+}

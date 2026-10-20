@@ -1,0 +1,123 @@
+{
+  "checked_at": "2026-10-19",
+  "viewport": {
+    "width": 375,
+    "height": 812
+  },
+  "focused_initially": true,
+  "date_input_accepted": true,
+  "failure_state": {
+    "dialogOpen": true,
+    "title": "Tarefa criada pela automação",
+    "date": "2026-11-15",
+    "alert": "Falha offline simulada."
+  },
+  "reload_persisted": true,
+  "filtered_state": {
+    "cards": 1,
+    "visible": true
+  },
+  "final_state": {
+    "path": "/tarefas",
+    "dark": true,
+    "width": 375,
+    "scrollWidth": 375,
+    "initialVisible": true,
+    "deletedVisible": false
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tarefas"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos/1"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tarefas"
+    },
+    {
+      "method": "POST",
+      "path": "/api/tarefas"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tarefas"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tarefas"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/tarefas/2"
+    },
+    {
+      "method": "GET",
+      "path": "/api/tarefas"
+    },
+    {
+      "method": "GET",
+      "path": "/api/projetos"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    }
+  ],
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "page_errors": [],
+  "passed": true
+}

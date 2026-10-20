@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-17",
+  "database": "MariaDB 11.4.10 isolated",
+  "port": 13308,
+  "fictional_fixture": true,
+  "concurrent_workers": 2,
+  "worker_outcomes": [
+    "completed",
+    "rejected_processing"
+  ],
+  "requests_overlapped": true,
+  "batch_status": "completed",
+  "total_rows": 500,
+  "imported_rows": 500,
+  "updated_rows": 0,
+  "failed_rows": 0,
+  "transaction_count": 500,
+  "passed": true,
+  "server_stopped": true,
+  "source_archive_sha256": "fb7c76f0804321ee373daa49145f2056d2d88f321b614130adeb05a1644ea003"
+}

@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-17",
+  "browser": "in-app chromium",
+  "dialogs": [
+    {
+      "route": "/leads",
+      "title": "Nova oportunidade"
+    },
+    {
+      "route": "/projetos",
+      "title": "Novo projeto manual"
+    },
+    {
+      "route": "/tarefas",
+      "title": "Nova tarefa"
+    },
+    {
+      "route": "/fornecedores",
+      "title": "Novo fornecedor"
+    },
+    {
+      "route": "/documentos",
+      "title": "Novo documento"
+    },
+    {
+      "route": "/calendario",
+      "title": "Novo evento"
+    }
+  ],
+  "accessible_names": 6,
+  "initial_focus_inside": 6,
+  "escape_closed": 6,
+  "focus_returned_to_trigger": 6,
+  "limitations": [
+    "Full screen-reader pass pending",
+    "Formal color contrast audit pending"
+  ]
+}

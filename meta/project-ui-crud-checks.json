@@ -1,0 +1,38 @@
+{
+  "checked_at": "2026-10-17T22:00:00-03:00",
+  "route": "/projetos",
+  "tenant_id": 3,
+  "fixture": {
+    "id": 29,
+    "created_name": "QA CRUD Projeto 20261017",
+    "edited_name": "QA CRUD Projeto 20261017 Editado",
+    "property_id": 1,
+    "property": "QA Visual Imóvel 001 — Nome extenso para validar responsividade",
+    "edited_budget": 80000,
+    "edited_status": "pausado"
+  },
+  "browser_checks": {
+    "create": true,
+    "route_reload": true,
+    "detail_values": true,
+    "edit": true,
+    "delete_confirmation_accessible_name": true,
+    "delete_confirmation_accessible_description": true,
+    "soft_delete_removed_from_collection": true,
+    "protected_history_error_visible": true,
+    "protected_project_preserved": true
+  },
+  "database_checks": {
+    "edited_record_tenant_id": 3,
+    "edited_record_property_id": 1,
+    "edited_record_budget": "80000.00",
+    "deleted_fixture_flag": true,
+    "protected_project_id": 1,
+    "protected_project_deleted_flag": false
+  },
+  "verification": {
+    "frontend_tests": "40/40 passed",
+    "frontend_build": "passed, 2309 modules",
+    "remaining_scope": "network failure behavior"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "checked_at": "2026-10-19",
+  "bug_id": 184,
+  "affected_modules": [
+    "Projetos",
+    "Central Financeira",
+    "Importação ITBI",
+    "Assistente financeiro"
+  ],
+  "mutation_flows": 14,
+  "focused_regression": {
+    "passed": 11,
+    "tests": 11,
+    "failed": 0
+  },
+  "frontend_regression": {
+    "passed": 77,
+    "tests": 77,
+    "failed": 0
+  },
+  "build": {
+    "modules": 2314,
+    "passed": true
+  }
+}

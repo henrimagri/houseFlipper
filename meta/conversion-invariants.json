@@ -1,0 +1,17 @@
+{
+    "database": "MariaDB isolated",
+    "concurrent_requests": 2,
+    "statuses": [
+        200,
+        201
+    ],
+    "same_project": true,
+    "overlap": true,
+    "project_rows": 1,
+    "property_rows": 1,
+    "stage_rows": 7,
+    "linked_project": 1,
+    "project_budget": 300,
+    "stage_budget_sum": 300,
+    "passed": true
+}

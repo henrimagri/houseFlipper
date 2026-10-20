@@ -1,0 +1,37 @@
+{
+  "checked_at": "2026-10-18T23:26:19.1003011-03:00",
+  "bug": 180,
+  "status": "fixed_and_verified",
+  "before": {
+    "limits": [
+      "10 attempts/IP/minute",
+      "5 attempts/email+IP/minute"
+    ],
+    "distributed_fixture": "31 attempts to one email from 31 distinct documentation-range IPs",
+    "attempt_31": "401",
+    "impact": "no shared target-account budget"
+  },
+  "after": {
+    "limits": [
+      "10 attempts/IP/minute",
+      "5 attempts/email+IP/minute",
+      "30 attempts/email/hour"
+    ],
+    "account_key": "SHA-256 of normalized email",
+    "attempts_1_to_30": "401",
+    "attempt_31": "429"
+  },
+  "tests": {
+    "focused": {
+      "tests": 2,
+      "assertions": 32,
+      "status": "passed"
+    },
+    "full_php": {
+      "tests": 312,
+      "assertions": 2792,
+      "status": "passed"
+    },
+    "pint": "passed"
+  }
+}

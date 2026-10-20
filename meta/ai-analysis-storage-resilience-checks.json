@@ -1,0 +1,15 @@
+{
+  "bug": "BUG163",
+  "result": "passed",
+  "checked_at": "2026-10-18",
+  "scope": "AI market-analysis temporary browser storage",
+  "before": "An exception from either storage write aborted navigation without feedback.",
+  "protections": [
+    "sessionStorage and localStorage writes are isolated",
+    "one successful storage is sufficient",
+    "complete failure shows an actionable error and does not navigate"
+  ],
+  "regression": "frontend/tests/ai-search-actions.test.mjs",
+  "frontend_tests": "65/65",
+  "build_modules": 2312
+}

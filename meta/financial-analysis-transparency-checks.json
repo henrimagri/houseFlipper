@@ -1,0 +1,36 @@
+{
+  "bug": "BUG 85",
+  "status": "corrected",
+  "risk": "high",
+  "surface": "Central Financeira and financial wizard",
+  "removed": [
+    "unsourced fixed investment benchmarks",
+    "fabricated ideal purchase/renovation/sale targets",
+    "unrecalculated ROI uplift",
+    "fabricated counterfactual score and unconditional buy label",
+    "statistical confidence and percentile claims",
+    "artificial calculation delays",
+    "direct buy/negotiate/do-not-buy advice"
+  ],
+  "method": "rules_based_financial_calculation",
+  "scenario_basis": "expected_sale_price_and_costs_informed_by_user",
+  "targeted": {
+    "suite": "InvestmentAnalysisTest",
+    "tests": 9,
+    "passed": 9,
+    "assertions": 68,
+    "duration_ms": 995
+  },
+  "frontend": {
+    "tests": 38,
+    "passed": 38,
+    "build": "passed",
+    "modules": 2307
+  },
+  "full_suite": {
+    "tests": 219,
+    "passed": 219,
+    "assertions": 1406,
+    "duration_ms": 11148
+  }
+}

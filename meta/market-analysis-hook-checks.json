@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-17",
+  "finding": "market analysis returned before declaring hooks when session context was absent",
+  "correction": {
+    "hooks_unconditional": true,
+    "invalid_context_requests_skipped": true,
+    "state_reset_for_missing_context": true
+  },
+  "verification": {
+    "frontend_tests": "52 tests passed",
+    "production_build": "2312 modules passed"
+  }
+}

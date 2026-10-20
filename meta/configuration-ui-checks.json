@@ -1,0 +1,35 @@
+{
+  "checked_at": "2026-10-17",
+  "viewport": {
+    "width": 375,
+    "height": 812
+  },
+  "failed_state": {
+    "path": "/configuracoes",
+    "width": 375,
+    "scrollWidth": 375,
+    "alerts": [
+      "Falha simulada das sessões. Tentar novamente",
+      "Falha ao consultar as fontesFalha simulada das fontes.Tentar novamente"
+    ],
+    "retryButtons": 2,
+    "dark": true
+  },
+  "recovered_state": {
+    "alerts": 0,
+    "sessionVisible": true,
+    "sourceVisible": true,
+    "scrollWidth": 375,
+    "width": 375
+  },
+  "attempts": {
+    "sources": 3,
+    "sessions": 3
+  },
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)",
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "page_errors": [],
+  "passed": true
+}

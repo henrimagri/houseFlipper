@@ -5,7 +5,6 @@ import { isAllowedHttpsUrl, isPublicHttpUrl, isPublicNetworkTarget } from './net
 const input = JSON.parse(process.argv[2] || '{}');
 const limit = Math.min(250, Math.max(1, Number(input.limit || 250)));
 const perPortalTimeoutMs = Math.min(12000, Math.max(4000, Number(input.perPortalTimeoutMs || 8000)));
-const minEnoughResults = Math.min(limit, Math.max(20, Number(input.minEnoughResults || 60)));
 const city = String(input.city || '').trim();
 const neighborhood = String(input.neighborhood || '').trim();
 const state = String(input.state || 'SP').trim().toUpperCase() || 'SP';
@@ -63,9 +62,15 @@ const propertyTerms = {
 const terms = propertyTerms[propertyType];
 const citySlug = slug(city || region);
 const neighborhoodSlug = slug(neighborhood);
-const zapLocation = neighborhoodSlug ? `${stateSlug}+${citySlug}+${neighborhoodSlug}` : `${stateSlug}+${citySlug}`;
-const pathLocation = neighborhoodSlug ? `${citySlug}/${neighborhoodSlug}` : citySlug;
-const dashLocation = neighborhoodSlug ? `${neighborhoodSlug}-${citySlug}` : citySlug;
+const saoPauloZones = {
+  perdizes: 'zona-oeste', pinheiros: 'zona-oeste', lapa: 'zona-oeste',
+  moema: 'zona-sul', 'vila-mariana': 'zona-sul', 'itaim-bibi': 'zona-sul', brooklin: 'zona-sul', 'campo-belo': 'zona-sul',
+  tatuape: 'zona-leste', santana: 'zona-norte',
+};
+const zoneSlug = citySlug === 'sao-paulo' ? saoPauloZones[neighborhoodSlug] : '';
+const zapPlace = [stateSlug, citySlug, zoneSlug, neighborhoodSlug].filter(Boolean).join('+');
+const vivaPlace = [stateSlug, citySlug, zoneSlug, neighborhoodSlug].filter(Boolean).join('/');
+const dashLocation = neighborhoodSlug ? `${neighborhoodSlug}-${citySlug}` : `${citySlug}-${stateSlug}`;
 
 const targets = [
   {
@@ -76,17 +81,17 @@ const targets = [
   {
     name: 'ZAP Imóveis',
     source_key: 'zap',
-    url: `https://www.zapimoveis.com.br/venda/${terms.zap}/${zapLocation}/`,
+    url: `https://www.zapimoveis.com.br/venda/${terms.zap}/${zapPlace}/`,
   },
   {
     name: 'VivaReal',
     source_key: 'vivareal',
-    url: `https://www.vivareal.com.br/venda/${stateSlug}/${pathLocation}/${terms.vivareal}/`,
+    url: `https://www.vivareal.com.br/venda/${vivaPlace}/${terms.vivareal}/`,
   },
   {
     name: 'ImovelWeb',
     source_key: 'other',
-    url: `https://www.imovelweb.com.br/${terms.imovelweb}-venda-${dashLocation}-${stateSlug}.html`,
+    url: `https://www.imovelweb.com.br/${terms.imovelweb}-venda-${dashLocation}.html`,
   },
   {
     name: 'Chaves na Mão',
@@ -96,22 +101,22 @@ const targets = [
   {
     name: 'Casa Mineira',
     source_key: 'realtor',
-    url: `https://www.casamineira.com.br/venda/${terms.casamineira}/${slug(city || region)}_${stateSlug}`,
+    url: `https://www.casamineira.com.br/venda/${terms.casamineira}/${neighborhoodSlug ? `${neighborhoodSlug}_` : ''}${citySlug}_${stateSlug}`,
   },
   {
     name: 'Loft',
     source_key: 'other',
-    url: `https://loft.com.br/venda/imoveis/${stateSlug}/${slug(city || region)}/${terms.loft}`,
+    url: `https://loft.com.br/venda/${terms.loft}/${stateSlug}/${citySlug}/${neighborhoodSlug ? `${neighborhoodSlug}_${citySlug}_${stateSlug}` : `${citySlug}_${stateSlug}`}`,
   },
   {
     name: 'QuintoAndar',
     source_key: 'quintoandar',
-    url: `https://www.quintoandar.com.br/comprar/imovel/${slug(city || region)}-${stateSlug}-brasil/${terms.quintoandar}`,
+    url: `https://www.quintoandar.com.br/comprar/imovel/${neighborhoodSlug ? `${neighborhoodSlug}-` : ''}${citySlug}-${stateSlug}-brasil/${terms.quintoandar}`,
   },
   {
     name: 'Mercado Livre',
     source_key: 'other',
-    url: `https://lista.mercadolivre.com.br/imoveis/${terms.mercadolivre}-venda-${slug(`${region} ${state}`)}`,
+    url: `https://lista.mercadolivre.com.br/${terms.mercadolivre}-${slug(`${neighborhood} ${city}`)}`,
   },
   {
     name: 'Facebook Marketplace',
@@ -150,11 +155,9 @@ const browser = await puppeteer.launch({
 
 const diagnostics = [];
 const items = [];
+const perSourceLimit = Math.max(1, Math.ceil(limit / targets.length));
 
-try {
-  for (const target of targets) {
-    if (items.length >= minEnoughResults || items.length >= limit) break;
-
+async function collectTarget(target) {
     const page = await browser.newPage();
     await denyDownloads(page);
     await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0 Safari/537.36');
@@ -164,6 +167,14 @@ try {
     try {
       const response = await page.goto(target.url, { waitUntil: 'domcontentloaded', timeout: perPortalTimeoutMs });
       await new Promise(resolve => setTimeout(resolve, 500));
+      const blocked = await page.evaluate(() => {
+        const content = String(document.body?.innerText || '').toLowerCase();
+        return content.includes('executando verificação de segurança')
+          || content.includes('verify you are human')
+          || content.includes('verifique se você é humano')
+          || content.includes('captcha');
+      });
+      if (blocked) throw new Error('Portal bloqueou a consulta automatizada');
       await autoScroll(page);
 
       const found = await page.evaluate(({ target, city, neighborhood, state }) => {
@@ -239,18 +250,34 @@ try {
 
         const cards = [];
         const anchors = [...document.querySelectorAll('a[href]')];
+        const isListingHref = (href) => {
+          const path = String(href || '').toLowerCase();
+          return {
+            'OLX': path.includes('/imoveis/'),
+            'ZAP Imóveis': path.includes('/imovel/') || path.includes('/lancamentos/'),
+            'VivaReal': path.includes('/imovel/'),
+            'ImovelWeb': path.includes('/propriedades/'),
+            'Chaves na Mão': path.includes('/imovel/'),
+            'Casa Mineira': path.includes('/imovel/'),
+            'Loft': path.includes('/imovel/'),
+            'QuintoAndar': false,
+            'Mercado Livre': path.includes('/mlb-'),
+            'Facebook Marketplace': path.includes('/marketplace/item/'),
+          }[target.name] ?? true;
+        };
 
         for (const anchor of anchors) {
           let node = anchor;
           let text = '';
 
-          for (let i = 0; i < 5 && node; i += 1) {
+          for (let i = 0; i < 8 && node; i += 1) {
             text = String(node.innerText || node.textContent || '').replace(/\s+/g, ' ').trim();
-            if (text.includes('R$') && text.length < 3500) break;
+            if (text.includes('R$') && text.length < 10000) break;
             node = node.parentElement;
           }
 
           const href = anchor.getAttribute('href') || '';
+          if (!isListingHref(href)) continue;
           const haystack = `${href} ${text}`.toLowerCase();
           const normalizedHaystack = normalizeSearchText(`${href} ${text}`);
           const price = moneyToNumber(text);
@@ -260,9 +287,6 @@ try {
           if (haystack.includes('publicidade') || haystack.includes('patrocinado')) continue;
           if (neighborhood && !normalizedHaystack.includes(normalizeSearchText(neighborhood))) continue;
           if (!neighborhood && city && !normalizedHaystack.includes(normalizeSearchText(city)) && !normalizedHaystack.includes(normalizeSearchText(state))) continue;
-          if (target.name === 'OLX' && !href.includes('/imoveis/')) continue;
-          if (target.name === 'Facebook Marketplace' && !href.includes('/marketplace/item/')) continue;
-
           const compactSpecs = inferCompactSpecs(text);
           cards.push({
             title,
@@ -283,10 +307,50 @@ try {
           });
         }
 
+        if (target.name === 'QuintoAndar') {
+          try {
+            const nextData = JSON.parse(document.querySelector('#__NEXT_DATA__')?.textContent || '{}');
+            const houses = nextData?.props?.pageProps?.initialState?.houses || {};
+
+            for (const house of Object.values(houses)) {
+              const askingPrice = Number(house?.salePrice || 0);
+              if (!house?.forSale || askingPrice <= 0) continue;
+
+              const houseNeighborhood = String(house?.neighbourhood || neighborhood || '').trim();
+              const houseCity = String(house?.address?.city || city || '').trim();
+              if (neighborhood && normalizeSearchText(houseNeighborhood) !== normalizeSearchText(neighborhood)) continue;
+              if (city && houseCity && normalizeSearchText(houseCity) !== normalizeSearchText(city)) continue;
+
+              const propertyLabel = String(house?.type || 'Imóvel').trim();
+              const description = String(house?.shortSaleDescription || '').replace(/\s+/g, ' ').trim();
+              const street = String(house?.address?.address || '').trim();
+              cards.push({
+                title: (description || `${propertyLabel} em ${houseNeighborhood || houseCity}`).slice(0, 120),
+                text: [description, street, houseNeighborhood, houseCity].filter(Boolean).join(' · '),
+                source_url: null,
+                thumbnail: null,
+                asking_price: askingPrice,
+                area_m2: Number(house?.area || 0) || null,
+                bedrooms: Number(house?.bedrooms ?? 0),
+                bathrooms: Number(house?.bathrooms ?? 0),
+                parking_spaces: Number(house?.parkingSpots ?? 0),
+                address: street || houseNeighborhood || houseCity || 'Região pesquisada',
+                city: houseCity || city,
+                neighborhood: houseNeighborhood || neighborhood,
+                state,
+                source: target.name,
+                source_key: target.source_key,
+              });
+            }
+          } catch {
+            // A página pode mudar o estado serializado; os cards HTML continuam como fallback.
+          }
+        }
+
         return cards;
       }, { target, city, neighborhood, state });
 
-      const unique = dedupe(found).slice(0, Math.max(0, limit - items.length));
+      const unique = dedupe(found).slice(0, perSourceLimit);
       const enriched = enrichDetails ? await enrichListings(browser, unique) : unique;
       diagnostics.push({ source: target.name, status: response?.status() || 0, found: unique.length });
       items.push(...enriched);
@@ -295,6 +359,11 @@ try {
     } finally {
       await page.close().catch(() => {});
     }
+}
+
+try {
+  for (let index = 0; index < targets.length; index += 3) {
+    await Promise.all(targets.slice(index, index + 3).map(collectTarget));
   }
 } finally {
   await browser.close();

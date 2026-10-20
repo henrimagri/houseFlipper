@@ -23,95 +23,7 @@ class NeighborhoodContextService
         $queries = $this->queryCandidatesFrom($subject);
         $query = $queries[0] ?? 'Brasil';
 
-        if ($key = config('services.google_maps.key')) {
-            $google = $this->fromGoogle($query, $key);
-            if (($google['status'] ?? null) === 'connected') {
-                return $google;
-            }
-
-            $fallback = $this->fromOpenStreetMap($queries);
-            $fallback['google_status'] = $google;
-
-            return $fallback;
-        }
-
         return $this->fromOpenStreetMap($queries);
-    }
-
-    private function fromGoogle(string $query, string $key): array
-    {
-        try {
-            $geocode = $this->guardedHttp()->timeout(5)
-                ->acceptJson()
-                ->get($this->assertPublicHttpsEndpoint('https://maps.googleapis.com/maps/api/geocode/json'), [
-                    'address' => $query,
-                    'region' => 'br',
-                    'key' => $key,
-                ]);
-            $this->assertResponseSize($geocode);
-
-            if (! $geocode->successful() || $geocode->json('status') !== 'OK') {
-                $message = $geocode->json('error_message') ?: 'Google Maps não retornou coordenadas para o bairro/endereço pesquisado.';
-
-                return $this->unavailable('google_places', $message);
-            }
-
-            $location = $geocode->json('results.0.geometry.location');
-            $lat = (float) data_get($location, 'lat');
-            $lng = (float) data_get($location, 'lng');
-
-            $categories = [
-                'transport' => ['label' => 'Transporte', 'types' => ['subway_station', 'train_station', 'transit_station']],
-                'education' => ['label' => 'Educação', 'types' => ['school', 'university']],
-                'health' => ['label' => 'Saúde', 'types' => ['hospital', 'doctor', 'pharmacy']],
-                'shopping' => ['label' => 'Mercado e comércio', 'types' => ['supermarket', 'shopping_mall']],
-                'leisure' => ['label' => 'Lazer', 'types' => ['park', 'gym']],
-            ];
-
-            $groups = [];
-            foreach ($categories as $keyName => $category) {
-                $places = collect();
-                foreach ($category['types'] as $type) {
-                    $response = $this->guardedHttp()->timeout(5)
-                        ->acceptJson()
-                        ->get($this->assertPublicHttpsEndpoint('https://maps.googleapis.com/maps/api/place/nearbysearch/json'), [
-                            'location' => $lat.','.$lng,
-                            'radius' => self::RADIUS_METERS,
-                            'type' => $type,
-                            'key' => $key,
-                            'language' => 'pt-BR',
-                        ]);
-                    $this->assertResponseSize($response);
-
-                    if ($response->successful()) {
-                        $places = $places->merge($response->json('results', []));
-                    }
-                }
-
-                $groups[] = [
-                    'key' => $keyName,
-                    'label' => $category['label'],
-                    'count' => $places->unique('place_id')->count(),
-                    'places' => $places
-                        ->unique('place_id')
-                        ->map(fn (array $place) => [
-                            'name' => data_get($place, 'name'),
-                            'type' => $this->humanType((array) data_get($place, 'types', [])),
-                            'distance_m' => $this->distanceMeters($lat, $lng, (float) data_get($place, 'geometry.location.lat'), (float) data_get($place, 'geometry.location.lng')),
-                            'rating' => data_get($place, 'rating'),
-                        ])
-                        ->filter(fn (array $place) => $place['name'])
-                        ->sortBy('distance_m')
-                        ->take(5)
-                        ->values()
-                        ->all(),
-                ];
-            }
-
-            return $this->connected('google_places', 'Google Maps/Places', $query, $lat, $lng, $groups);
-        } catch (\Throwable $exception) {
-            return $this->unavailable('google_places', 'Serviço externo indisponível.');
-        }
     }
 
     private function fromOpenStreetMap(array $queries): array
@@ -617,7 +529,7 @@ QUERY;
     {
         return [
             'key' => $key,
-            'source' => $key === 'google_places' ? 'Google Maps/Places' : 'OpenStreetMap',
+            'source' => 'OpenStreetMap',
             'status' => 'unavailable',
             'message' => $message,
             'query' => null,

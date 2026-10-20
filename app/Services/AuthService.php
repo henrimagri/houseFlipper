@@ -28,7 +28,17 @@ class AuthService
             ]);
             $user->forceFill([
                 'requires_email_verification' => true,
-                'registration_profile' => ['phone' => $data['phone'] ?? null, 'address' => $data['address'] ?? null],
+                'registration_profile' => [
+                    'phone' => $data['phone'] ?? null,
+                    'address' => $data['address'] ?? null,
+                    'intended_product' => $data['intended_product'] ?? null,
+                    'professional_name' => $data['professional_name'] ?? null,
+                    'creci' => $data['creci'] ?? null,
+                    'city' => $data['city'] ?? null,
+                    'company_name' => $data['company_name'] ?? null,
+                    'region_preference' => $data['region_preference'] ?? null,
+                    'usage_goal' => $data['usage_goal'] ?? null,
+                ],
             ]);
             $user->save();
 
@@ -108,5 +118,16 @@ class AuthService
             $request->session()->invalidate();
             $request->session()->regenerateToken();
         }
+    }
+
+    public function logoutOthers(User $user): int
+    {
+        $currentId = $user->currentAccessToken() instanceof PersonalAccessToken
+            ? $user->currentAccessToken()->id
+            : null;
+
+        return $user->tokens()
+            ->when($currentId, fn ($query) => $query->whereKeyNot($currentId))
+            ->delete();
     }
 }

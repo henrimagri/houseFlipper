@@ -1,0 +1,92 @@
+{
+  "@types/react": {
+    "current": "18.3.31",
+    "wanted": "18.3.31",
+    "latest": "19.3.0",
+    "dependent": "frontend",
+    "location": "C:\\Users\\thaym\\Documents\\Codex\\2026-10-16\\git-github-com-henrimagri-houseflipper-git\\houseFlipper\\frontend\\node_modules\\@types\\react",
+    "type": "devDependencies",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react",
+    "dependedByLocation": ""
+  },
+  "@types/react-dom": {
+    "current": "18.3.7",
+    "wanted": "18.3.7",
+    "latest": "19.3.0",
+    "dependent": "frontend",
+    "location": "C:\\Users\\thaym\\Documents\\Codex\\2026-10-16\\git-github-com-henrimagri-houseflipper-git\\houseFlipper\\frontend\\node_modules\\@types\\react-dom",
+    "type": "devDependencies",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom",
+    "dependedByLocation": ""
+  },
+  "@vitejs/plugin-react": {
+    "current": "4.7.0",
+    "wanted": "4.7.0",
+    "latest": "6.1.2",
+    "dependent": "frontend",
+    "location": "C:\\Users\\thaym\\Documents\\Codex\\2026-10-16\\git-github-com-henrimagri-houseflipper-git\\houseFlipper\\frontend\\node_modules\\@vitejs\\plugin-react",
+    "type": "devDependencies",
+    "homepage": "https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#readme",
+    "dependedByLocation": ""
+  },
+  "lucide-react": {
+    "current": "0.460.0",
+    "wanted": "0.460.0",
+    "latest": "1.59.0",
+    "dependent": "frontend",
+    "location": "C:\\Users\\thaym\\Documents\\Codex\\2026-10-16\\git-github-com-henrimagri-houseflipper-git\\houseFlipper\\frontend\\node_modules\\lucide-react",
+    "type": "dependencies",
+    "homepage": "https://lucide.dev",
+    "dependedByLocation": ""
+  },
+  "react": {
+    "current": "18.3.1",
+    "wanted": "18.3.1",
+    "latest": "19.3.1",
+    "dependent": "frontend",
+    "location": "C:\\Users\\thaym\\Documents\\Codex\\2026-10-16\\git-github-com-henrimagri-houseflipper-git\\houseFlipper\\frontend\\node_modules\\react",
+    "type": "dependencies",
+    "homepage": "https://react.dev/",
+    "dependedByLocation": ""
+  },
+  "react-dom": {
+    "current": "18.3.1",
+    "wanted": "18.3.1",
+    "latest": "19.3.1",
+    "dependent": "frontend",
+    "location": "C:\\Users\\thaym\\Documents\\Codex\\2026-10-16\\git-github-com-henrimagri-houseflipper-git\\houseFlipper\\frontend\\node_modules\\react-dom",
+    "type": "dependencies",
+    "homepage": "https://react.dev/",
+    "dependedByLocation": ""
+  },
+  "recharts": {
+    "current": "2.15.4",
+    "wanted": "2.15.4",
+    "latest": "3.10.1",
+    "dependent": "frontend",
+    "location": "C:\\Users\\thaym\\Documents\\Codex\\2026-10-16\\git-github-com-henrimagri-houseflipper-git\\houseFlipper\\frontend\\node_modules\\recharts",
+    "type": "dependencies",
+    "homepage": "https://github.com/recharts/recharts",
+    "dependedByLocation": ""
+  },
+  "typescript": {
+    "current": "5.9.3",
+    "wanted": "5.9.3",
+    "latest": "7.0.2",
+    "dependent": "frontend",
+    "location": "C:\\Users\\thaym\\Documents\\Codex\\2026-10-16\\git-github-com-henrimagri-houseflipper-git\\houseFlipper\\frontend\\node_modules\\typescript",
+    "type": "devDependencies",
+    "homepage": "https://www.typescriptlang.org/",
+    "dependedByLocation": ""
+  },
+  "vite": {
+    "current": "6.4.4",
+    "wanted": "6.4.4",
+    "latest": "8.3.4",
+    "dependent": "frontend",
+    "location": "C:\\Users\\thaym\\Documents\\Codex\\2026-10-16\\git-github-com-henrimagri-houseflipper-git\\houseFlipper\\frontend\\node_modules\\vite",
+    "type": "devDependencies",
+    "homepage": "https://vite.dev",
+    "dependedByLocation": ""
+  }
+}

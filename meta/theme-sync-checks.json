@@ -1,0 +1,13 @@
+{
+  "date": "2026-10-17",
+  "storage_key": "flipcontrol:theme",
+  "checks": {
+    "initial_system_preference_applied": true,
+    "system_change_listener_registered": true,
+    "system_change_listener_cleaned_up": true,
+    "storage_event_synchronizes_tabs": true,
+    "invalid_storage_value_falls_back_to_system": true,
+    "dark_theme_previously_verified_in_browser": true
+  },
+  "remaining": ["formal contrast audit across every state", "visual inspection of every modal and table"]
+}

@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-17",
+  "providers": {
+    "cartorios": ["success", "http_error", "exception", "unconfigured"],
+    "prefeitura": ["success", "http_error", "exception", "unconfigured", "no_dataset"],
+    "itbi_municipal": ["json_success", "csv_success", "http_error", "exception", "unconfigured", "no_dataset", "combined_location_filter"],
+    "imported_itbi": ["database_success", "empty_result", "quality_filters"],
+    "portal_scraper": ["headless_success", "upstream_failure", "validated_redirect", "blocked_redirect", "oversized_response"]
+  },
+  "security": {
+    "exception_details_not_exposed": true,
+    "stray_http_requests_blocked_in_tests": true,
+    "city_and_neighborhood_are_conjunctive": true
+  },
+  "verification": {
+    "market_provider_suite": "5 tests, 37 assertions passed",
+    "backend_suite": "266 tests, 1804 assertions passed",
+    "pint": "passed"
+  }
+}

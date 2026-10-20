@@ -1,0 +1,15 @@
+{
+  "bug": 113,
+  "result": "passed",
+  "related_tests": 5,
+  "related_assertions": 76,
+  "full_suite_tests": 247,
+  "full_suite_assertions": 1662,
+  "checks": [
+    "PATCH with title only returns 200",
+    "completed status and completion date are preserved",
+    "project and stage are preserved",
+    "stage from another effective project returns 422",
+    "incomplete PUT remains rejected"
+  ]
+}

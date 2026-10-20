@@ -1,0 +1,16 @@
+{
+  "bug": 103,
+  "result": "passed-sequentially",
+  "related_tests": 31,
+  "related_assertions": 283,
+  "full_suite_tests": 238,
+  "full_suite_assertions": 1573,
+  "checks": [
+    "project creation revalidates active property under lock",
+    "expense creation revalidates active property and project under lock",
+    "expense updates lock old and new parents in stable order",
+    "document creation and updates lock affected projects",
+    "failed document parent revalidation removes prepared file"
+  ],
+  "limitation": "multiprocess transactional-database race execution remains pending"
+}

@@ -1,0 +1,18 @@
+{
+  "bug": 99,
+  "status": "fixed_and_tested",
+  "before": {
+    "persisted_start": "2026-11-10",
+    "persisted_planned_end": "2026-11-20",
+    "partial_end_before_start_status": 200
+  },
+  "after": {
+    "partial_end_before_start_status": 422,
+    "partial_start_after_end_status": 422,
+    "persisted_start": "2026-11-10",
+    "persisted_planned_end": "2026-11-20",
+    "related_tests": "21 tests, 190 assertions passed",
+    "php_full_suite": "233 tests, 1527 assertions passed",
+    "pint": "passed globally"
+  }
+}

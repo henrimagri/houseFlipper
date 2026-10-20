@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-10-20T15:38:25.806Z",
+  "results": [
+    {
+      "theme": "light",
+      "stationaryDistance": 0,
+      "manualDistance": 49.66089653522061,
+      "selected": "São Paulo",
+      "background": "rgb(3, 8, 23)",
+      "overflow": false,
+      "button": {
+        "width": 32,
+        "height": 32
+      },
+      "tooltip": {
+        "width": 62.0625,
+        "height": 24.999984741210938,
+        "text": "Goiânia",
+        "display": "block"
+      },
+      "transformedMarkerContent": false,
+      "errors": [],
+      "passed": true
+    },
+    {
+      "theme": "dark",
+      "stationaryDistance": 0,
+      "manualDistance": 50.040175692532806,
+      "selected": "São Paulo",
+      "background": "rgb(3, 8, 23)",
+      "overflow": false,
+      "button": {
+        "width": 32,
+        "height": 32
+      },
+      "tooltip": {
+        "width": 62.0625,
+        "height": 24.999984741210938,
+        "text": "Goiânia",
+        "display": "block"
+      },
+      "transformedMarkerContent": false,
+      "errors": [],
+      "passed": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "bug": 105,
+  "result": "passed-sequentially",
+  "related_tests": 26,
+  "related_assertions": 237,
+  "full_suite_tests": 239,
+  "full_suite_assertions": 1576,
+  "checks": [
+    "project update locks source and destination properties in stable order",
+    "destination property is revalidated after lock",
+    "project row is revalidated and locked before update",
+    "deleted destination leaves original relationship unchanged"
+  ],
+  "limitation": "multiprocess PUT versus DELETE verification remains pending"
+}

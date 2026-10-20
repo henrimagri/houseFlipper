@@ -1,0 +1,148 @@
+{
+  "results": [
+    {
+      "case": "home",
+      "theme": "light",
+      "width": 375,
+      "status": 200,
+      "errors": [],
+      "overflow": false,
+      "dark": false,
+      "globeCanvas": 1,
+      "heading": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "globeDisclosure": true
+    },
+    {
+      "case": "home",
+      "theme": "light",
+      "width": 430,
+      "status": 304,
+      "errors": [],
+      "overflow": false,
+      "dark": false,
+      "globeCanvas": 1,
+      "heading": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "globeDisclosure": true
+    },
+    {
+      "case": "home",
+      "theme": "light",
+      "width": 768,
+      "status": 304,
+      "errors": [],
+      "overflow": false,
+      "dark": false,
+      "globeCanvas": 1,
+      "heading": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "globeDisclosure": true
+    },
+    {
+      "case": "home",
+      "theme": "light",
+      "width": 1366,
+      "status": 304,
+      "errors": [],
+      "overflow": false,
+      "dark": false,
+      "globeCanvas": 1,
+      "heading": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "globeDisclosure": true
+    },
+    {
+      "case": "home",
+      "theme": "light",
+      "width": 1920,
+      "status": 304,
+      "errors": [],
+      "overflow": false,
+      "dark": false,
+      "globeCanvas": 1,
+      "heading": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "globeDisclosure": true
+    },
+    {
+      "case": "home",
+      "theme": "dark",
+      "width": 375,
+      "status": 304,
+      "errors": [],
+      "overflow": false,
+      "dark": true,
+      "globeCanvas": 1,
+      "heading": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "globeDisclosure": true
+    },
+    {
+      "case": "home",
+      "theme": "dark",
+      "width": 430,
+      "status": 304,
+      "errors": [],
+      "overflow": false,
+      "dark": true,
+      "globeCanvas": 1,
+      "heading": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "globeDisclosure": true
+    },
+    {
+      "case": "home",
+      "theme": "dark",
+      "width": 768,
+      "status": 304,
+      "errors": [],
+      "overflow": false,
+      "dark": true,
+      "globeCanvas": 1,
+      "heading": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "globeDisclosure": true
+    },
+    {
+      "case": "home",
+      "theme": "dark",
+      "width": 1366,
+      "status": 304,
+      "errors": [],
+      "overflow": false,
+      "dark": true,
+      "globeCanvas": 1,
+      "heading": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "globeDisclosure": true
+    },
+    {
+      "case": "home",
+      "theme": "dark",
+      "width": 1920,
+      "status": 304,
+      "errors": [],
+      "overflow": false,
+      "dark": true,
+      "globeCanvas": 1,
+      "heading": "O mercado imobiliário evoluiu. Sua forma de trabalhar também.",
+      "globeDisclosure": true
+    },
+    {
+      "case": "reduced-motion",
+      "canvas": 1,
+      "reduced": true
+    },
+    {
+      "case": "theme-menu",
+      "saved": "light",
+      "dark": false
+    },
+    {
+      "case": "commercial-modal",
+      "open": true
+    },
+    {
+      "case": "command-palette",
+      "open": true
+    },
+    {
+      "case": "profile-menu",
+      "open": true,
+      "productSwitchers": 1
+    }
+  ],
+  "failures": []
+}

@@ -1,0 +1,32 @@
+{
+  "checked_at": "2026-10-18",
+  "bug": 145,
+  "status": "passed",
+  "actions": [
+    "openEdit",
+    "openDetail",
+    "favorite",
+    "openFinancialAnalysis"
+  ],
+  "controls": [
+    "try/catch for every remote action",
+    "public fallback messages",
+    "pending reset in finally",
+    "modal-local role=alert",
+    "disabled concurrent detail actions"
+  ],
+  "regression": "opportunity-action-errors.test.mjs",
+  "frontend": {
+    "tests": 55,
+    "passed": 55,
+    "failed": 0,
+    "duration_ms": 563.0027
+  },
+  "build": {
+    "result": "passed",
+    "modules": 2312,
+    "entry_chunk_kb": 269.67,
+    "largest_chunk_kb": 421.58,
+    "warning": null
+  }
+}

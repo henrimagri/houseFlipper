@@ -5,6 +5,7 @@ interface KpiCardProps {
   valor: string;
   rodape?: string;
   rodapeColor?: string;
+  hint?: string;
   Icon: LucideIcon;
   iconBg: string;
   iconColor: string;
@@ -15,12 +16,13 @@ export default function KpiCard({
   valor,
   rodape,
   rodapeColor = 'text-gray-500 dark:text-slate-400',
+  hint,
   Icon,
   iconBg,
   iconColor,
 }: KpiCardProps) {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-5 shadow-xs">
+    <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-5 shadow-xs" title={hint}>
       <div className="flex items-start justify-between">
         <span className="text-xs font-medium text-gray-500 dark:text-slate-400">{titulo}</span>
         <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${iconBg}`}>

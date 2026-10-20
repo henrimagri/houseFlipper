@@ -35,7 +35,7 @@ class RegisterRequest extends FormRequest
             'name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email', function ($attribute, $value, $fail) {
                 if (is_string($value) && User::whereRaw('LOWER(email) = ?', [mb_strtolower($value)])->exists()) {
-                    $fail('Este e-mail já está cadastrado.');
+                    $fail('Não foi possível criar a conta com estes dados.');
                 }
             }],
             'password' => ['required', 'string', 'min:12', 'max:72', 'confirmed', function ($attribute, $value, $fail) {
@@ -45,6 +45,14 @@ class RegisterRequest extends FormRequest
             }],
             'device_name' => ['sometimes', 'string', 'max:100'],
             'phone' => ['nullable', 'string', 'regex:/^\d{10,11}$/'],
+            'intended_product' => ['nullable', 'in:corretor,imobiliaria,house_flipper'],
+            'professional_name' => ['nullable', 'string', 'max:150'],
+            'creci' => ['nullable', 'string', 'max:40'],
+            'city' => ['nullable', 'string', 'max:120'],
+            'company_name' => ['nullable', 'string', 'max:150'],
+            'region_preference' => ['nullable', 'string', 'max:120'],
+            'usage_goal' => ['nullable', 'string', 'max:180'],
+            'consent' => ['sometimes', 'accepted'],
             'address' => ['sometimes', 'required', 'array:postal_code,street,number,complement,neighborhood,city,state'],
             'address.postal_code' => ['required_with:address', 'string', 'regex:/^\d{8}$/'],
             'address.street' => ['required_with:address', 'string', 'max:180'],
@@ -53,6 +61,14 @@ class RegisterRequest extends FormRequest
             'address.neighborhood' => ['required_with:address', 'string', 'max:120'],
             'address.city' => ['required_with:address', 'string', 'max:120'],
             'address.state' => ['required_with:address', Rule::in(['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'])],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.unique' => 'Não foi possível criar a conta com estes dados.',
+            'consent.accepted' => 'É necessário aceitar a política de privacidade.',
         ];
     }
 }

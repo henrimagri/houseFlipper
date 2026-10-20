@@ -1,0 +1,141 @@
+{
+  "generatedAt": "2026-10-20T15:41:17.381Z",
+  "results": [
+    {
+      "kind": "landing",
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "overflow": false,
+      "canvases": 1,
+      "mapImages": 1,
+      "mapPaths": 27,
+      "mapCapitals": 27,
+      "routeFlows": 1,
+      "movingSignals": 27,
+      "oldMapPolygons": 0,
+      "demoDisclosure": true,
+      "consoleErrors": [],
+      "failedRequests": [],
+      "passed": true
+    },
+    {
+      "kind": "landing",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "overflow": false,
+      "canvases": 1,
+      "mapImages": 1,
+      "mapPaths": 27,
+      "mapCapitals": 27,
+      "routeFlows": 1,
+      "movingSignals": 27,
+      "oldMapPolygons": 0,
+      "demoDisclosure": true,
+      "consoleErrors": [],
+      "failedRequests": [],
+      "passed": true
+    },
+    {
+      "kind": "landing",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": false,
+      "canvases": 1,
+      "mapImages": 1,
+      "mapPaths": 27,
+      "mapCapitals": 27,
+      "routeFlows": 1,
+      "movingSignals": 27,
+      "oldMapPolygons": 0,
+      "demoDisclosure": true,
+      "consoleErrors": [],
+      "failedRequests": [],
+      "passed": true
+    },
+    {
+      "kind": "landing",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "overflow": false,
+      "canvases": 1,
+      "mapImages": 1,
+      "mapPaths": 27,
+      "mapCapitals": 27,
+      "routeFlows": 1,
+      "movingSignals": 27,
+      "oldMapPolygons": 0,
+      "demoDisclosure": true,
+      "consoleErrors": [],
+      "failedRequests": [],
+      "passed": true
+    },
+    {
+      "kind": "landing",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "overflow": false,
+      "canvases": 1,
+      "mapImages": 1,
+      "mapPaths": 27,
+      "mapCapitals": 27,
+      "routeFlows": 1,
+      "movingSignals": 27,
+      "oldMapPolygons": 0,
+      "demoDisclosure": true,
+      "consoleErrors": [],
+      "failedRequests": [],
+      "passed": true
+    },
+    {
+      "kind": "components-dark",
+      "globeBox": {
+        "x": 731.671875,
+        "y": 166,
+        "height": 410,
+        "width": 566.328125
+      },
+      "passed": true
+    },
+    {
+      "kind": "tutorial",
+      "initialTour": {
+        "path": "/app/imobiliaria/dashboard",
+        "overflow": "hidden",
+        "title": "Painel empresarial",
+        "focusInside": true
+      },
+      "routedTour": {
+        "path": "/app/imobiliaria/imoveis",
+        "dialog": {
+          "top": 0,
+          "left": 0,
+          "right": 1366,
+          "bottom": 768
+        },
+        "target": {
+          "width": 1078,
+          "height": 704
+        }
+      },
+      "mobileDialog": {
+        "top": 0,
+        "left": 0,
+        "right": 375,
+        "bottom": 812
+      },
+      "dismissedPersisted": true,
+      "tourVersion": 2,
+      "passed": true
+    }
+  ]
+}

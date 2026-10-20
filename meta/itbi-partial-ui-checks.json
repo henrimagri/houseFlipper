@@ -1,0 +1,46 @@
+{
+  "checked_at": "2026-10-19",
+  "before": {
+    "button": false,
+    "file": "itbi-partial-ui-fixture.csv"
+  },
+  "alert": {
+    "text": "Importação concluída com 1 linha inválida.",
+    "fileCleared": true,
+    "visibleTransaction": true
+  },
+  "final": {
+    "dark": true,
+    "width": 375,
+    "scrollWidth": 375
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/itbi-imports"
+    },
+    {
+      "method": "GET",
+      "path": "/api/dashboard"
+    },
+    {
+      "method": "GET",
+      "path": "/api/auth/me"
+    },
+    {
+      "method": "GET",
+      "path": "/api/itbi-imports"
+    },
+    {
+      "method": "POST",
+      "path": "/api/itbi-imports/upload"
+    },
+    {
+      "method": "GET",
+      "path": "/api/itbi-imports"
+    }
+  ],
+  "page_errors": [],
+  "console_errors": [],
+  "passed": true
+}

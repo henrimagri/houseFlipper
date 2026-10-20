@@ -1,0 +1,33 @@
+{
+  "checked_at": "2026-10-19",
+  "bug_id": 183,
+  "affected_modules": [
+    "Calendário",
+    "Documentos",
+    "Fornecedores",
+    "Despesas",
+    "Imóveis",
+    "Tarefas",
+    "Oportunidades"
+  ],
+  "mutation_flows": 16,
+  "focused_tests": {
+    "tests": 2,
+    "passed": 2,
+    "failed": 0
+  },
+  "frontend_regression": {
+    "tests": 76,
+    "passed": 76,
+    "failed": 0
+  },
+  "build": {
+    "modules": 2314,
+    "passed": true
+  },
+  "visual_regression": {
+    "calendar": true,
+    "tasks": true
+  },
+  "vite_port_released": true
+}

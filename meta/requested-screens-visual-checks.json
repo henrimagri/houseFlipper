@@ -1,0 +1,36 @@
+{
+  "checked_at": "2026-10-17",
+  "result": "passed",
+  "browser": "in_app_browser",
+  "routes": {
+    "/cadastro": {
+      "postal_code_incomplete_feedback": "passed",
+      "accessible_fields": 13,
+      "console_errors": 0,
+      "viewports": [
+        375,
+        768,
+        1440
+      ],
+      "horizontal_overflow": false,
+      "console_warnings": 0
+    },
+    "/mensagens": {
+      "expected_page": "404",
+      "viewport": 375,
+      "horizontal_overflow": false
+    },
+    "/esqueci-senha": {
+      "console_errors": 0,
+      "console_warnings": 0,
+      "viewport": 375,
+      "horizontal_overflow": false,
+      "anti_enumeration_copy_visible": true
+    }
+  },
+  "theme": "dark",
+  "server_status": {
+    "backend": 200,
+    "frontend": 200
+  }
+}
