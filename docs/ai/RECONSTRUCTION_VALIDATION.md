@@ -109,3 +109,7 @@ Neste host a sonda retornou COLMAP 4.2.1 `without GPU support`; o gate denso per
 Python completo: 83 testes aprovados (34,53 s); Laravel: 87 testes/438 assertions; frontend estático: 12; TypeScript/Vite aprovados. Novas regressões verificam cancelamento, recuperação, isolamento do artefato e material/UV/atlas, além de edição paramétrica. O reconhecimento técnico do atlas não equivale a fotofidelidade: a flag fotométrica permanece falsa. Poisson depth 8, limitado a 6–10, não garante teto de memória.
 
 Houve QA efetivo do canvas paramétrico no navegador oficial: ambiente sem fotos, superfícies selecionáveis, pintura localizada, desfazer/refazer, versões e câmera; relatório `MASTER_EDITOR_VALIDATION.md`. Não houve novo ensaio playroom_small, nova métrica de completude/precisão ou promoção de malha. Preservar Fase 8. Primeiro job Linux/CUDA, avaliação independente e inspeção visual de sua malha continuam necessários.
+
+## Master ASTRA — regressão após máscara manual
+
+Python 106/106, Laravel completo 89/89, frontend 21/21 e build aprovados. O novo pipeline manual opera em CPU, sem inferência neural, e preserva pixels fora da seleção. Executado QA fotográfico real com playroom e comparação independente, conforme `MASTER_PHOTO_MASK_VALIDATION.md`. Isso não fornece novas métricas ou aprovação de geometria 3D; Fase 8 permanece ativa.

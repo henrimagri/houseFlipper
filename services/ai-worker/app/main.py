@@ -154,11 +154,26 @@ async def vision_simulate(
     points: str | None = Form(default=None),
     opacity: float = Form(default=0.72),
     material: str = Form(default="paint"),
+    mask_mode: str = Form(default="sam"),
+    mask_strokes: str | None = Form(default=None),
 ) -> dict:
-    if not color.startswith("#") or len(color) != 7:
+    if not color.startswith("#") or len(color) != 7 or any(char not in "0123456789abcdefABCDEF" for char in color[1:]):
         raise HTTPException(status_code=422, detail="Cor hexadecimal inválida.")
     if material not in {"paint", "wood"} or not 0.1 <= opacity <= 1.0:
         raise HTTPException(status_code=422, detail="Parâmetros de simulação inválidos.")
+    if mask_mode not in {"sam", "manual"}:
+        raise HTTPException(status_code=422, detail="Modo de máscara inválido.")
+    decoded_strokes = None
+    if mask_mode == "manual":
+        try:
+            if not mask_strokes or len(mask_strokes) > 2_000_000:
+                raise ValueError("Máscara manual vazia ou muito grande.")
+            decoded_strokes = json.loads(mask_strokes)
+            vision_pipeline.validate_manual_strokes(decoded_strokes)
+        except (json.JSONDecodeError, ValueError) as exception:
+            raise HTTPException(status_code=422, detail=str(exception)) from None
+    elif mask_strokes is not None:
+        raise HTTPException(status_code=422, detail="Traços manuais exigem o modo manual.")
     data = await validate_image(file)
     decoded_points = None
     if points:
@@ -173,7 +188,8 @@ async def vision_simulate(
         source = Path(temporary) / f"source{suffix}"
         source.write_bytes(data)
         try:
-            return vision_pipeline.simulate(source, color, decoded_points, opacity, material)
+            return vision_pipeline.simulate(source, color, decoded_points, opacity, material,
+                                            mask_mode=mask_mode, mask_strokes=decoded_strokes)
         except (ValueError, OSError) as exception:
             raise HTTPException(status_code=422, detail=str(exception)) from exception
 
@@ -272,7 +288,7 @@ def artifact(job_id: str, name: str, x_worker_scope: str | None = Header(default
         safe_id = str(uuid.UUID(job_id))
     except ValueError:
         raise HTTPException(status_code=404, detail="Artefato não encontrado.") from None
-    if Path(name).name != name or name not in {"original.jpg", "depth.png", "mask.png", "segmentation-overlay.png", "simulation.png", "comparison.png", "result.json", "sparse.ply", "dense.ply", "mesh.ply", "dense-mesh.ply", "dense-model.glb", "model.glb"}:
+    if Path(name).name != name or name not in {"original.jpg", "original.png", "depth.png", "mask.png", "segmentation-overlay.png", "simulation.png", "comparison.png", "result.json", "sparse.ply", "dense.ply", "mesh.ply", "dense-mesh.ply", "dense-model.glb", "model.glb"}:
         raise HTTPException(status_code=404, detail="Artefato não encontrado.")
     target = Path(os.environ.get("AI_WORKER_ARTIFACT_ROOT", Path(__file__).resolve().parents[1] / "artifacts")) / safe_id / name
     job_result = read_job(target.parents[1], safe_id)

@@ -100,9 +100,15 @@ class PropertyVisualizationService
         $photoSimulations = $visualization->assets->where('kind', 'photo_simulation')->sortByDesc('id')->map(function (PropertyVisualizationAsset $simulation) use ($visualization, $subjectType, $subjectId): array {
             $sourceId = str_starts_with((string) $simulation->room_key, 'source_') ? (int) substr((string) $simulation->room_key, 7) : 0;
             $source = $visualization->assets->firstWhere('id', $sourceId);
-            $job = $visualization->processingJobs->where('kind', 'photo_simulation')
+            $sourceJobs = $visualization->processingJobs->where('kind', 'photo_simulation')->where('status', 'completed')
                 ->filter(fn (PropertyProcessingJob $item) => in_array($sourceId, $item->input_asset_ids ?? [], true))
-                ->sortByDesc('id')->first();
+                ->sortByDesc('id');
+            $job = $sourceJobs->first(fn (PropertyProcessingJob $item) => (int) data_get($item->result, 'assets.simulation_id') === $simulation->id);
+            // Legacy records have no asset/job link. Only a single unambiguous pair can be recovered.
+            if (! $job && $sourceJobs->count() === 1 && ! data_get($sourceJobs->first()->result, 'assets.simulation_id')
+                && $visualization->assets->where('kind', 'photo_simulation')->where('room_key', $simulation->room_key)->count() === 1) {
+                $job = $sourceJobs->first();
+            }
             $result = $job?->result ?? [];
             $promptPoints = collect(data_get($result, 'segmentation.prompt_points', []));
             $promptLabels = collect(data_get($result, 'segmentation.prompt_labels', []));
@@ -113,7 +119,10 @@ class PropertyVisualizationService
                 'source_asset_id' => $sourceId,
                 'source_url' => $source ? '/api/visualizations/'.$subjectType.'/'.$subjectId.'/assets/'.$source->id.'/file' : null,
                 'result_url' => '/api/visualizations/'.$subjectType.'/'.$subjectId.'/assets/'.$simulation->id.'/file',
-                'comparison_url' => optional($visualization->assets->where('kind', 'photo_comparison')->where('room_key', $simulation->room_key)->sortByDesc('id')->first(), fn (PropertyVisualizationAsset $asset) => '/api/visualizations/'.$subjectType.'/'.$subjectId.'/assets/'.$asset->id.'/file'),
+                'comparison_url' => optional($visualization->assets->firstWhere('id', data_get($result, 'assets.comparison_id')), fn (PropertyVisualizationAsset $asset) => '/api/visualizations/'.$subjectType.'/'.$subjectId.'/assets/'.$asset->id.'/file'),
+                'mask_mode' => data_get($result, 'editor_input.mask_mode', 'sam'),
+                'mask_strokes' => data_get($result, 'editor_input.mask_strokes', []),
+                'metadata_available' => $job !== null,
                 'color' => data_get($result, 'composition.color', '#d8c6ae'),
                 'opacity' => data_get($result, 'composition.opacity', 0.72),
                 'material' => data_get($result, 'composition.material', 'paint'),
@@ -468,6 +477,8 @@ class PropertyVisualizationService
         array $points = [],
         float $opacity = 0.72,
         string $material = 'paint',
+        string $maskMode = 'sam',
+        array $maskStrokes = [],
     ): array {
         $this->entitlement->assert($user, 'renovation_simulation');
         $visualization = $this->show($user, $subjectType, $subjectId);
@@ -484,18 +495,18 @@ class PropertyVisualizationService
                 $points,
                 $opacity,
                 $material,
+                $maskMode,
+                $maskStrokes,
             );
-            $job->fill([
-                'worker_job_id' => $result['job_id'],
-                'result' => $result,
-                'status' => 'completed',
-                'completed_at' => now(),
-            ])->save();
+            $result['editor_input'] = ['mask_mode' => $maskMode, 'mask_strokes' => $maskStrokes];
             $sourceKey = 'source_'.$asset->id;
             $this->importWorkerArtifact($visualization, $result['job_id'], data_get($result, 'segmentation.artifact'), 'segmentation_mask', 'paint-mask.png', 'image/png', $sourceKey);
             $this->importWorkerArtifact($visualization, $result['job_id'], data_get($result, 'segmentation.overlay_artifact'), 'vision_overlay', 'paint-mask-overlay.png', 'image/png', $sourceKey);
-            $this->importWorkerArtifact($visualization, $result['job_id'], data_get($result, 'simulation_artifact'), 'photo_simulation', 'simulacao-'.$asset->id.'.png', 'image/png', $sourceKey);
-            $this->importWorkerArtifact($visualization, $result['job_id'], data_get($result, 'comparison_artifact'), 'photo_comparison', 'antes-depois-'.$asset->id.'.png', 'image/png', $sourceKey);
+            $comparison = $this->importWorkerArtifact($visualization, $result['job_id'], data_get($result, 'comparison_artifact'), 'photo_comparison', 'antes-depois-'.$asset->id.'.png', 'image/png', $sourceKey);
+            $simulation = $this->importWorkerArtifact($visualization, $result['job_id'], data_get($result, 'simulation_artifact'), 'photo_simulation', 'simulacao-'.$asset->id.'.png', 'image/png', $sourceKey);
+            abort_unless($simulation, 502, 'O worker não devolveu a imagem da simulação.');
+            $result['assets'] = ['simulation_id' => $simulation->id, 'comparison_id' => $comparison?->id];
+            $job->fill(['worker_job_id' => $result['job_id'], 'result' => $result, 'status' => 'completed', 'completed_at' => now()])->save();
 
             return $this->payload($visualization->fresh('assets', 'versions'), $user, $subjectType, $subjectId);
         } catch (\Throwable $exception) {

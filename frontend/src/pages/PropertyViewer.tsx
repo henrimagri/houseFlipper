@@ -256,9 +256,9 @@ export default function PropertyViewer() {
   }
 
   async function applyPhotoSimulation(request: PhotoEditRequest, _source: VisualizationAsset): Promise<PhotoEditSimulation> {
-    if (request.points.every(point => point.label === 0)) throw new Error('Marque ao menos um ponto da superfície que deseja alterar.');
+    if (request.mask_mode !== 'manual' && request.points.every(point => point.label === 0)) throw new Error('Marque ao menos um ponto da superfície que deseja alterar.');
     setBusy(true);
-    setNotice('Refinando a máscara e preservando sombras e iluminação da fotografia...');
+    setNotice(request.mask_mode === 'manual' ? 'Aplicando a máscara desenhada sobre uma cópia da fotografia...' : 'Refinando a máscara e preservando sombras e iluminação da fotografia...');
     try {
       const response = await api.post(`/visualizations/${subjectType}/${id}/photo-simulations`, request);
       const payload = response.data.data as VisualizationPayload;

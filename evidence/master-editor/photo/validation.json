@@ -1,0 +1,43 @@
+{
+  "checks": {
+    "original_pixels_preserved": true,
+    "outside_mask_pixels_preserved": true,
+    "selected_pixels_changed": true,
+    "manual_provenance": true,
+    "no_segmentation_model": true
+  },
+  "passed": true,
+  "source_name": "40_DSC0001.jpg",
+  "source_sha256": "6ca67b203d84ef3b0fcd7817221f57e83e1df21107db13a3ba295971e40b690e",
+  "image_size": [
+    1082,
+    723
+  ],
+  "selected_pixels": 7343,
+  "changed_pixels": 7343,
+  "changed_pixels_outside_mask": 0,
+  "coverage": 0.009386592627248858,
+  "artifacts": {
+    "original.png": {
+      "bytes": 419546,
+      "sha256": "3fe365ca0e676c52893c7a0b14fc904875bf7bd71fbcdceec65fc202a7ea035e"
+    },
+    "mask.png": {
+      "bytes": 1134,
+      "sha256": "a81b70e0dd600db7a65aff2822f913164a633397979935f604a2d67f3d5ce65b"
+    },
+    "simulation.png": {
+      "bytes": 410713,
+      "sha256": "57c9fccbd5550ae5bc183c25a1df7571ace82a77df7fc7c015b35f31653773f0"
+    },
+    "comparison.png": {
+      "bytes": 450547,
+      "sha256": "2dbbb0d90463a00be331a1a590746592a5643d9b00814da030d01836f6bf4796"
+    },
+    "result.json": {
+      "bytes": 1291,
+      "sha256": "be960a5c43c7c3058a6b408c657c1121408f1bd4616c06926ee76874109c7a67"
+    }
+  },
+  "limitations": "Verifies localized 2D editing, not surface classification, physical paint fidelity or 3D reconstruction."
+}

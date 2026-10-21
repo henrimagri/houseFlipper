@@ -1,0 +1,11 @@
+import type { PhotoMaskStroke } from './propertyVisualization';
+export const MAX_MASK_STROKES: number;
+export const MAX_STROKE_POINTS: number;
+export type MaskHistory = { strokes: PhotoMaskStroke[]; redo: PhotoMaskStroke[] };
+export type MaskAction = { type: 'reset' | 'undo' | 'redo' } | { type: 'restore'; strokes: PhotoMaskStroke[] } | { type: 'commit'; stroke: PhotoMaskStroke };
+export function imagePoint(clientX: number, clientY: number, rect: { left: number; top: number; width: number; height: number }): { x: number; y: number } | null;
+export function maskHistory(state: MaskHistory, action: MaskAction): MaskHistory;
+export function appendStrokePoint(stroke: PhotoMaskStroke, point: { x: number; y: number }): PhotoMaskStroke;
+export function drawMask(context: CanvasRenderingContext2D, width: number, height: number, strokes: PhotoMaskStroke[]): void;
+export function hasMaskPixels(pixels: Uint8ClampedArray): boolean;
+export function validPhotoColor(color: string): boolean;

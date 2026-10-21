@@ -511,3 +511,11 @@ Worker: staging de retry preservado, recuperação de resultados terminais, esco
 Testes: Laravel 87/87, 438 assertions; Python 83/83 (warning da fixture UV inválido); frontend 12/12 verificações estáticas; TypeScript/Vite aprovados. QA real no navegador: criação, pintura isolada, seleção por clique, rotação/zoom, vistas frontal/lateral/superior, undo/redo, recarga, comparação de versão e rejeição de parede com teto selecionado. Tela móvel 390×844 inspecionada e corrigida. Evidências, caminhos, comandos e limites: `MASTER_EDITOR_VALIDATION.md`. Inventário amplo: `COMMERCIAL_READINESS_MATRIX.md`.
 
 Próximo marco: máscara manual verdadeira sobre fotografia, sem chamar pontos SAM de pincel raster. Catálogo, aberturas, performance, streaming, cobrança e demais requisitos permanecem parciais; não houve declaração de sistema comercial concluído.
+
+## 21/10/2026 — Master ASTRA: máscara manual real e histórico fotográfico
+
+Segundo marco implementado e testado: modos SAM por pontos e máscara manual separados; pincel/borracha raster, largura, undo/redo, prévia proporcional e bloqueio de seleção vazia. Laravel/FastAPI validam traços limitados e persistem parâmetros por job. Corrigida associação de versões antigas ao último resultado da mesma foto; versões ambíguas recebem aviso em vez de parâmetros inventados. Original permanece preservado.
+
+QA real: foto autorizada MIT Meta Eyeful Tower `40_DSC0001.jpg`, enviada pelo navegador ao imóvel de QA. Dois jobs reais, borracha/desfazer/refazer, resultado e reabertura inspecionados. Avaliação independente: 7.343 pixels selecionados/alterados, zero alteração fora da máscara, original derivado idêntico ao JPEG decodificado. Fluxo manual não chamou modelos neurais. Relatório e hashes: `MASTER_PHOTO_MASK_VALIDATION.md` e `evidence/master-editor/photo/validation.json`.
+
+Testes: Python completo 106/106; Laravel completo 89/89, 457 assertions, seguido de teste focado 8/8, 77 assertions com negativas entre tenants; frontend 21/21 (9 helpers funcionais, 12 verificações estáticas), TypeScript/Vite aprovados. Pincel manual funcional não equivale a seleção arquitetônica automática ou fidelidade física de tinta. Retocar máscara SAM antes da composição, catálogo/PBR/aberturas, performance e demais requisitos continuam pendentes; reconstrução Fase 8 preservada.

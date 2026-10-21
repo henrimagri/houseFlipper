@@ -113,3 +113,7 @@ As tabelas acima preservam o diagnóstico do commit-base; não representam o est
 | Custos/ambiguidade em comandos | Removida estimativa monetária arbitrária e escolha implícita de parede | Interpretador restrito; não é agente multimodal geral |
 
 Os demais estados iniciais continuam válidos até evidência específica nova. Frontend estático não substitui QA. Referência Suvinil inspecionada somente via controles HTML públicos; sem cópia de assets e sem paridade comercial declarada.
+
+## Atualização executada — máscara manual e histórico fotográfico
+
+`MASTER_PHOTO_MASK_VALIDATION.md` registra implementação e execução real de pincel/borracha raster, correção da proporção/coordenadas, undo/redo de traços, validação de limites e vínculo independente entre simulação e seus parâmetros. Estado desses itens: **implementado e testado**, incluindo foto real autorizada, composição no worker e recarga no navegador. Pixels fora da máscara ficaram idênticos. O modo SAM por pontos foi preservado; seu resultado automático ainda não pode ser retocado diretamente como máscara raster. Segmentação arquitetônica avaliada, simulação física/PBR sobre a foto, catálogo avançado e qualidade comercial geral permanecem parciais.

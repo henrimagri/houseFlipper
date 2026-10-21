@@ -34,6 +34,8 @@ class AiWorkerClient
         array $points = [],
         float $opacity = 0.72,
         string $material = 'paint',
+        string $maskMode = 'sam',
+        array $maskStrokes = [],
     ): array {
         return $this->http()
             ->timeout((int) config('ai.worker.processing_timeout', 1800))
@@ -43,6 +45,8 @@ class AiWorkerClient
                 'points' => $points === [] ? null : json_encode($points, JSON_THROW_ON_ERROR),
                 'opacity' => $opacity,
                 'material' => $material,
+                'mask_mode' => $maskMode,
+                ...($maskMode === 'manual' ? ['mask_strokes' => json_encode($maskStrokes, JSON_THROW_ON_ERROR)] : []),
             ])->throw()->json();
     }
 

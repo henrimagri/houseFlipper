@@ -337,3 +337,9 @@ O próximo ensaio autorizado deve usar a imagem Linux fixada por digest, registr
 Nenhuma fotografia real foi reprocessada para reconstrução neste marco. Fase 8, métricas e atlas ativos preservados. O gate denso agora rejeita atlas inválido, falta de UV/material e perda de textura na reimportação GLB; testes usam fixtures técnicas, não um novo imóvel reconstruído. `photometric_fidelity_validated=false` continua explícito. Cancelamento não é convertido em fallback por `OSError`; Poisson recebe depth padrão 8 (6–10). Não há nova medição de geometria, tempo de MVS ou VRAM.
 
 O navegador oficial permitiu inspecionar o **editor paramétrico**, com pintura, seleção, câmeras, versões e recarga reais. Isso encerra parte da pendência de acesso visual ao editor, mas não valida visualmente um novo GLB denso. Capturas e resultados estão em `MASTER_EDITOR_VALIDATION.md`; reconstrução CUDA permanece pendente.
+
+## Master ASTRA — fotografia real, edição 2D localizada
+
+Executados dois jobs de pintura manual com a fotografia MIT `images-jpeg-1k/40/40_DSC0001.jpg`, do mesmo playroom autorizado. Upload, composição, importação, comparação e reabertura foram inspecionados no navegador. A versão com recorte apagado modificou 7.343 pixels (0,93866% da foto), zero fora da máscara; original derivado preservado pixel a pixel. Hashes/medição reproduzível: `MASTER_PHOTO_MASK_VALIDATION.md` e `evidence/master-editor/photo/validation.json`.
+
+Este resultado comprova somente pintura fotográfica manual localizada. Não houve geração de profundidade, nova malha, métrica geométrica ou promoção de reconstrução. A licença foi preservada junto às capturas; dataset e imagens integrais continuam locais.

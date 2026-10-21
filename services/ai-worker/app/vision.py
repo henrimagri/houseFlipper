@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import time
 import uuid
@@ -327,12 +328,78 @@ class VisionPipeline:
         }
 
     @staticmethod
+    def validate_manual_strokes(strokes: Any) -> None:
+        if not isinstance(strokes, list) or not 1 <= len(strokes) <= 64:
+            raise ValueError("A máscara manual exige entre 1 e 64 traços.")
+
+        def bounded_number(value: Any, minimum: float, maximum: float) -> bool:
+            return (isinstance(value, (int, float)) and not isinstance(value, bool)
+                    and minimum <= value <= maximum and math.isfinite(value))
+
+        point_count = 0
+        for stroke in strokes:
+            if not isinstance(stroke, dict) or stroke.get("mode") not in ("paint", "erase"):
+                raise ValueError("Modo de traço inválido; use paint ou erase.")
+            if not bounded_number(stroke.get("radius"), 0.002, 0.15):
+                raise ValueError("Raio normalizado deve estar entre 0.002 e 0.15.")
+            points = stroke.get("points")
+            if not isinstance(points, list) or not 1 <= len(points) <= 256:
+                raise ValueError("Cada traço exige entre 1 e 256 pontos.")
+            point_count += len(points)
+            for point in points:
+                if (not isinstance(point, dict) or not bounded_number(point.get("x"), 0, 1)
+                        or not bounded_number(point.get("y"), 0, 1)):
+                    raise ValueError("Coordenadas da máscara devem ser números finitos entre 0 e 1.")
+        if point_count > 16384:
+            raise ValueError("A máscara excede o limite de 16384 pontos.")
+
+    @staticmethod
+    def rasterize_manual_mask(size: tuple[int, int], strokes: Any) -> Image.Image:
+        """Rasterize only user-painted pixels; no segmentation or surface inference."""
+        VisionPipeline.validate_manual_strokes(strokes)
+        width, height = size
+        mask = Image.new("L", size, 0)
+        draw = ImageDraw.Draw(mask)
+        for stroke in strokes:
+            fill = 255 if stroke["mode"] == "paint" else 0
+            radius = max(0.5, float(stroke["radius"]) * min(width, height))
+            points = [(float(point["x"]) * (width - 1), float(point["y"]) * (height - 1))
+                      for point in stroke["points"]]
+            if len(points) > 1:
+                draw.line(points, fill=fill, width=max(1, round(radius * 2)), joint="curve")
+            for x, y in points:
+                draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=fill)
+        if mask.getbbox() is None:
+            raise ValueError("A máscara está vazia ou foi totalmente apagada. Pinte uma região antes de aplicar.")
+        return mask
+
+    @staticmethod
+    def _save_manual_mask(image: Image.Image, mask: Image.Image, output_dir: Path) -> dict[str, Any]:
+        mask.save(output_dir / "mask.png")
+        tinted = image.convert("RGBA")
+        tint = Image.new("RGBA", image.size, (24, 201, 216, 0))
+        tint.putalpha(mask.point(lambda value: round(value * 0.42)))
+        tinted.alpha_composite(tint)
+        tinted.convert("RGB").save(output_dir / "segmentation-overlay.png")
+        return {
+            "artifact": "mask.png", "overlay_artifact": "segmentation-overlay.png",
+            "provenance": "manual_user_mask", "model_used": False, "model": None,
+            "device": "cpu", "mask_count": 1,
+            "coverage_ratio": round(float(np.count_nonzero(np.asarray(mask))) / (image.width * image.height), 6),
+            "dimensions": {"width": image.width, "height": image.height},
+            "coordinate_system": "normalized_exif_oriented_image", "edge_refinement": "user_brush_only",
+            "limitations": "Região desenhada pelo usuário; não identifica nem infere superfícies automaticamente.",
+        }
+
+    @staticmethod
     def compose_paint(
         image: Image.Image,
         mask: Image.Image,
         color: str,
         opacity: float = 0.72,
         material: str = "paint",
+        *,
+        refine_mask: bool = True,
     ) -> Image.Image:
         """Recolors a segmented surface while preserving source luminance and texture."""
         source = np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
@@ -347,12 +414,16 @@ class VisionPipeline:
             joints = np.where((rows % 54) < 2, 0.84, 1.0)
             relight = np.clip(relight * grain[..., None] * joints[..., None], 0.0, 1.0)
 
-        refined = mask.convert("L").filter(ImageFilter.MedianFilter(size=5)).filter(ImageFilter.GaussianBlur(radius=2.2))
+        refined = (mask.convert("L").filter(ImageFilter.MedianFilter(size=5)).filter(ImageFilter.GaussianBlur(radius=2.2))
+                   if refine_mask else mask.convert("L").filter(ImageFilter.GaussianBlur(radius=0.6)))
         original_mask = np.asarray(mask.convert("L"), dtype=np.float32) / 255.0
         feathered = np.asarray(refined, dtype=np.float32) / 255.0
         alpha = (feathered * (original_mask > 0.02) * max(0.0, min(float(opacity), 1.0)))[..., None]
         composed = source * (1.0 - alpha) + relight * alpha
-        return Image.fromarray(np.clip(composed * 255.0, 0, 255).astype(np.uint8), mode="RGB")
+        output = np.clip(composed * 255.0, 0, 255).astype(np.uint8)
+        outside = alpha[..., 0] == 0
+        output[outside] = np.asarray(image.convert("RGB"))[outside]
+        return Image.fromarray(output, mode="RGB")
 
     def simulate(
         self,
@@ -361,20 +432,36 @@ class VisionPipeline:
         points: list[Any] | None = None,
         opacity: float = 0.72,
         material: str = "paint",
+        *,
+        mask_mode: str = "sam",
+        mask_strokes: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
+        if mask_mode not in {"sam", "manual"}:
+            raise ValueError("Modo de máscara inválido.")
+        if mask_mode == "sam" and mask_strokes is not None:
+            raise ValueError("Traços manuais exigem o modo manual.")
+        if mask_mode == "manual" and points:
+            raise ValueError("Pontos SAM não podem ser combinados com uma máscara manual.")
         with self.operation_lock, native_stage("simulate_photo", source=input_path.name):
+            image = load_image(input_path)
+            manual_mask = self.rasterize_manual_mask(image.size, mask_strokes) if mask_mode == "manual" else None
             job_id = str(uuid.uuid4())
             output_dir = _artifact_root() / job_id
             output_dir.mkdir(parents=True, exist_ok=False)
-            image = load_image(input_path)
-            original_path = output_dir / "original.jpg"
-            image.save(original_path, quality=94)
-            detection = self._detect_locked(image)
-            automatic_exclusions = self.automatic_exclusion_points(detection["objects"], points, max(0, 16 - len(points or [])))
-            refined_points = list(points or []) + automatic_exclusions
-            segmentation = self._segment_locked(image, output_dir, refined_points)
+            original_path = output_dir / ("original.png" if mask_mode == "manual" else "original.jpg")
+            if manual_mask is not None:
+                image.save(original_path)
+                detection = {"model_used": False, "model": None, "objects": [], "status": "not_requested"}
+                automatic_exclusions = []
+                segmentation = self._save_manual_mask(image, manual_mask, output_dir)
+            else:
+                image.save(original_path, quality=94)
+                detection = self._detect_locked(image)
+                automatic_exclusions = self.automatic_exclusion_points(detection["objects"], points, max(0, 16 - len(points or [])))
+                refined_points = list(points or []) + automatic_exclusions
+                segmentation = self._segment_locked(image, output_dir, refined_points)
         mask = Image.open(output_dir / segmentation["artifact"]).convert("L")
-        edited = self.compose_paint(image, mask, color, opacity, material)
+        edited = self.compose_paint(image, mask, color, opacity, material, refine_mask=mask_mode != "manual")
         simulation_path = output_dir / "simulation.png"
         edited.save(simulation_path, optimize=True)
         comparison = Image.new("RGB", (image.width * 2, image.height), "white")
@@ -395,6 +482,7 @@ class VisionPipeline:
                 "color": color.lower(),
                 "opacity": round(max(0.0, min(float(opacity), 1.0)), 3),
                 "material": material,
+                "mask_mode": mask_mode,
                 "method": "luminance_preserving_masked_recolor",
                 "preserves_geometry": True,
                 "automatic_exclusions": automatic_exclusions,

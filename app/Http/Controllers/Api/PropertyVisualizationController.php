@@ -10,6 +10,7 @@ use App\Services\Visualization\PropertyVisualizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PropertyVisualizationController extends Controller
@@ -103,11 +104,30 @@ class PropertyVisualizationController extends Controller
             'color' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'opacity' => ['nullable', 'numeric', 'between:0.1,1'],
             'material' => ['nullable', 'string', 'in:paint,wood'],
+            'mask_mode' => ['nullable', 'string', 'in:sam,manual'],
+            'mask_strokes' => ['required_if:mask_mode,manual', 'array', 'max:64'],
+            'mask_strokes.*' => ['required', 'array:mode,radius,points'],
+            'mask_strokes.*.mode' => ['required', 'string', 'in:paint,erase'],
+            'mask_strokes.*.radius' => ['required', 'numeric', 'between:0.002,0.15'],
+            'mask_strokes.*.points' => ['required', 'array', 'min:1', 'max:256'],
+            'mask_strokes.*.points.*' => ['required', 'array:x,y'],
+            'mask_strokes.*.points.*.x' => ['required', 'numeric', 'between:0,1'],
+            'mask_strokes.*.points.*.y' => ['required', 'numeric', 'between:0,1'],
             'points' => ['nullable', 'array', 'max:16'],
             'points.*.x' => ['required_with:points', 'numeric', 'min:0', 'max:20000'],
             'points.*.y' => ['required_with:points', 'numeric', 'min:0', 'max:20000'],
             'points.*.label' => ['required_with:points', 'integer', 'in:0,1'],
         ]);
+
+        if (($data['mask_mode'] ?? 'sam') === 'manual' && ! collect($data['mask_strokes'] ?? [])->contains('mode', 'paint')) {
+            throw ValidationException::withMessages(['mask_strokes' => 'Pinte ao menos uma região na máscara manual.']);
+        }
+        if (($data['mask_mode'] ?? 'sam') === 'sam' && ! empty($data['mask_strokes'])) {
+            throw ValidationException::withMessages(['mask_strokes' => 'Traços manuais exigem o modo manual.']);
+        }
+        if (($data['mask_mode'] ?? 'sam') === 'manual' && ! empty($data['points'])) {
+            throw ValidationException::withMessages(['points' => 'Use somente traços no modo manual.']);
+        }
 
         return response()->json(['data' => $this->visualizations->simulatePhoto(
             $request->user(),
@@ -118,6 +138,8 @@ class PropertyVisualizationController extends Controller
             $data['points'] ?? [],
             (float) ($data['opacity'] ?? 0.72),
             $data['material'] ?? 'paint',
+            $data['mask_mode'] ?? 'sam',
+            $data['mask_strokes'] ?? [],
         )]);
     }
 

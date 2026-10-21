@@ -92,6 +92,7 @@ class PropertyVisualizationNeuralTest extends TestCase
                 $this->assertTrue($request->hasHeader('X-Worker-Scope'));
                 $this->assertStringContainsString('name="job_scope"', $request->body());
                 $this->assertStringContainsString('name="idempotency_key"', $request->body());
+
                 return Http::response([
                     'job_id' => $jobId,
                     'status' => 'completed',
@@ -292,6 +293,75 @@ class PropertyVisualizationNeuralTest extends TestCase
                 'room_key' => 'source_'.$asset->id,
             ]);
         }
+    }
+
+    public function test_manual_photo_mask_and_each_simulation_keep_their_own_history(): void
+    {
+        Storage::fake('local');
+        [$owner, $property] = $this->accountWithProperty('manual-mask-owner');
+        Sanctum::actingAs($owner);
+        $url = '/api/visualizations/propriedades/'.$property->id;
+        $this->withHeader('X-Product-Context', 'house_flipper')->getJson($url)->assertOk();
+        $visualization = PropertyVisualization::query()->where('subject_id', $property->id)->firstOrFail();
+        $original = 'authorized-unchanged-photo';
+        Storage::disk('local')->put('visualizations/manual-source.jpg', $original);
+        $asset = $visualization->assets()->create(['kind' => 'photo', 'path' => 'visualizations/manual-source.jpg', 'original_name' => 'sala.jpg', 'mime_type' => 'image/jpeg', 'size_bytes' => strlen($original), 'checksum' => hash('sha256', $original)]);
+        $stroke = ['mode' => 'paint', 'radius' => 0.05, 'points' => [['x' => 0.2, 'y' => 0.3], ['x' => 0.7, 'y' => 0.3]]];
+        $counter = 0;
+        Http::fake(function ($request) use (&$counter) {
+            if (str_contains($request->url(), '/v1/vision/simulate')) {
+                $counter++;
+
+                return Http::response([
+                    'job_id' => sprintf('00000000-0000-0000-0000-%012d', $counter), 'status' => 'completed',
+                    'simulation_artifact' => 'simulation.png', 'comparison_artifact' => 'comparison.png',
+                    'segmentation' => ['artifact' => 'mask.png', 'overlay_artifact' => 'segmentation-overlay.png', 'provenance' => 'manual_user_mask', 'model_used' => false],
+                    'composition' => ['color' => $counter === 1 ? '#123456' : '#abcdef', 'material' => 'paint'],
+                ]);
+            }
+
+            return Http::response('generated-private-png', 200, ['Content-Type' => 'image/png']);
+        });
+        $input = ['asset_id' => $asset->id, 'color' => '#123456', 'mask_mode' => 'manual', 'mask_strokes' => [$stroke]];
+        $first = $this->postJson($url.'/photo-simulations', $input)->assertOk()->assertJsonPath('data.photo_editing.simulations.0.mask_mode', 'manual')->assertJsonPath('data.photo_editing.simulations.0.mask_strokes.0.radius', 0.05)->json('data.photo_editing.simulations.0');
+        $input['color'] = '#abcdef';
+        $input['mask_strokes'][0]['radius'] = 0.08;
+        $this->postJson($url.'/photo-simulations', $input)->assertOk();
+        $history = $this->getJson($url)->assertOk()->json('data.photo_editing.simulations');
+        $this->assertSame('#abcdef', $history[0]['color']);
+        $this->assertSame(0.08, $history[0]['mask_strokes'][0]['radius']);
+        $this->assertSame('#123456', $history[1]['color']);
+        $this->assertSame(0.05, $history[1]['mask_strokes'][0]['radius']);
+        $this->assertSame($first['comparison_url'], $history[1]['comparison_url']);
+        $this->assertNotSame($history[0]['comparison_url'], $history[1]['comparison_url']);
+        $this->assertSame($original, Storage::disk('local')->get($asset->path));
+        Http::assertSent(function ($request) {
+            if (! str_contains($request->url(), '/v1/vision/simulate')) {
+                return false;
+            }
+            $parts = collect($request->data())->keyBy('name');
+
+            return $parts['mask_mode']['contents'] === 'manual' && json_decode($parts['mask_strokes']['contents'], true)[0]['radius'] === 0.05;
+        });
+        $requestsBefore = Http::recorded()->count();
+        [$outsider, $foreignProperty] = $this->accountWithProperty('manual-mask-other');
+        Sanctum::actingAs($outsider);
+        $this->postJson($url.'/photo-simulations', $input)->assertNotFound();
+        $this->postJson('/api/visualizations/propriedades/'.$foreignProperty->id.'/photo-simulations', $input)->assertNotFound();
+        $this->assertSame($requestsBefore, Http::recorded()->count());
+    }
+
+    public function test_manual_mask_bounds_are_rejected_before_worker_access(): void
+    {
+        Http::preventStrayRequests();
+        [$owner, $property] = $this->accountWithProperty('mask-bounds');
+        Sanctum::actingAs($owner);
+        $url = '/api/visualizations/propriedades/'.$property->id.'/photo-simulations';
+        $this->withHeader('X-Product-Context', 'house_flipper');
+        foreach ([[], [['mode' => 'paint', 'radius' => 0.5, 'points' => [['x' => 0.5, 'y' => 0.5]]]], [['mode' => 'paint', 'radius' => 0.05, 'points' => [['x' => 1.5, 'y' => 0.5]]]], [['mode' => 'erase', 'radius' => 0.05, 'points' => [['x' => 0.5, 'y' => 0.5]]]]] as $strokes) {
+            $this->postJson($url, ['asset_id' => 1, 'color' => '#123456', 'mask_mode' => 'manual', 'mask_strokes' => $strokes])->assertUnprocessable();
+        }
+        Http::assertNothingSent();
     }
 
     private function accountWithProperty(string $slug): array

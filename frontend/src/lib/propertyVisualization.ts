@@ -51,6 +51,7 @@ export type VisualizationAsset = {
 };
 
 export type PhotoEditPoint = { x: number; y: number; label: 0 | 1 };
+export type PhotoMaskStroke = { mode: 'paint' | 'erase'; radius: number; points: Array<{ x: number; y: number }> };
 
 export type PhotoEditRequest = {
   asset_id: number;
@@ -58,6 +59,8 @@ export type PhotoEditRequest = {
   opacity: number;
   material: 'paint' | 'wood';
   points: PhotoEditPoint[];
+  mask_mode?: 'sam' | 'manual';
+  mask_strokes?: PhotoMaskStroke[];
 };
 
 export type PhotoEditSimulation = {
@@ -73,6 +76,9 @@ export type PhotoEditSimulation = {
   opacity: number;
   material: 'paint' | 'wood';
   points: PhotoEditPoint[];
+  mask_mode?: 'sam' | 'manual';
+  mask_strokes?: PhotoMaskStroke[];
+  metadata_available?: boolean;
 };
 
 export type ModelViewerDiagnostic = {

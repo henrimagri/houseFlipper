@@ -215,12 +215,13 @@ test('property visualization separates photo editing, scene creation, and valida
   assert.match(screen, /Modelo ainda não elegível para o viewer/);
   assert.match(screen, /artefatos ajudam no diagnóstico, mas não são apresentados como modelo final/i);
   assert.match(editor, /Comparação antes e depois/);
-  assert.match(editor, /Correção da máscara/);
-  assert.match(editor, /Incluir/);
-  assert.match(editor, /Excluir/);
+  assert.match(editor, /mask_mode/);
+  assert.match(editor, /Ponto incluir/);
+  assert.match(editor, /Ponto excluir/);
   assert.match(editor, /Aplicar simulação/);
   assert.match(editor, /Histórico de simulações/);
-  assert.match(editor, /backend usa esses pontos no SAM 2/i);
+  assert.match(editor, /SAM 2 interpreta esses pontos/i);
+  assert.match(editor, /sem segmentação automática/);
   assert.match(screen, /photo-simulations/);
   assert.match(sceneEditor, /ACESFilmicToneMapping/);
   assert.match(sceneEditor, /Proporções aproximadas/);
