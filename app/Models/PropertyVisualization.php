@@ -38,6 +38,11 @@ class PropertyVisualization extends Model
         return $this->hasMany(PropertySceneVersion::class);
     }
 
+    public function processingJobs(): HasMany
+    {
+        return $this->hasMany(PropertyProcessingJob::class);
+    }
+
     public function primaryModel(): HasMany
     {
         return $this->hasMany(PropertyVisualizationAsset::class)->whereIn('kind', ['glb', 'gltf'])->where('is_primary', true);

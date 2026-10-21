@@ -189,3 +189,46 @@ test('auction catalog supports official automatic refresh and robust multi-file 
   assert.match(importer, /removeProviderPreamble/);
   assert.match(routes, /\/auctions\/sync/);
 });
+
+test('property visualization separates photo editing, scene creation, and validated reconstruction', async () => {
+  const [screen, editor, sceneEditor, catalog, viewer, contracts] = await Promise.all([
+    read('src/pages/PropertyViewer.tsx'),
+    read('src/components/PropertyPhotoEditor.tsx'),
+    read('src/components/PropertyPhotoSceneEditor.tsx'),
+    read('src/lib/furnitureCatalog.ts'),
+    read('src/components/GlbViewer.tsx'),
+    read('src/lib/propertyVisualization.ts'),
+  ]);
+
+  assert.match(screen, /Editar fotografia/);
+  assert.match(screen, /Criar ambiente 3D/);
+  assert.match(screen, /Reconstruir em 3D/);
+  assert.match(screen, /viewer_eligible === true/);
+  assert.match(screen, /Modelo ainda não elegível para o viewer/);
+  assert.match(screen, /artefatos ajudam no diagnóstico, mas não são apresentados como modelo final/i);
+  assert.match(editor, /Comparação antes e depois/);
+  assert.match(editor, /Correção da máscara/);
+  assert.match(editor, /Incluir/);
+  assert.match(editor, /Excluir/);
+  assert.match(editor, /Aplicar simulação/);
+  assert.match(editor, /Histórico de simulações/);
+  assert.match(editor, /backend usa esses pontos no SAM 2/i);
+  assert.match(screen, /photo-simulations/);
+  assert.match(sceneEditor, /ACESFilmicToneMapping/);
+  assert.match(sceneEditor, /Proporções aproximadas/);
+  assert.match(sceneEditor, /mode === 'decorate' \? loadCatalogModels/);
+  assert.match(sceneEditor, /if \(!texture\) continue/);
+  assert.match(catalog, /sheen-wood-leather-sofa\.glb/);
+  assert.match(catalog, /license: 'CC BY 4\.0/);
+  assert.match(viewer, /if \(!eligible\)/);
+  assert.match(viewer, /invalid_bounds/);
+  assert.match(viewer, /Falha ao abrir o modelo/);
+  assert.match(viewer, /outputColorSpace = THREE\.SRGBColorSpace/);
+  assert.match(viewer, /toneMapping = THREE\.ACESFilmicToneMapping/);
+  assert.match(viewer, /const thinnestAxis = dimensions\.indexOf/);
+  assert.match(viewer, /side: THREE\.DoubleSide/);
+  assert.match(viewer, /vertexColors: true/);
+  assert.match(viewer, /Math\.tan\(fovRadians \/ 2\)\) \* 1\.25/);
+  assert.match(contracts, /export type PhotoEditRequest/);
+  assert.match(contracts, /viewer_eligible\?: boolean/);
+});

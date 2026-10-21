@@ -13,6 +13,7 @@ export type SceneObject = {
 export type SceneSurface = {
   id: string;
   kind: string;
+  side?: string;
   room: string;
   color: string;
   material: string;
@@ -26,11 +27,52 @@ export type SceneGraph = {
   rooms: Array<{ key: string; label: string; confidence?: number; unknowns?: string[] }>;
   surfaces: SceneSurface[];
   objects: SceneObject[];
+  lighting?: { preset: string; ambient_intensity: number; directional_intensity: number; color: string };
+  room_dimensions?: Record<string, { width: number; depth: number; height: number; source: 'estimated' | 'user' }>;
   photo_planes: Array<{ id: string; room: string; asset_id: number; wall: string }>;
   photo_assets?: Array<{ id: number; url: string; name: string; room_key?: string | null }>;
   exterior?: { kind: string; has_facade_photo: boolean; label: string };
   library?: string[];
   subject?: Record<string, unknown>;
+};
+
+export type VisualizationAsset = {
+  id: number;
+  kind: string;
+  name: string;
+  room_key?: string | null;
+  url: string;
+};
+
+export type PhotoEditPoint = { x: number; y: number; label: 0 | 1 };
+
+export type PhotoEditRequest = {
+  asset_id: number;
+  color: string;
+  opacity: number;
+  material: 'paint' | 'wood';
+  points: PhotoEditPoint[];
+};
+
+export type PhotoEditSimulation = {
+  id: string;
+  status: 'processing' | 'completed' | 'failed';
+  source_asset_id: number;
+  source_url?: string | null;
+  result_url?: string | null;
+  comparison_url?: string | null;
+  created_at: string;
+  label: string;
+  color: string;
+  opacity: number;
+  material: 'paint' | 'wood';
+  points: PhotoEditPoint[];
+};
+
+export type ModelViewerDiagnostic = {
+  code?: string;
+  message: string;
+  checks?: Array<{ label: string; status: 'passed' | 'failed' | 'pending'; detail?: string }>;
 };
 
 export type VisualizationPayload = {
@@ -52,16 +94,39 @@ export type VisualizationPayload = {
   } | null;
   scene_graph?: SceneGraph | null;
   versions?: Array<{ id: number; label: string; created_at?: string }>;
-  model: { id: number; kind: string; name: string; url: string } | null;
-  gallery: Array<{ id: number; kind: string; name: string; room_key?: string | null }>;
+  model: {
+    id: number;
+    kind: string;
+    name: string;
+    url: string;
+    fidelity?: string;
+    viewer_eligible?: boolean;
+    viewer_diagnostic?: ModelViewerDiagnostic | null;
+  } | null;
+  gallery: VisualizationAsset[];
+  photo_editing?: { simulations: PhotoEditSimulation[] } | null;
+  processing_jobs?: Array<{
+    id: number;
+    worker_job_id?: string | null;
+    kind: string;
+    status: string;
+    result?: Record<string, unknown> | null;
+    error?: string | null;
+    created_at?: string;
+    completed_at?: string | null;
+  }>;
   photo_analyses: Array<{
     id: number;
     source_name: string | null;
     room_guess: string | null;
-    confidence: number;
+    confidence: number | null;
+    detection_confidence?: number | null;
+    room_confidence?: number | null;
+    room_provenance?: Record<string, unknown> | null;
     origin: string;
     quality: string;
     limitations: string[];
+    elements?: Array<{ label?: string; confidence?: number; box_xyxy?: number[] }>;
     palette?: Array<{ hex: string; share?: number }>;
   }>;
   rooms: Array<{ key: string; label: string; source: string; available: boolean }>;
@@ -82,6 +147,7 @@ export type VisualizationPayload = {
 
 export function visualizationModeLabel(payload: Pick<VisualizationPayload, 'faithful' | 'level'>): string {
   if (payload.faithful && payload.level === 'a_model') return 'Modelo 3D do imóvel';
+  if (payload.level === 'photogrammetry_preview') return 'Prévia fotogramétrica esparsa';
   if (payload.level === 'photo_referenced') return 'Cena referenciada nas fotos';
   if (payload.level === 'parametric_spec') return 'Maquete paramétrica do anúncio';
   if (payload.level === 'reconstructed_floorplan') return 'Planta 2D + maquete paramétrica';

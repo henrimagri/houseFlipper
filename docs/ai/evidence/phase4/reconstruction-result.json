@@ -1,0 +1,41 @@
+{
+  "job_id": "b0b37159-df61-4424-8f3c-f2618b7b0bfc",
+  "status": "completed",
+  "kind": "photogrammetry",
+  "colmap": {
+    "version": "4.2.1",
+    "gpu_build": false,
+    "license": "BSD-3-Clause"
+  },
+  "quality_gate": {
+    "accepted": true,
+    "photo_count": 18,
+    "blurry": [],
+    "dark": [],
+    "resolution_groups": 1
+  },
+  "timings": {
+    "feature_extraction_ms": 2188.23,
+    "matching_ms": 4923.65,
+    "mapping_ms": 4986.54
+  },
+  "artifacts": {
+    "sparse_point_cloud": "sparse.ply",
+    "mesh": "mesh.ply",
+    "mesh_status": "sparse_delaunay_preview",
+    "dense_point_cloud": null,
+    "glb": "model.glb",
+    "glb_status": "sparse_delaunay_preview"
+  },
+  "integrity": {
+    "sparse_ply_bytes": 72098,
+    "mesh_ply_bytes": 27714,
+    "glb_bytes": 26896,
+    "registered_model": "0",
+    "analysis": "\nI20261020 17:31:57.723522 26352 model.cc:434] Rigs: 1\nI20261020 17:31:57.724694 26352 model.cc:435] Cameras: 1\nI20261020 17:31:57.724711 26352 model.cc:436] Frames: 18\nI20261020 17:31:57.724719 26352 model.cc:437] Registered frames: 18\nI20261020 17:31:57.724727 26352 model.cc:439] Images: 18\nI20261020 17:31:57.724734 26352 model.cc:440] Registered images: 18\nI20261020 17:31:57.724742 26352 model.cc:442] Points: 4794\nI20261020 17:31:57.724749 26352 model.cc:443] Observations: 37268\nI20261020 17:31:57.724762 26352 model.cc:445] Mean track length: 7.773884\nI20261020 17:31:57.724778 26352 model.cc:447] Mean observations per image: 2070.444444\nI20261020 17:31:57.724787 26352 model.cc:450] Mean reprojection error: 0.179462px\n"
+  },
+  "limitations": [
+    "A instalação sem CUDA valida SfM e malha Delaunay esparsa; a reconstrução densa requer um worker COLMAP com GPU.",
+    "A malha Delaunay esparsa é uma prévia geométrica e não deve ser apresentada como superfície final fiel."
+  ]
+}

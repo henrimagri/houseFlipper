@@ -1,0 +1,81 @@
+{
+  "model": "facebook/detr-resnet-50",
+  "license": "Apache-2.0",
+  "device": "cuda",
+  "threshold": 0.72,
+  "latency_ms": 441.96,
+  "peak_vram_mb": 429.65,
+  "objects": [
+    {
+      "label": "bowl",
+      "confidence": 0.958398,
+      "box_xyxy": [
+        1343.77,
+        437.06,
+        1489.19,
+        472.93
+      ]
+    },
+    {
+      "label": "potted plant",
+      "confidence": 0.991229,
+      "box_xyxy": [
+        1364.1,
+        388.43,
+        1471.49,
+        449.13
+      ]
+    },
+    {
+      "label": "potted plant",
+      "confidence": 0.997876,
+      "box_xyxy": [
+        0.45,
+        412.09,
+        305.79,
+        829.44
+      ]
+    },
+    {
+      "label": "couch",
+      "confidence": 0.997744,
+      "box_xyxy": [
+        239.86,
+        387.44,
+        832.22,
+        722.93
+      ]
+    },
+    {
+      "label": "chair",
+      "confidence": 0.949308,
+      "box_xyxy": [
+        1303.28,
+        549.98,
+        1534.44,
+        765.17
+      ]
+    },
+    {
+      "label": "chair",
+      "confidence": 0.997965,
+      "box_xyxy": [
+        1115.64,
+        420.38,
+        1377.26,
+        876.0
+      ]
+    },
+    {
+      "label": "dining table",
+      "confidence": 0.95258,
+      "box_xyxy": [
+        1150.83,
+        429.47,
+        1535.31,
+        863.93
+      ]
+    }
+  ],
+  "limitations": "Classes limitadas ao conjunto COCO; ausência de detecção não prova ausência do objeto."
+}

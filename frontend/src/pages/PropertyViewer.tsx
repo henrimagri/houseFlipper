@@ -1,13 +1,14 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Box, Camera, Loader2, Share2, Upload } from 'lucide-react';
+import { ArrowLeft, Box, Camera, CheckCircle2, Cuboid, Images, Loader2, Paintbrush, ScanLine, Share2, TriangleAlert, Upload } from 'lucide-react';
 import api from '@/lib/api';
 import GlbViewer from '@/components/GlbViewer';
 import PropertyMaquetteViewer from '@/components/PropertyMaquetteViewer';
+import PropertyPhotoEditor from '@/components/PropertyPhotoEditor';
 import PropertyPhotoSceneEditor from '@/components/PropertyPhotoSceneEditor';
-import { roomLabel, visualizationModeLabel, type VisualizationPayload } from '@/lib/propertyVisualization';
+import { roomLabel, visualizationModeLabel, type ModelViewerDiagnostic, type PhotoEditRequest, type PhotoEditSimulation, type VisualizationAsset, type VisualizationPayload } from '@/lib/propertyVisualization';
 
-type ShellTab = 'scene' | 'maquette' | 'model' | 'photos';
+type WorkspaceMode = 'photo_edit' | 'scene_3d' | 'reconstruction_3d';
 
 export default function PropertyViewer() {
   const { id = '' } = useParams();
@@ -22,17 +23,19 @@ export default function PropertyViewer() {
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
-  const [tab, setTab] = useState<ShellTab>('scene');
+  const [mode, setMode] = useState<WorkspaceMode>('photo_edit');
   const [notice, setNotice] = useState('');
+  const [captureConfirmed, setCaptureConfirmed] = useState(false);
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<number[]>([]);
 
-  async function load(nextTab?: ShellTab) {
+  async function load(nextMode?: WorkspaceMode) {
     setLoading(true);
     setError('');
     try {
       const response = await api.get(`/visualizations/${subjectType}/${id}`);
       const payload = response.data.data as VisualizationPayload;
       setData(payload);
-      setTab(nextTab ?? (payload.scene_graph ? 'scene' : payload.model ? 'model' : 'maquette'));
+      setMode(nextMode ?? (payload.gallery.some(item => item.kind === 'photo' || item.kind === 'panorama') ? 'photo_edit' : payload.scene_graph ? 'scene_3d' : 'reconstruction_3d'));
     } catch (exception: any) {
       setError(exception.response?.data?.message ?? 'Não foi possível abrir a visualização deste imóvel.');
       setData(null);
@@ -44,17 +47,23 @@ export default function PropertyViewer() {
   useEffect(() => { void load(); }, [subjectType, id]);
 
   async function upload(event: FormEvent<HTMLInputElement>, kind: 'glb' | 'photo') {
-    const file = event.currentTarget.files?.[0];
-    if (!file) return;
+    const files = Array.from(event.currentTarget.files ?? []);
+    if (files.length === 0) return;
     setUploading(true);
     setError('');
     try {
       const payload = new FormData();
-      payload.append('arquivo', file);
-      payload.append('kind', kind === 'glb' && file.name.toLowerCase().endsWith('.gltf') ? 'gltf' : kind);
-      await api.post(`/visualizations/${subjectType}/${id}/assets`, payload);
-      if (kind === 'photo') await rebuild();
-      else await load('model');
+      if (kind === 'photo') files.forEach(file => payload.append('arquivos[]', file));
+      else payload.append('arquivo', files[0]);
+      payload.append('kind', kind === 'glb' && files[0].name.toLowerCase().endsWith('.gltf') ? 'gltf' : kind);
+      const response = await api.post(`/visualizations/${subjectType}/${id}/assets`, payload);
+      const created = Array.isArray(response.data.data) ? response.data.data : [response.data.data];
+      setNotice(`${files.length} arquivo(s) enviado(s) com sucesso.`);
+      await load(kind === 'photo' ? 'photo_edit' : 'reconstruction_3d');
+      if (kind === 'photo') {
+        setSelectedPhotoIds(created.map((item: { id: number }) => Number(item.id)).filter(Boolean));
+        setCaptureConfirmed(false);
+      }
     } catch (exception: any) {
       setError(exception.response?.data?.message ?? 'Falha ao enviar o arquivo.');
     } finally {
@@ -64,13 +73,73 @@ export default function PropertyViewer() {
     }
   }
 
+  async function analyzeNeural(assetId: number) {
+    setBusy(true);
+    setError('');
+    setNotice('Executando profundidade neural e segmentação na GPU...');
+    try {
+      const response = await api.post(`/visualizations/${subjectType}/${id}/vision`, { asset_id: assetId });
+      setData(response.data.data);
+      setMode('photo_edit');
+      setNotice('Mapa de profundidade e máscara neural concluídos.');
+    } catch (exception: any) {
+      setError(exception.response?.data?.message ?? 'Não foi possível executar a análise neural.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function reconstruct() {
+    const assetIds = selectedPhotoIds;
+    setBusy(true);
+    setError('');
+    setNotice('Validando captura e executando a reconstrução COLMAP...');
+    try {
+      const response = await api.post(`/visualizations/${subjectType}/${id}/reconstruct`, {
+        asset_ids: assetIds,
+        capture_confirmed: captureConfirmed,
+      });
+      let current = response.data.data as VisualizationPayload;
+      setData(current);
+      setMode('reconstruction_3d');
+      const job = current.processing_jobs?.find((item) => item.kind === 'photogrammetry');
+      if (!job) throw new Error('O job de reconstrução não foi registrado.');
+      setNotice('Reconstrução aceita. Você pode acompanhar as etapas sem manter uma requisição aberta.');
+      for (let attempt = 0; attempt < 600 && !['completed', 'failed'].includes(job.status); attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 3000));
+        const polled = await api.get(`/visualizations/${subjectType}/${id}/reconstruction-jobs/${job.id}`);
+        current = polled.data.data as VisualizationPayload;
+        setData(current);
+        const latest = current.processing_jobs?.find((item) => item.id === job.id);
+        if (!latest) throw new Error('O acompanhamento do job foi perdido.');
+        job.status = latest.status;
+        job.result = latest.result;
+        job.error = latest.error;
+        const stage = typeof latest.result?.stage === 'string' ? latest.result.stage.replace(/_/g, ' ') : 'processando';
+        const percent = typeof latest.result?.percent === 'number' ? ` · ${latest.result.percent}%` : '';
+        setNotice(`Reconstrução: ${stage}${percent}.`);
+      }
+      if (job.status === 'failed') {
+        throw new Error(job.error ?? 'O worker não concluiu a reconstrução.');
+      }
+      if (job.status !== 'completed') {
+        throw new Error('A reconstrução excedeu o tempo máximo de acompanhamento.');
+      }
+      setNotice('Reconstrução concluída. Confira a qualidade geométrica e as limitações registradas.');
+    } catch (exception: any) {
+      setError(exception.response?.data?.message ?? exception.message ?? 'O conjunto não pôde ser reconstruído.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function rebuild() {
     setBusy(true);
     setNotice('Analisando fotografias...');
     try {
       const response = await api.post(`/visualizations/${subjectType}/${id}/rebuild`);
       setData(response.data.data);
-      setTab('scene');
+      setMode('scene_3d');
       setNotice(statusLabel(response.data.data.scene_status));
     } catch (exception: any) {
       setError(exception.response?.data?.message ?? 'Não foi possível gerar a cena a partir das fotografias.');
@@ -106,7 +175,7 @@ export default function PropertyViewer() {
 
   async function saveVersion(label: string) {
     await api.post(`/visualizations/${subjectType}/${id}/versions`, { label });
-    await load('scene');
+    await load('scene_3d');
   }
 
   async function restore(versionId: number) {
@@ -120,14 +189,48 @@ export default function PropertyViewer() {
     setNotice('Link copiado. Quem abrir precisa da mesma conta autorizada.');
   }
 
+  async function applyPhotoSimulation(request: PhotoEditRequest, _source: VisualizationAsset): Promise<PhotoEditSimulation> {
+    if (request.points.every(point => point.label === 0)) throw new Error('Marque ao menos um ponto da superfície que deseja alterar.');
+    setBusy(true);
+    setNotice('Refinando a máscara e preservando sombras e iluminação da fotografia...');
+    try {
+      const response = await api.post(`/visualizations/${subjectType}/${id}/photo-simulations`, request);
+      const payload = response.data.data as VisualizationPayload;
+      setData(payload);
+      const simulation = payload.photo_editing?.simulations?.[0];
+      if (!simulation) throw new Error('O processamento terminou sem devolver a versão editada.');
+      setNotice('Simulação processada e salva sem alterar a fotografia original.');
+      return simulation;
+    } catch (exception: any) {
+      throw new Error(exception.response?.data?.message ?? exception.message ?? 'Não foi possível processar a simulação.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const hasFloorplan = useMemo(() => Boolean(data?.gallery.some(item => item.kind === 'floorplan')), [data]);
   const graph = data?.scene_graph ?? null;
+  const capturePhotos = data?.gallery.filter(item => (item.kind === 'photo' || item.kind === 'panorama') && selectedPhotoIds.includes(item.id)) ?? [];
+  const availablePhotos = data?.gallery.filter(item => item.kind === 'photo' || item.kind === 'panorama') ?? [];
+  const reconstructionArtifacts = data?.gallery.filter(item => item.kind === 'point_cloud' || item.kind === 'reconstruction_mesh') ?? [];
+
+  function toggleCapturePhoto(assetId: number) {
+    setCaptureConfirmed(false);
+    setSelectedPhotoIds(current => current.includes(assetId) ? current.filter(id => id !== assetId) : [...current, assetId]);
+  }
 
   if (loading) return <div className="min-h-[50vh] grid place-items-center text-slate-500"><Loader2 className="h-8 w-8 animate-spin text-primary-600" /></div>;
   if (!data) return <div role="alert" className="rounded-2xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950 p-8 text-red-800 dark:text-red-200">{error}<button type="button" className="block mt-3 font-bold underline" onClick={() => void load()}>Tentar novamente</button></div>;
 
   const subject = data.subject;
   const modelUrl = data.model ? `${data.model.url}` : null;
+  const modelEligible = data.model?.viewer_eligible === true;
+  const modelDiagnostic = data.model?.viewer_diagnostic ?? {
+    code: data.model ? 'eligibility_not_confirmed' : 'model_not_available',
+    message: data.model
+      ? 'O arquivo existe, mas ainda não foi aprovado para o viewer. Valide geometria, materiais, escala e origem antes de exibi-lo como reconstrução final.'
+      : 'Ainda não existe um modelo 3D elegível para este imóvel. Use fotografias autorizadas para iniciar a reconstrução.',
+  };
   const label = visualizationModeLabel(data);
 
   return <div className="space-y-5">
@@ -141,26 +244,30 @@ export default function PropertyViewer() {
         <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${data.level === 'photo_referenced' || data.faithful ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200' : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200'}`}>{label}</span>
         <button type="button" onClick={() => void share()} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-bold"><Share2 className="h-4 w-4" /> Compartilhar</button>
         <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="inline-flex items-center gap-2 rounded-xl bg-primary-600 text-white px-4 py-2 text-sm font-bold disabled:opacity-60"><Upload className="h-4 w-4" /> {uploading ? 'Enviando...' : 'Enviar GLB'}</button>
-        <button type="button" onClick={() => photoRef.current?.click()} disabled={uploading} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-bold">Enviar foto</button>
+        <button type="button" onClick={() => photoRef.current?.click()} disabled={uploading} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-bold"><Images className="h-4 w-4" /> Enviar fotos</button>
         <input ref={fileRef} type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json" className="hidden" onChange={event => void upload(event, 'glb')} />
-        <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" className="hidden" onChange={event => void upload(event, 'photo')} />
+        <input ref={photoRef} multiple type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" className="hidden" onChange={event => void upload(event, 'photo')} />
       </div>
     </header>
 
     {error && <p role="alert" className="rounded-xl bg-red-50 dark:bg-red-950 p-3 text-sm text-red-800 dark:text-red-200">{error}</p>}
     {notice && <p className="rounded-xl bg-slate-100 dark:bg-slate-800 p-3 text-sm text-slate-700 dark:text-slate-200">{notice}</p>}
 
-    <section className={`rounded-3xl border border-slate-200 dark:border-slate-700 bg-slate-950 overflow-hidden ${fullscreen ? 'fixed inset-3 z-50' : ''}`}>
-      <div className="flex flex-wrap items-center gap-2 px-4 py-3 text-slate-200 text-sm border-b border-white/10">
-        <span className="inline-flex items-center gap-2 font-bold mr-2"><Box className="h-4 w-4" /> Visualizador</span>
-        <TabButton active={tab === 'scene'} onClick={() => setTab('scene')}>Cena 3D</TabButton>
-        <TabButton active={tab === 'maquette'} onClick={() => setTab('maquette')}>Maquete</TabButton>
-        <TabButton active={tab === 'model'} onClick={() => setTab('model')} disabled={!modelUrl}>Modelo GLB</TabButton>
-        <TabButton active={tab === 'photos'} onClick={() => setTab('photos')}>Fotos</TabButton>
-        <button type="button" onClick={() => void rebuild()} disabled={busy} className="ml-auto rounded-lg bg-white text-slate-900 px-3 py-1.5 text-xs font-bold disabled:opacity-50">{busy ? 'Processando...' : 'Gerar a partir das fotos'}</button>
-      </div>
-      {tab === 'scene' && graph && (
-        <PropertyPhotoSceneEditor
+    <nav aria-label="Modos da visualização do imóvel" className="grid gap-3 md:grid-cols-3">
+      <ModeButton icon={Paintbrush} active={mode === 'photo_edit'} onClick={() => setMode('photo_edit')} title="Editar fotografia" text="Cor, orientações e comparação visual" />
+      <ModeButton icon={Cuboid} active={mode === 'scene_3d'} onClick={() => setMode('scene_3d')} title="Criar ambiente 3D" text="Cena editável baseada nas evidências" />
+      <ModeButton icon={ScanLine} active={mode === 'reconstruction_3d'} onClick={() => setMode('reconstruction_3d')} title="Reconstruir em 3D" text="Captura, processamento e validação" />
+    </nav>
+
+    <section className={`overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 dark:border-slate-700 ${fullscreen ? 'fixed inset-3 z-50 overflow-auto' : ''}`}>
+      {mode === 'photo_edit' && <PropertyPhotoEditor photos={availablePhotos} simulations={data.photo_editing?.simulations ?? []} busy={busy} onAnalyze={analyzeNeural} onApply={applyPhotoSimulation} />}
+
+      {mode === 'scene_3d' && <>
+        <div className="flex flex-wrap items-center gap-3 border-b border-white/10 px-4 py-3 text-slate-200">
+          <div className="min-w-0 flex-1"><p className="font-black">Ambiente 3D editável</p><p className="text-xs text-slate-400">A cena preserva as limitações das fotos e dos dados do anúncio.</p></div>
+          <button type="button" onClick={() => void rebuild()} disabled={busy || availablePhotos.length === 0} className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-slate-900 disabled:opacity-40">{busy ? 'Processando...' : graph ? 'Atualizar pelas fotos' : 'Criar pelas fotos'}</button>
+        </div>
+        {graph ? <PropertyPhotoSceneEditor
           graph={graph}
           canRenovate={Boolean(data.product_features.renovation_simulation)}
           versions={data.versions ?? []}
@@ -171,44 +278,52 @@ export default function PropertyViewer() {
           onSaveVersion={saveVersion}
           onRestore={restore}
           onFullscreen={() => setFullscreen(value => !value)}
-        />
-      )}
-      {tab === 'scene' && !graph && (
-        <EmptyPane
-          icon={Box}
-          title="Ainda sem cena gerada"
-          text="Use as fotografias autorizadas deste registro para montar uma simulação editável. Sem fotos, a maquete paramétrica permanece disponível. A galeria não substitui o modelo 3D."
-        />
-      )}
-      {tab === 'model' && modelUrl && <GlbViewer src={modelUrl} className="w-full h-[min(70vh,720px)]" />}
-      {tab === 'model' && !modelUrl && <EmptyPane icon={Box} title="Sem arquivo GLB" text="Envie um modelo deste imóvel. A cena fotográfica e a maquete continuam disponíveis." />}
-      {tab === 'maquette' && (
-        <PropertyMaquetteViewer
-          title={subject.title}
-          areaM2={Number(subject.area_m2) || null}
-          bedrooms={subject.bedrooms}
-          bathrooms={subject.bathrooms}
-          parkingSpaces={subject.parking_spaces}
-          propertyType={subject.property_type}
-          notes={subject.title}
-          hasGlb={Boolean(modelUrl)}
-          hasFloorplan={hasFloorplan}
-          showChrome
-          onFullscreen={() => setFullscreen(value => !value)}
-          className="w-full h-[min(70vh,720px)]"
-        />
-      )}
-      {tab === 'photos' && (
-        <div className="min-h-[320px] bg-slate-900 p-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {data.gallery.filter(item => item.kind !== 'glb').length === 0 && <p className="text-slate-300 col-span-full">Nenhuma foto ou planta anexada a esta visualização. Isto não é um modelo 3D editável.</p>}
-          {data.gallery.map(item => (
-            <article key={item.id} className="rounded-2xl border border-white/10 p-4 text-slate-200">
-              <p className="font-bold">{item.name}</p>
-              <p className="text-xs text-slate-400 mt-1">{item.kind === 'floorplan' ? 'Planta 2D' : item.kind === 'panorama' ? 'Panorama' : 'Foto'}{item.room_key ? ` · ${roomLabel(item.room_key)}` : ''}</p>
-            </article>
-          ))}
+        /> : <div>
+          <div className="border-b border-amber-300/20 bg-amber-400/10 px-4 py-3 text-xs text-amber-100">Maquete paramétrica ilustrativa. Ela organiza os dados do anúncio e não representa uma reconstrução fiel do imóvel.</div>
+          <PropertyMaquetteViewer
+            title={subject.title}
+            areaM2={Number(subject.area_m2) || null}
+            bedrooms={subject.bedrooms}
+            bathrooms={subject.bathrooms}
+            parkingSpaces={subject.parking_spaces}
+            propertyType={subject.property_type}
+            notes={subject.title}
+            hasGlb={modelEligible}
+            hasFloorplan={hasFloorplan}
+            showChrome
+            onFullscreen={() => setFullscreen(value => !value)}
+            className="h-[min(70vh,720px)] w-full"
+          />
+        </div>}
+      </>}
+
+      {mode === 'reconstruction_3d' && <div className="space-y-0 text-slate-100">
+        <div className="border-b border-white/10 p-5">
+          <h2 className="flex items-center gap-2 text-lg font-black"><ScanLine className="h-5 w-5 text-cyan-400" /> Reconstrução fotogramétrica</h2>
+          <p className="mt-1 text-sm text-slate-400">Um arquivo só aparece no visualizador depois de passar pela validação de elegibilidade.</p>
         </div>
-      )}
+        {modelUrl && modelEligible ? <GlbViewer src={modelUrl} eligible={modelEligible} diagnostic={data.model?.viewer_diagnostic} className="h-[min(70vh,720px)] w-full" /> : <ModelDiagnosticPanel diagnostic={modelDiagnostic} hasModel={Boolean(modelUrl)} artifacts={reconstructionArtifacts} />}
+
+        <div className="border-t border-white/10 bg-slate-900/70 p-5">
+          <div className="flex items-start gap-3">
+            <ScanLine className="h-6 w-6 shrink-0 text-cyan-400" />
+            <div className="min-w-0 flex-1">
+              <h3 className="font-black">Captura para reconstrução 3D</h3>
+              <p className="mt-1 text-sm text-slate-300">Envie de 8 a 120 fotos do mesmo ambiente, com pelo menos 60% de sobreposição entre posições consecutivas.</p>
+              <ul className="mt-3 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
+                {['Fotografe de vários ângulos, caminhando devagar.', 'Mantenha iluminação e foco consistentes.', 'Evite pessoas ou objetos em movimento.', 'Separe cada ambiente e nunca misture imóveis.', 'Não use imagens borradas ou muito escuras.', 'Inclua cantos, piso e paredes com bastante textura.'].map(item => <li key={item} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-400" />{item}</li>)}
+              </ul>
+              <div className="mt-4 flex gap-2 overflow-x-auto pb-2" aria-label="Selecionar fotos para reconstrução">
+                {availablePhotos.map(photo => <label key={photo.id} className={`w-28 shrink-0 cursor-pointer overflow-hidden rounded-xl border ${selectedPhotoIds.includes(photo.id) ? 'border-cyan-400 ring-2 ring-cyan-400/20' : 'border-white/10'}`}><img src={photo.url} alt="" className="h-16 w-full object-cover" /><span className="flex items-center gap-2 px-2 py-2 text-[11px] font-bold"><input type="checkbox" checked={selectedPhotoIds.includes(photo.id)} onChange={() => toggleCapturePhoto(photo.id)} />{photo.name}</span></label>)}
+                {availablePhotos.length === 0 && <p className="text-sm text-slate-400">Envie fotografias para montar o conjunto de captura.</p>}
+              </div>
+              <p className="mt-2 text-xs font-bold uppercase tracking-wide text-cyan-300">{capturePhotos.length} selecionadas de {availablePhotos.length} disponíveis</p>
+              <label className="mt-2 flex items-start gap-2 text-sm font-medium"><input type="checkbox" checked={captureConfirmed} onChange={event => setCaptureConfirmed(event.target.checked)} className="mt-1" /> Confirmo que as {capturePhotos.length} fotos selecionadas são autorizadas, pertencem ao mesmo ambiente e possuem sobreposição.</label>
+              <button type="button" disabled={busy || !captureConfirmed || capturePhotos.length < 8} onClick={() => void reconstruct()} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"><Box className="h-4 w-4" /> Reconstruir com COLMAP ({capturePhotos.length}/8 mín.)</button>
+            </div>
+          </div>
+        </div>
+      </div>}
     </section>
 
     <div className="grid xl:grid-cols-[1.1fr_0.9fr] gap-5">
@@ -227,12 +342,14 @@ export default function PropertyViewer() {
       </section>
       <section className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5">
         <h2 className="font-black flex items-center gap-2"><Camera className="h-4 w-4" /> Análise das fotografias</h2>
-        <p className="text-xs text-slate-500 mt-1">Paleta vem do histograma quando o arquivo local existe. Confiança é estimativa, não prova. Fotos originais não são alteradas pelo editor.</p>
+        <p className="text-xs text-slate-500 mt-1">A confiança do ambiente é separada da confiança dos objetos. Quando não existe classificação de cômodo, nenhuma porcentagem artificial é exibida. Fotos originais não são alteradas pelo editor.</p>
         <div className="mt-4 space-y-3">
           {data.photo_analyses.length === 0 && <p className="text-sm text-slate-500">Nenhuma análise registrada. Gere a cena para classificar as fotos deste registro.</p>}
           {data.photo_analyses.map(item => <article key={item.id} className="rounded-xl border border-slate-200 dark:border-slate-800 p-3 text-sm">
             <p className="font-bold">{item.source_name || 'Arquivo'}</p>
-            <p className="text-slate-500 mt-1">{roomLabel(item.room_guess)} · confiança {item.confidence}% · origem {item.origin}</p>
+            <p className="text-slate-500 mt-1">{item.room_guess && item.room_confidence != null ? `${roomLabel(item.room_guess)} · confiança do ambiente ${item.room_confidence}%` : 'Ambiente não classificado · sem confiança de cômodo'} · origem {item.origin}</p>
+            {item.detection_confidence != null && <p className="mt-1 text-xs text-slate-500">Maior confiança entre objetos: {item.detection_confidence}%.</p>}
+            {item.elements && item.elements.length > 0 && <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">Objetos detectados: {item.elements.map(element => `${detectedLabel(element.label)} ${Math.round((element.confidence ?? 0) * 100)}%`).join(', ')}.</p>}
           </article>)}
         </div>
       </section>
@@ -249,20 +366,24 @@ function statusLabel(status?: string | null): string {
   } as Record<string, string>)[status ?? ''] ?? 'Processamento concluído';
 }
 
-function TabButton({ active, onClick, disabled, children }: { active: boolean; onClick: () => void; disabled?: boolean; children: string }) {
-  return <button type="button" disabled={disabled} onClick={onClick} className={`rounded-lg px-3 py-1.5 text-xs font-bold ${active ? 'bg-white text-slate-900' : 'border border-white/15 text-slate-200'} disabled:opacity-40`}>{children}</button>;
+function ModeButton({ icon: Icon, active, onClick, title, text }: { icon: typeof Box; active: boolean; onClick: () => void; title: string; text: string }) {
+  return <button type="button" aria-pressed={active} onClick={onClick} className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${active ? 'border-cyan-500 bg-cyan-50 ring-2 ring-cyan-500/15 dark:bg-cyan-950/30' : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900'}`}><span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${active ? 'bg-cyan-500 text-slate-950' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}><Icon className="h-5 w-5" /></span><span><span className="block font-black text-slate-900 dark:text-slate-100">{title}</span><span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{text}</span></span></button>;
 }
 
-function EmptyPane({ icon: Icon, title, text }: { icon: typeof Box; title: string; text: string }) {
-  return <div className="h-[min(52vh,520px)] grid place-items-center text-center px-6 text-slate-300">
-    <div>
-      <Icon className="h-10 w-10 mx-auto text-violet-300" />
-      <h2 className="font-black text-xl mt-4">{title}</h2>
-      <p className="text-sm mt-2 max-w-xl mx-auto">{text}</p>
+function ModelDiagnosticPanel({ diagnostic, hasModel, artifacts }: { diagnostic: ModelViewerDiagnostic; hasModel: boolean; artifacts: VisualizationAsset[] }) {
+  return <div className="grid min-h-[340px] place-items-center px-5 py-8">
+    <div className="w-full max-w-2xl rounded-2xl border border-amber-300/20 bg-amber-400/10 p-5">
+      <div className="flex gap-3"><TriangleAlert className="h-6 w-6 shrink-0 text-amber-300" /><div><h3 className="font-black text-amber-50">{hasModel ? 'Modelo ainda não elegível para o viewer' : 'Reconstrução 3D ainda não disponível'}</h3><p className="mt-1 text-sm text-amber-100/80">{diagnostic.message}</p></div></div>
+      {diagnostic.checks && diagnostic.checks.length > 0 && <ul className="mt-4 grid gap-2">{diagnostic.checks.map(check => <li key={check.label} className="flex items-start justify-between gap-4 rounded-lg border border-white/10 px-3 py-2 text-xs"><span><span className="font-bold">{check.label}</span>{check.detail && <span className="mt-0.5 block text-slate-400">{check.detail}</span>}</span><span className={check.status === 'passed' ? 'text-emerald-300' : check.status === 'failed' ? 'text-rose-300' : 'text-amber-300'}>{check.status === 'passed' ? 'Aprovado' : check.status === 'failed' ? 'Reprovado' : 'Pendente'}</span></li>)}</ul>}
+      {artifacts.length > 0 && <div className="mt-4"><p className="text-xs font-black uppercase tracking-wide text-slate-300">Artefatos técnicos disponíveis</p><ul className="mt-2 flex flex-wrap gap-2">{artifacts.map(artifact => <li key={artifact.id} className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300">{artifact.kind === 'point_cloud' ? 'Nuvem de pontos' : 'Malha de reconstrução'} · {artifact.name}</li>)}</ul><p className="mt-2 text-xs text-slate-400">Esses artefatos ajudam no diagnóstico, mas não são apresentados como modelo final do imóvel.</p></div>}
     </div>
   </div>;
 }
 
 function Fact({ label, value }: { label: string; value: string | number }) {
   return <div className="rounded-xl bg-slate-50 dark:bg-slate-950 p-3"><p className="text-xs text-slate-500">{label}</p><p className="font-bold mt-1">{value}</p></div>;
+}
+
+function detectedLabel(label?: string): string {
+  return ({ couch: 'sofá', chair: 'cadeira', 'dining table': 'mesa de jantar', 'potted plant': 'planta em vaso', bowl: 'tigela', bed: 'cama' } as Record<string, string>)[label ?? ''] ?? (label || 'objeto');
 }

@@ -1,0 +1,74 @@
+{
+  "job_id": "a2428314-42e4-4061-aa46-7a701c0efc5d",
+  "status": "completed",
+  "kind": "vision",
+  "original_artifact": "original.jpg",
+  "depth": {
+    "artifact": "depth.png",
+    "model": "depth-anything/Depth-Anything-V2-Small-hf",
+    "license": "Apache-2.0",
+    "device": "cuda",
+    "latency_ms": 984.06,
+    "peak_vram_mb": 186.18,
+    "relative_depth": {
+      "min": 0.486816,
+      "max": 3.146484,
+      "mean": 1.458458
+    },
+    "dimensions": {
+      "width": 960,
+      "height": 640
+    }
+  },
+  "segmentation": {
+    "artifact": "mask.png",
+    "overlay_artifact": "segmentation-overlay.png",
+    "model": "facebook/sam2.1-hiera-tiny",
+    "license": "Apache-2.0",
+    "device": "cuda",
+    "latency_ms": 811.05,
+    "peak_vram_mb": 282.72,
+    "prompt_points": [
+      [
+        700.0,
+        380.0
+      ]
+    ],
+    "mask_count": 1,
+    "coverage_ratio": 0.128179,
+    "dimensions": {
+      "width": 960,
+      "height": 640
+    }
+  },
+  "models": {
+    "depth_anything_v2": {
+      "model": "depth-anything/Depth-Anything-V2-Small-hf",
+      "license": "Apache-2.0",
+      "loaded": true
+    },
+    "sam2": {
+      "model": "facebook/sam2.1-hiera-tiny",
+      "license": "Apache-2.0",
+      "loaded": true
+    }
+  },
+  "structured_result": {
+    "surface_regions": [
+      {
+        "kind": "prompted_region",
+        "coverage_ratio": 0.128179
+      }
+    ],
+    "visible_elements": [
+      {
+        "kind": "prompted_object_or_surface",
+        "confidence": null
+      }
+    ],
+    "limitations": [
+      "A profundidade é relativa e monocular; não fornece escala métrica.",
+      "SAM 2 segmenta as regiões indicadas por pontos; não atribui classe semântica ao objeto."
+    ]
+  }
+}

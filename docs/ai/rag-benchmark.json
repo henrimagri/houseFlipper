@@ -1,0 +1,71 @@
+{
+    "dataset": "resources/ai/evaluations/rag-semantic.json",
+    "generated_at": "2026-10-20T19:54:16+00:00",
+    "modes": {
+        "lexical": {
+            "recall_at_4": 0,
+            "mrr": 0,
+            "latency_ms": 12,
+            "cases": [
+                {
+                    "query": "Quando a compra passa de fato para o nome do adquirente?",
+                    "expected": "ITBI e registro imobiliário no Brasil",
+                    "rank": null,
+                    "titles": []
+                },
+                {
+                    "query": "Por que um portal pode sumir durante uma consulta?",
+                    "expected": "Como a busca inteligente do FlipControl funciona",
+                    "rank": null,
+                    "titles": []
+                },
+                {
+                    "query": "Posso tratar o cenário de venda como lucro garantido?",
+                    "expected": "Análise House Flipper e visualizações",
+                    "rank": null,
+                    "titles": []
+                }
+            ]
+        },
+        "hybrid": {
+            "recall_at_4": 1,
+            "mrr": 1,
+            "latency_ms": 168,
+            "cases": [
+                {
+                    "query": "Quando a compra passa de fato para o nome do adquirente?",
+                    "expected": "ITBI e registro imobiliário no Brasil",
+                    "rank": 1,
+                    "titles": [
+                        "ITBI e registro imobiliário no Brasil",
+                        "Como a busca inteligente do FlipControl funciona",
+                        "Como a busca inteligente do FlipControl funciona",
+                        "ITBI e registro imobiliário no Brasil"
+                    ]
+                },
+                {
+                    "query": "Por que um portal pode sumir durante uma consulta?",
+                    "expected": "Como a busca inteligente do FlipControl funciona",
+                    "rank": 1,
+                    "titles": [
+                        "Como a busca inteligente do FlipControl funciona",
+                        "Como a busca inteligente do FlipControl funciona",
+                        "ITBI e registro imobiliário no Brasil",
+                        "ITBI e registro imobiliário no Brasil"
+                    ]
+                },
+                {
+                    "query": "Posso tratar o cenário de venda como lucro garantido?",
+                    "expected": "Análise House Flipper e visualizações",
+                    "rank": 1,
+                    "titles": [
+                        "Análise House Flipper e visualizações",
+                        "Como a busca inteligente do FlipControl funciona",
+                        "Análise House Flipper e visualizações",
+                        "Como a busca inteligente do FlipControl funciona"
+                    ]
+                }
+            ]
+        }
+    }
+}

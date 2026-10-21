@@ -1,0 +1,42 @@
+{
+  "source_asset": "Eyeful Tower playroom_small/mesh.obj",
+  "classification": "official_dataset_reference_mesh_not_locally_reconstructed",
+  "license": "MIT",
+  "geometry_count": 1,
+  "vertices": 437239,
+  "faces": 843112,
+  "bounds": [
+    [
+      -3.034162,
+      -0.002263,
+      -3.406384
+    ],
+    [
+      2.955748,
+      2.459194,
+      3.38753
+    ]
+  ],
+  "extents_m": [
+    5.98991,
+    2.4614570000000002,
+    6.793914
+  ],
+  "texture": {
+    "path": "mesh.jpg",
+    "bytes": 14006162
+  },
+  "glb_bytes": 29357540,
+  "load_seconds": 506.132,
+  "export_seconds": 2.856,
+  "watertight_all": false,
+  "winding_consistent_all": true,
+  "textured_glb_bytes": 42307864,
+  "texture_embedded": true,
+  "web_texture_dimensions": [
+    4096,
+    4096
+  ],
+  "web_texture_bytes": 933361,
+  "texture_export_seconds": 3.677
+}

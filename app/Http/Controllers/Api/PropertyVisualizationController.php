@@ -31,12 +31,22 @@ class PropertyVisualizationController extends Controller
     {
         $subjectType = $this->subjectType($subjectType);
         $data = $request->validate([
-            'arquivo' => ['required', 'file'],
+            'arquivo' => ['required_without:arquivos', 'nullable', 'file'],
+            'arquivos' => ['required_without:arquivo', 'nullable', 'array', 'min:1', 'max:120'],
+            'arquivos.*' => ['required', 'file'],
             'kind' => ['required', 'in:glb,gltf,photo,floorplan,panorama'],
             'room_key' => ['nullable', 'string', 'max:80'],
         ]);
         try {
-            $asset = $this->visualizations->storeAsset($request->user(), $subjectType, $id, $request->file('arquivo'), $data['kind'], $data['room_key'] ?? null);
+            $files = $request->hasFile('arquivos') ? $request->file('arquivos') : [$request->file('arquivo')];
+            if (count($files) > 1 && $data['kind'] !== 'photo') {
+                return response()->json(['message' => 'O envio múltiplo é permitido somente para fotografias.'], 422);
+            }
+            $assets = [];
+            foreach ($files as $file) {
+                $asset = $this->visualizations->storeAsset($request->user(), $subjectType, $id, $file, $data['kind'], $data['room_key'] ?? null);
+                $assets[] = ['id' => $asset->id, 'kind' => $asset->kind];
+            }
         } catch (DocumentRejectedException) {
             return response()->json(['message' => 'O arquivo foi rejeitado pela validação de segurança.'], 422);
         } catch (DocumentStorageException $exception) {
@@ -45,7 +55,7 @@ class PropertyVisualizationController extends Controller
             return response()->json(['message' => 'Não foi possível armazenar o arquivo. Tente novamente.'], 503);
         }
 
-        return response()->json(['data' => ['id' => $asset->id, 'kind' => $asset->kind]], 201);
+        return response()->json(['data' => count($assets) === 1 ? $assets[0] : $assets], 201);
     }
 
     public function file(Request $request, string $subjectType, int $id, int $assetId): StreamedResponse|JsonResponse
@@ -61,6 +71,75 @@ class PropertyVisualizationController extends Controller
     public function rebuild(Request $request, string $subjectType, int $id): JsonResponse
     {
         return response()->json(['data' => $this->visualizations->rebuild($request->user(), $this->subjectType($subjectType), $id)]);
+    }
+
+    public function analyzeNeural(Request $request, string $subjectType, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'asset_id' => ['required', 'integer', 'min:1'],
+            'points' => ['nullable', 'array', 'max:8'],
+            'points.*' => ['required', 'array', 'size:2'],
+            'points.*.*' => ['required', 'numeric', 'min:0', 'max:20000'],
+        ]);
+
+        return response()->json(['data' => $this->visualizations->analyzeNeural(
+            $request->user(),
+            $this->subjectType($subjectType),
+            $id,
+            (int) $data['asset_id'],
+            $data['points'] ?? [],
+        )]);
+    }
+
+    public function simulatePhoto(Request $request, string $subjectType, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'asset_id' => ['required', 'integer', 'min:1'],
+            'color' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'opacity' => ['nullable', 'numeric', 'between:0.1,1'],
+            'material' => ['nullable', 'string', 'in:paint,wood'],
+            'points' => ['nullable', 'array', 'max:16'],
+            'points.*.x' => ['required_with:points', 'numeric', 'min:0', 'max:20000'],
+            'points.*.y' => ['required_with:points', 'numeric', 'min:0', 'max:20000'],
+            'points.*.label' => ['required_with:points', 'integer', 'in:0,1'],
+        ]);
+
+        return response()->json(['data' => $this->visualizations->simulatePhoto(
+            $request->user(),
+            $this->subjectType($subjectType),
+            $id,
+            (int) $data['asset_id'],
+            $data['color'],
+            $data['points'] ?? [],
+            (float) ($data['opacity'] ?? 0.72),
+            $data['material'] ?? 'paint',
+        )]);
+    }
+
+    public function reconstructPhotogrammetry(Request $request, string $subjectType, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'asset_ids' => ['required', 'array', 'min:8', 'max:120'],
+            'asset_ids.*' => ['required', 'integer', 'distinct', 'min:1'],
+            'capture_confirmed' => ['required', 'accepted'],
+        ]);
+
+        return response()->json(['data' => $this->visualizations->reconstructPhotogrammetry(
+            $request->user(),
+            $this->subjectType($subjectType),
+            $id,
+            array_map('intval', $data['asset_ids']),
+        )]);
+    }
+
+    public function reconstructionJob(Request $request, string $subjectType, int $id, int $job): JsonResponse
+    {
+        return response()->json(['data' => $this->visualizations->refreshReconstructionJob(
+            $request->user(),
+            $this->subjectType($subjectType),
+            $id,
+            $job,
+        )]);
     }
 
     public function command(Request $request, string $subjectType, int $id): JsonResponse
@@ -84,7 +163,7 @@ class PropertyVisualizationController extends Controller
     {
         $data = $request->validate([
             'actions' => ['required', 'array', 'min:1', 'max:20'],
-            'actions.*.op' => ['required', 'string', 'in:paint_kind,add_object,remove_object,set_object_color,transform,hide,duplicate,set_active_room,upsert_object'],
+            'actions.*.op' => ['required', 'string', 'in:paint_kind,paint_surface,add_object,remove_object,set_object_color,transform,hide,duplicate,set_active_room,upsert_object,set_lighting,set_room_dimensions'],
             'actions.*.hidden' => ['nullable', 'boolean'],
             'actions.*.object' => ['nullable', 'array'],
             'actions.*.id' => ['nullable', 'string', 'max:80'],
@@ -92,9 +171,14 @@ class PropertyVisualizationController extends Controller
             'actions.*.room' => ['nullable', 'string', 'max:80'],
             'actions.*.color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'actions.*.material' => ['nullable', 'string', 'max:40'],
+            'actions.*.preset' => ['nullable', 'string', 'in:daylight,warm,cool,soft,evening'],
             'actions.*.position' => ['nullable', 'array'],
             'actions.*.rotation' => ['nullable', 'numeric'],
             'actions.*.scale' => ['nullable', 'numeric', 'between:0.4,2.5'],
+            'actions.*.dimensions' => ['nullable', 'array'],
+            'actions.*.dimensions.width' => ['nullable', 'numeric', 'between:1.8,20'],
+            'actions.*.dimensions.depth' => ['nullable', 'numeric', 'between:1.8,20'],
+            'actions.*.dimensions.height' => ['nullable', 'numeric', 'between:2,8'],
         ]);
 
         return response()->json(['data' => $this->visualizations->applyActions($request->user(), $this->subjectType($subjectType), $id, $data['actions'])]);

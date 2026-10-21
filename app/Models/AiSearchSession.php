@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AiSearchSession extends Model
 {
-    protected $fillable = ['user_id', 'tenant_id', 'product_slug', 'criteria', 'last_listings', 'last_recommendation'];
+    protected $fillable = ['user_id', 'tenant_id', 'organization_id', 'product_slug', 'title', 'status', 'active_agent', 'prompt_version', 'criteria', 'last_listings', 'last_recommendation', 'expires_at'];
 
     protected function casts(): array
     {
@@ -16,6 +16,7 @@ class AiSearchSession extends Model
             'criteria' => 'array',
             'last_listings' => 'array',
             'last_recommendation' => 'array',
+            'expires_at' => 'datetime',
         ];
     }
 
@@ -26,6 +27,6 @@ class AiSearchSession extends Model
 
     public function messages(): HasMany
     {
-        return $this->hasMany(AiSearchMessage::class)->orderBy('id');
+        return $this->hasMany(AiSearchMessage::class);
     }
 }

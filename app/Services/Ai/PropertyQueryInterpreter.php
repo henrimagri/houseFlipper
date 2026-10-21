@@ -194,8 +194,8 @@ class PropertyQueryInterpreter
     private function extractCounts(string $normalized, array &$extracted): void
     {
         $map = ['um' => 1, 'uma' => 1, 'dois' => 2, 'duas' => 2, 'tres' => 3, 'três' => 3, 'quatro' => 4, 'cinco' => 5];
-        foreach (['quartos' => 'min_bedrooms', 'dormitorios' => 'min_bedrooms', 'dormitórios' => 'min_bedrooms', 'suites' => 'min_bedrooms', 'suítes' => 'min_bedrooms', 'banheiros' => 'min_bathrooms', 'vagas' => 'min_parking'] as $word => $field) {
-            if (preg_match('/(?:pelo menos|no minimo|no mínimo|minimo|mínimo)?\s*(\d+|um|uma|dois|duas|tres|três|quatro|cinco)\s+'.$word.'/u', $normalized, $match)) {
+        foreach (['quartos?' => 'min_bedrooms', 'dormitorios?' => 'min_bedrooms', 'dormitórios?' => 'min_bedrooms', 'suites?' => 'min_bedrooms', 'suítes?' => 'min_bedrooms', 'banheiros?' => 'min_bathrooms', 'vagas?' => 'min_parking'] as $word => $field) {
+            if (preg_match('/(?:pelo menos|no minimo|no mínimo|minimo|mínimo)?\s*(\d+|um|uma|dois|duas|tres|três|quatro|cinco)\s+'.$word.'\b/u', $normalized, $match)) {
                 $value = $map[$match[1]] ?? (int) $match[1];
                 if ($value > 0) {
                     $extracted['required'][$field] = $value;
@@ -254,6 +254,6 @@ class PropertyQueryInterpreter
 
     private function normalize(string $value): string
     {
-        return Str::of($value)->lower()->ascii()->replaceMatches('/[^a-z0-9\$]+/u', ' ')->squish()->toString();
+        return Str::of($value)->lower()->ascii()->replaceMatches('/[^a-z0-9\$\.,]+/u', ' ')->squish()->toString();
     }
 }

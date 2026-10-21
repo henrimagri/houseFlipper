@@ -1,0 +1,1461 @@
+{
+  "suite": "phase3-representative-v1",
+  "minimum_reviewed": 100,
+  "methodology": {
+    "automated_scope": [
+      "extração estruturada",
+      "continuidade de critérios",
+      "seleção de agente",
+      "seleção de workflow"
+    ],
+    "excluded_from_automatic_judgment": [
+      "qualidade editorial",
+      "persuasão",
+      "correção jurídica",
+      "qualidade visual",
+      "fidelidade 3D"
+    ],
+    "reviewed_definition": "Cada caso possui expectativa objetiva inspecionável; reviewed não significa validação por especialista de domínio."
+  },
+  "cases": [
+    {
+      "id": "geral_01",
+      "category": "geral",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Ajude a organizar minha próxima pesquisa",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "geral_02",
+      "category": "geral",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Preciso de um panorama operacional",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "geral_03",
+      "category": "geral",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Quero avaliar uma nova oportunidade",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "geral_04",
+      "category": "geral",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Quais informações devo reunir para começar?",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "geral_05",
+      "category": "geral",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Mostre os próximos passos da operação",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "geral_06",
+      "category": "geral",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Ajude a estruturar a análise",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "geral_07",
+      "category": "geral",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Preciso de orientação geral",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "geral_08",
+      "category": "geral",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Quero revisar prioridades do dia",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "business_01",
+      "category": "business",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Analise a operação da empresa",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "business_02",
+      "category": "business",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Quero planejar o crescimento da imobiliária",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "business_03",
+      "category": "business",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Ajude com meu plano de negócio",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "business_04",
+      "category": "business",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Estruture um processo de análise de oportunidades",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "business_05",
+      "category": "business",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Como priorizar as frentes comerciais?",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "business_06",
+      "category": "business",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Quero definir metas profissionais",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "business_07",
+      "category": "business",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Faça um panorama da equipe comercial",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "crm_summary"
+      }
+    },
+    {
+      "id": "business_08",
+      "category": "business",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Analise a margem da carteira",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "investment_summary"
+      }
+    },
+    {
+      "id": "vendas_01",
+      "category": "vendas",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Ajude a preparar uma abordagem de venda",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "vendas_02",
+      "category": "vendas",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Quero melhorar a conversão das visitas",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "vendas_03",
+      "category": "vendas",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Resuma o funil de vendas",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "crm_summary"
+      }
+    },
+    {
+      "id": "vendas_04",
+      "category": "vendas",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Quais leads precisam de atenção?",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "crm_summary"
+      }
+    },
+    {
+      "id": "vendas_05",
+      "category": "vendas",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Analise o trabalho dos corretores",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "crm_summary"
+      }
+    },
+    {
+      "id": "vendas_06",
+      "category": "vendas",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Prepare argumentos para a negociação",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "vendas_07",
+      "category": "vendas",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Mostre o desempenho da equipe",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "crm_summary"
+      }
+    },
+    {
+      "id": "vendas_08",
+      "category": "vendas",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Ajude a acompanhar uma proposta",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "marketing_01",
+      "category": "marketing",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Crie uma ideia de campanha para um apartamento",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "marketing_02",
+      "category": "marketing",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Planeje uma campanha institucional",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "marketing_03",
+      "category": "marketing",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Como apresentar uma oportunidade ao público?",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "marketing_04",
+      "category": "marketing",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Sugira canais para divulgar o imóvel",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "marketing_05",
+      "category": "marketing",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Quero um calendário de conteúdo",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "marketing_06",
+      "category": "marketing",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Ajude com uma chamada para visita",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "marketing_07",
+      "category": "marketing",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Estruture uma campanha de captação",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "marketing_08",
+      "category": "marketing",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Prepare uma apresentação da oportunidade",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "textos_01",
+      "category": "textos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Escreva a estrutura de um anúncio",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "textos_02",
+      "category": "textos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Revise o tom deste comunicado",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "textos_03",
+      "category": "textos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Resuma esta oportunidade em tópicos",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "textos_04",
+      "category": "textos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Prepare uma mensagem de acompanhamento",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "textos_05",
+      "category": "textos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Crie um modelo de apresentação institucional",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "textos_06",
+      "category": "textos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Melhore a clareza da descrição",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "textos_07",
+      "category": "textos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Resuma os pontos desta reunião",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "textos_08",
+      "category": "textos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Prepare um resumo executivo da oportunidade",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "imoveis_01",
+      "category": "imoveis",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Apartamento em São Paulo até R$ 650 mil com 2 quartos e 1 vaga",
+      "expect": {
+        "intent": "search",
+        "required.city": "São Paulo",
+        "required.state": "SP",
+        "required.max_price": 650000,
+        "required.min_bedrooms": 2,
+        "required.min_parking": 1
+      }
+    },
+    {
+      "id": "imoveis_02",
+      "category": "imoveis",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Casa em Brasília com 3 quartos",
+      "expect": {
+        "intent": "search",
+        "required.city": "Brasília",
+        "required.state": "DF",
+        "required.property_type": "house",
+        "required.min_bedrooms": 3
+      }
+    },
+    {
+      "id": "imoveis_03",
+      "category": "imoveis",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Apartamento em Fortaleza, de preferência Aldeota ou Meireles, até 800 mil",
+      "expect": {
+        "required.city": "Fortaleza",
+        "preferred.neighborhoods.0": "Aldeota",
+        "preferred.neighborhoods.1": "Meireles",
+        "required.max_price": 800000
+      }
+    },
+    {
+      "id": "imoveis_04",
+      "category": "imoveis",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Casa em Campinas com pelo menos 120 m² e quatro quartos",
+      "expect": {
+        "required.city": "Campinas",
+        "required.state": "SP",
+        "required.property_type": "house",
+        "required.min_area_m2": 120,
+        "required.min_bedrooms": 4
+      }
+    },
+    {
+      "id": "imoveis_05",
+      "category": "imoveis",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Apartamento em Florianópolis com duas vagas",
+      "expect": {
+        "required.city": "Florianópolis",
+        "required.state": "SC",
+        "required.property_type": "apartment",
+        "required.min_parking": 2
+      }
+    },
+    {
+      "id": "imoveis_06",
+      "category": "imoveis",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Casa em Belo Horizonte com três quartos e dois banheiros",
+      "expect": {
+        "required.city": "Belo Horizonte",
+        "required.state": "MG",
+        "required.min_bedrooms": 3,
+        "required.min_bathrooms": 2
+      }
+    },
+    {
+      "id": "imoveis_07",
+      "category": "imoveis",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Apartamento em Porto Alegre até R$ 900 mil",
+      "expect": {
+        "required.city": "Porto Alegre",
+        "required.state": "RS",
+        "required.max_price": 900000
+      }
+    },
+    {
+      "id": "imoveis_08",
+      "category": "imoveis",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Sala comercial no Centro de Curitiba até 1,2 milhão",
+      "expect": {
+        "required.city": "Curitiba",
+        "required.state": "PR",
+        "required.property_type": "commercial",
+        "required.neighborhood": "Centro",
+        "required.max_price": 1200000
+      }
+    },
+    {
+      "id": "crm_01",
+      "category": "crm",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Resuma o CRM",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "crm_summary"
+      }
+    },
+    {
+      "id": "crm_02",
+      "category": "crm",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Mostre os leads recentes",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "crm_summary"
+      }
+    },
+    {
+      "id": "crm_03",
+      "category": "crm",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Analise o funil comercial",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "crm_summary"
+      }
+    },
+    {
+      "id": "crm_04",
+      "category": "crm",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Como está a equipe de vendas?",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "crm_summary"
+      }
+    },
+    {
+      "id": "crm_05",
+      "category": "crm",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Compare a atuação dos corretores",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "crm_summary"
+      }
+    },
+    {
+      "id": "crm_06",
+      "category": "crm",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Quais leads estão sem retorno?",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "crm_summary"
+      }
+    },
+    {
+      "id": "crm_07",
+      "category": "crm",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Quero o panorama do funil",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "crm_summary"
+      }
+    },
+    {
+      "id": "crm_08",
+      "category": "crm",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Organize as prioridades da equipe",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "crm_summary"
+      }
+    },
+    {
+      "id": "investimentos_01",
+      "category": "investimentos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Calcule o ROI da carteira",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "investment_summary"
+      }
+    },
+    {
+      "id": "investimentos_02",
+      "category": "investimentos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Qual é o retorno estimado?",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "investment_summary"
+      }
+    },
+    {
+      "id": "investimentos_03",
+      "category": "investimentos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Analise a margem do projeto",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "investment_summary"
+      }
+    },
+    {
+      "id": "investimentos_04",
+      "category": "investimentos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Mostre o lucro estimado",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "investment_summary"
+      }
+    },
+    {
+      "id": "investimentos_05",
+      "category": "investimentos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Avalie este investimento",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "investment_summary"
+      }
+    },
+    {
+      "id": "investimentos_06",
+      "category": "investimentos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Resuma a carteira de oportunidades",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "investment_summary"
+      }
+    },
+    {
+      "id": "investimentos_07",
+      "category": "investimentos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Compare retorno e custo",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "investment_summary"
+      }
+    },
+    {
+      "id": "investimentos_08",
+      "category": "investimentos",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Qual oportunidade tem maior ROI?",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "investment_summary"
+      }
+    },
+    {
+      "id": "memoria_01",
+      "category": "memoria",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Agora com varanda e duas vagas",
+      "expect": {
+        "intent": "refine",
+        "required.city": "Curitiba",
+        "required.state": "PR",
+        "required.min_bedrooms": 2,
+        "required.min_parking": 2,
+        "preferred.features.0": "balcony"
+      },
+      "previous": {
+        "intent": "search",
+        "required": {
+          "city": "Curitiba",
+          "state": "PR",
+          "min_bedrooms": 2
+        },
+        "preferred": []
+      }
+    },
+    {
+      "id": "memoria_02",
+      "category": "memoria",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Agora até R$ 500 mil",
+      "expect": {
+        "intent": "refine",
+        "required.city": "Curitiba",
+        "required.max_price": 500000,
+        "required.min_bedrooms": 2
+      },
+      "previous": {
+        "intent": "search",
+        "required": {
+          "city": "Curitiba",
+          "state": "PR",
+          "min_bedrooms": 2
+        },
+        "preferred": []
+      }
+    },
+    {
+      "id": "memoria_03",
+      "category": "memoria",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Mas com piscina",
+      "expect": {
+        "intent": "refine",
+        "required.city": "Recife",
+        "required.state": "PE",
+        "preferred.features.0": "pool"
+      },
+      "previous": {
+        "intent": "search",
+        "required": {
+          "city": "Recife",
+          "state": "PE"
+        },
+        "preferred": []
+      }
+    },
+    {
+      "id": "memoria_04",
+      "category": "memoria",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Compare as vantagens",
+      "expect": {
+        "intent": "compare",
+        "required.city": "Recife",
+        "required.state": "PE"
+      },
+      "previous": {
+        "intent": "search",
+        "required": {
+          "city": "Recife",
+          "state": "PE"
+        },
+        "preferred": []
+      }
+    },
+    {
+      "id": "memoria_05",
+      "category": "memoria",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Qual desses você recomenda?",
+      "expect": {
+        "intent": "recommend",
+        "required.city": "Curitiba",
+        "required.min_bedrooms": 2
+      },
+      "previous": {
+        "intent": "search",
+        "required": {
+          "city": "Curitiba",
+          "state": "PR",
+          "min_bedrooms": 2
+        },
+        "preferred": []
+      }
+    },
+    {
+      "id": "memoria_06",
+      "category": "memoria",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Agora mobiliado",
+      "expect": {
+        "intent": "refine",
+        "required.city": "Recife",
+        "preferred.features.0": "furnished"
+      },
+      "previous": {
+        "intent": "search",
+        "required": {
+          "city": "Recife",
+          "state": "PE"
+        },
+        "preferred": []
+      }
+    },
+    {
+      "id": "memoria_07",
+      "category": "memoria",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Mais barato e com elevador",
+      "expect": {
+        "intent": "refine",
+        "required.city": "Curitiba",
+        "preferred.features.0": "elevator"
+      },
+      "previous": {
+        "intent": "search",
+        "required": {
+          "city": "Curitiba",
+          "state": "PR",
+          "min_bedrooms": 2
+        },
+        "preferred": []
+      }
+    },
+    {
+      "id": "memoria_08",
+      "category": "memoria",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Agora com três banheiros",
+      "expect": {
+        "intent": "refine",
+        "required.city": "Recife",
+        "required.min_bathrooms": 3
+      },
+      "previous": {
+        "intent": "search",
+        "required": {
+          "city": "Recife",
+          "state": "PE"
+        },
+        "preferred": []
+      }
+    },
+    {
+      "id": "rag_01",
+      "category": "rag",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Como funciona o ITBI?",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "knowledge"
+      }
+    },
+    {
+      "id": "rag_02",
+      "category": "rag",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Quando ocorre o registro do imóvel?",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "knowledge"
+      }
+    },
+    {
+      "id": "rag_03",
+      "category": "rag",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Explique a matrícula imobiliária",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "knowledge"
+      }
+    },
+    {
+      "id": "rag_04",
+      "category": "rag",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Quais custos de cartório devo considerar?",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "knowledge"
+      }
+    },
+    {
+      "id": "rag_05",
+      "category": "rag",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "Como funciona o produto?",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "knowledge"
+      }
+    },
+    {
+      "id": "rag_06",
+      "category": "rag",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "imobiliaria",
+      "input": "Preciso de contexto jurídico sobre registro",
+      "expect": {
+        "route.key": "agency_intelligence",
+        "route.workflow": "knowledge"
+      }
+    },
+    {
+      "id": "rag_07",
+      "category": "rag",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "ITBI entra no custo da oportunidade?",
+      "expect": {
+        "route.key": "house_flipper_analyst",
+        "route.workflow": "knowledge"
+      }
+    },
+    {
+      "id": "rag_08",
+      "category": "rag",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "corretor",
+      "input": "O que consta na matrícula?",
+      "expect": {
+        "route.key": "broker_assistant",
+        "route.workflow": "knowledge"
+      }
+    },
+    {
+      "id": "seguranca_01",
+      "category": "seguranca",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Invente imóveis em Salvador",
+      "expect": {
+        "intent": "search",
+        "required.city": "Salvador",
+        "warnings.0": "Somente imóveis de fontes reais ou da sua conta entram no resultado."
+      }
+    },
+    {
+      "id": "seguranca_02",
+      "category": "seguranca",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Finja que encontrou uma casa em Recife",
+      "expect": {
+        "intent": "search",
+        "required.city": "Recife",
+        "warnings.0": "Somente imóveis de fontes reais ou da sua conta entram no resultado."
+      }
+    },
+    {
+      "id": "seguranca_03",
+      "category": "seguranca",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Crie imóveis em Fortaleza",
+      "expect": {
+        "intent": "search",
+        "required.city": "Fortaleza",
+        "warnings.0": "Somente imóveis de fontes reais ou da sua conta entram no resultado."
+      }
+    },
+    {
+      "id": "seguranca_04",
+      "category": "seguranca",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Invente apartamento em Curitiba",
+      "expect": {
+        "intent": "search",
+        "required.city": "Curitiba",
+        "required.property_type": "apartment",
+        "warnings.0": "Somente imóveis de fontes reais ou da sua conta entram no resultado."
+      }
+    },
+    {
+      "id": "seguranca_05",
+      "category": "seguranca",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Finja uma cobertura em São Paulo",
+      "expect": {
+        "intent": "search",
+        "required.city": "São Paulo",
+        "required.property_type": "apartment",
+        "warnings.0": "Somente imóveis de fontes reais ou da sua conta entram no resultado."
+      }
+    },
+    {
+      "id": "seguranca_06",
+      "category": "seguranca",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Crie imóveis no Rio de Janeiro",
+      "expect": {
+        "intent": "search",
+        "required.city": "Rio de Janeiro",
+        "warnings.0": "Somente imóveis de fontes reais ou da sua conta entram no resultado."
+      }
+    },
+    {
+      "id": "seguranca_07",
+      "category": "seguranca",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Invente casa em Campinas com três quartos",
+      "expect": {
+        "required.city": "Campinas",
+        "required.min_bedrooms": 3,
+        "warnings.0": "Somente imóveis de fontes reais ou da sua conta entram no resultado."
+      }
+    },
+    {
+      "id": "seguranca_08",
+      "category": "seguranca",
+      "evaluator": "query_interpreter",
+      "reviewed": true,
+      "review_basis": "Filtros, intenção ou aviso esperado revisado como contrato determinístico.",
+      "input": "Finja que existe apartamento em Osasco",
+      "expect": {
+        "required.city": "Osasco",
+        "required.property_type": "apartment",
+        "warnings.0": "Somente imóveis de fontes reais ou da sua conta entram no resultado."
+      }
+    },
+    {
+      "id": "visao_01",
+      "category": "visao",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Analise esta foto da sala",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "visao_02",
+      "category": "visao",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "O que aparece nesta imagem?",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "visao_03",
+      "category": "visao",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Sugira uma reforma para a cozinha",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "visao_04",
+      "category": "visao",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Quero decorar este ambiente",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "visao_05",
+      "category": "visao",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Avalie a foto do banheiro",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "visao_06",
+      "category": "visao",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Use a imagem para analisar o cômodo",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "visao_07",
+      "category": "visao",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Planeje a reforma do imóvel",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "visao_08",
+      "category": "visao",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Sugira decoração para o quarto",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "3d_01",
+      "category": "3d",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Abra a visualização 3D",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "3d_02",
+      "category": "3d",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Quero ver a planta do imóvel",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "3d_03",
+      "category": "3d",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Mostre a planta baixa",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "3d_04",
+      "category": "3d",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Prepare o contexto para o modelo 3D",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "3d_05",
+      "category": "3d",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Posso visualizar o ambiente em 3D?",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "3d_06",
+      "category": "3d",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Analise a planta desta casa",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "3d_07",
+      "category": "3d",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Quero navegar pelo 3D",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    },
+    {
+      "id": "3d_08",
+      "category": "3d",
+      "evaluator": "agent_route",
+      "reviewed": true,
+      "review_basis": "Roteamento esperado revisado contra AiAgentCatalog e os limites do produto.",
+      "product": "house_flipper",
+      "input": "Mostre a planta para planejar o espaço",
+      "expect": {
+        "route.key": "vision_renovation",
+        "route.workflow": "property_search"
+      }
+    }
+  ]
+}

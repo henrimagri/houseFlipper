@@ -1,0 +1,953 @@
+{
+    "suite": "phase3-representative-v1",
+    "prompt_version": "2026-10-20.1",
+    "generated_at": "2026-10-20T23:02:10+00:00",
+    "deterministic_scope": "Somente extração estruturada e seleção de agente/workflow; qualidade subjetiva de texto exige revisão humana separada.",
+    "minimum_reviewed": 100,
+    "reviewed": 104,
+    "review_threshold_passed": true,
+    "total": 104,
+    "passed": 104,
+    "failed": 0,
+    "categories": [
+        {
+            "category": "geral",
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "reviewed": 8
+        },
+        {
+            "category": "business",
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "reviewed": 8
+        },
+        {
+            "category": "vendas",
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "reviewed": 8
+        },
+        {
+            "category": "marketing",
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "reviewed": 8
+        },
+        {
+            "category": "textos",
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "reviewed": 8
+        },
+        {
+            "category": "imoveis",
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "reviewed": 8
+        },
+        {
+            "category": "crm",
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "reviewed": 8
+        },
+        {
+            "category": "investimentos",
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "reviewed": 8
+        },
+        {
+            "category": "memoria",
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "reviewed": 8
+        },
+        {
+            "category": "rag",
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "reviewed": 8
+        },
+        {
+            "category": "seguranca",
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "reviewed": 8
+        },
+        {
+            "category": "visao",
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "reviewed": 8
+        },
+        {
+            "category": "3d",
+            "total": 8,
+            "passed": 8,
+            "failed": 0,
+            "reviewed": 8
+        }
+    ],
+    "evaluators": [
+        {
+            "evaluator": "agent_route",
+            "total": 80,
+            "passed": 80,
+            "failed": 0
+        },
+        {
+            "evaluator": "query_interpreter",
+            "total": 24,
+            "passed": 24,
+            "failed": 0
+        }
+    ],
+    "results": [
+        {
+            "id": "geral_01",
+            "category": "geral",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "geral_02",
+            "category": "geral",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "geral_03",
+            "category": "geral",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "geral_04",
+            "category": "geral",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "geral_05",
+            "category": "geral",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "geral_06",
+            "category": "geral",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "geral_07",
+            "category": "geral",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "geral_08",
+            "category": "geral",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "business_01",
+            "category": "business",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "business_02",
+            "category": "business",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "business_03",
+            "category": "business",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "business_04",
+            "category": "business",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "business_05",
+            "category": "business",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "business_06",
+            "category": "business",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "business_07",
+            "category": "business",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "business_08",
+            "category": "business",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "vendas_01",
+            "category": "vendas",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "vendas_02",
+            "category": "vendas",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "vendas_03",
+            "category": "vendas",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "vendas_04",
+            "category": "vendas",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "vendas_05",
+            "category": "vendas",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "vendas_06",
+            "category": "vendas",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "vendas_07",
+            "category": "vendas",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "vendas_08",
+            "category": "vendas",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "marketing_01",
+            "category": "marketing",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "marketing_02",
+            "category": "marketing",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "marketing_03",
+            "category": "marketing",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "marketing_04",
+            "category": "marketing",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "marketing_05",
+            "category": "marketing",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "marketing_06",
+            "category": "marketing",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "marketing_07",
+            "category": "marketing",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "marketing_08",
+            "category": "marketing",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "textos_01",
+            "category": "textos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "textos_02",
+            "category": "textos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "textos_03",
+            "category": "textos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "textos_04",
+            "category": "textos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "textos_05",
+            "category": "textos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "textos_06",
+            "category": "textos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "textos_07",
+            "category": "textos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "textos_08",
+            "category": "textos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "imoveis_01",
+            "category": "imoveis",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "imoveis_02",
+            "category": "imoveis",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "imoveis_03",
+            "category": "imoveis",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "imoveis_04",
+            "category": "imoveis",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "imoveis_05",
+            "category": "imoveis",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "imoveis_06",
+            "category": "imoveis",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "imoveis_07",
+            "category": "imoveis",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "imoveis_08",
+            "category": "imoveis",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "crm_01",
+            "category": "crm",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "crm_02",
+            "category": "crm",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "crm_03",
+            "category": "crm",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "crm_04",
+            "category": "crm",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "crm_05",
+            "category": "crm",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "crm_06",
+            "category": "crm",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "crm_07",
+            "category": "crm",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "crm_08",
+            "category": "crm",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "investimentos_01",
+            "category": "investimentos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "investimentos_02",
+            "category": "investimentos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "investimentos_03",
+            "category": "investimentos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "investimentos_04",
+            "category": "investimentos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "investimentos_05",
+            "category": "investimentos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "investimentos_06",
+            "category": "investimentos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "investimentos_07",
+            "category": "investimentos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "investimentos_08",
+            "category": "investimentos",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "memoria_01",
+            "category": "memoria",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "memoria_02",
+            "category": "memoria",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "memoria_03",
+            "category": "memoria",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "memoria_04",
+            "category": "memoria",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "memoria_05",
+            "category": "memoria",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "memoria_06",
+            "category": "memoria",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "memoria_07",
+            "category": "memoria",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "memoria_08",
+            "category": "memoria",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "rag_01",
+            "category": "rag",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "rag_02",
+            "category": "rag",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "rag_03",
+            "category": "rag",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "rag_04",
+            "category": "rag",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "rag_05",
+            "category": "rag",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "rag_06",
+            "category": "rag",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "rag_07",
+            "category": "rag",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "rag_08",
+            "category": "rag",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "seguranca_01",
+            "category": "seguranca",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "seguranca_02",
+            "category": "seguranca",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "seguranca_03",
+            "category": "seguranca",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "seguranca_04",
+            "category": "seguranca",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "seguranca_05",
+            "category": "seguranca",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "seguranca_06",
+            "category": "seguranca",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "seguranca_07",
+            "category": "seguranca",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "seguranca_08",
+            "category": "seguranca",
+            "evaluator": "query_interpreter",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "visao_01",
+            "category": "visao",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "visao_02",
+            "category": "visao",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "visao_03",
+            "category": "visao",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "visao_04",
+            "category": "visao",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "visao_05",
+            "category": "visao",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "visao_06",
+            "category": "visao",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "visao_07",
+            "category": "visao",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "visao_08",
+            "category": "visao",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "3d_01",
+            "category": "3d",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "3d_02",
+            "category": "3d",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "3d_03",
+            "category": "3d",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "3d_04",
+            "category": "3d",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "3d_05",
+            "category": "3d",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "3d_06",
+            "category": "3d",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "3d_07",
+            "category": "3d",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        },
+        {
+            "id": "3d_08",
+            "category": "3d",
+            "evaluator": "agent_route",
+            "reviewed": true,
+            "passed": true,
+            "errors": []
+        }
+    ]
+}

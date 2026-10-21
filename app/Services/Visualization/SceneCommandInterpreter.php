@@ -18,24 +18,85 @@ class SceneCommandInterpreter
         }
 
         $room = $this->currentRoom($graph);
+        if (Str::contains($normalized, ['parede atras do sofa', 'parede atrás do sofá', 'parede do sofa', 'parede do sofá'])) {
+            $color = $this->color($normalized);
+            if ($color === null) {
+                return $this->confirm('Qual cor deseja aplicar somente na parede atrás do sofá?');
+            }
+
+            return $this->ok([['op' => 'paint_surface', 'id' => $this->wallBehindSofaId($graph, $room), 'color' => $color]], 'Somente a parede atrás do sofá foi pintada na cena 3D.');
+        }
         if (Str::contains($normalized, ['parede', 'paredes'])) {
             $color = $this->color($normalized) ?? '#d9cbb8';
+
             return $this->ok([['op' => 'paint_kind', 'kind' => 'wall', 'color' => $color, 'room' => $room]], 'Paredes pintadas na pré-visualização. Não altera a foto original.');
         }
         if (Str::contains($normalized, ['teto'])) {
             $color = $this->color($normalized) ?? '#f4f1ea';
+
             return $this->ok([['op' => 'paint_kind', 'kind' => 'ceiling', 'color' => $color, 'room' => $room]], 'Teto atualizado na simulação.');
         }
         if (Str::contains($normalized, ['piso', 'chao', 'chão', 'porcelanato', 'ceramica', 'cerâmica', 'madeira', 'marmore', 'mármore', 'laminado'])) {
             $material = $this->material($normalized);
             $color = $this->color($normalized) ?? $this->materialColor($material);
+
             return $this->ok([['op' => 'paint_kind', 'kind' => 'floor', 'color' => $color, 'material' => $material, 'room' => $room]], 'Piso da simulação atualizado. Acabamento real do imóvel não muda.');
         }
         if (Str::contains($normalized, ['retire', 'remover', 'remova', 'tire esse', 'tira esse'])) {
             if (! $selectedId) {
                 return $this->fail('Selecione o móvel na cena antes de pedir para removê-lo.');
             }
+
             return $this->ok([['op' => 'remove_object', 'id' => $selectedId]], 'Objeto removido da simulação.');
+        }
+        if (Str::contains($normalized, ['substitua', 'substituir', 'troque o sofa', 'troque o sofá'])) {
+            if (! $selectedId) {
+                return $this->confirm('Selecione o móvel que será substituído e confirme o pedido para evitar trocar o elemento errado.');
+            }
+            $object = $this->selectedObject($graph, $selectedId);
+            if ($object === null) {
+                return $this->confirm('O móvel selecionado não existe mais. Selecione novamente antes de substituir.');
+            }
+            $replacement = Str::contains($normalized, ['cadeira']) ? 'chair' : (Str::contains($normalized, ['mesa']) ? 'table' : 'sofa');
+
+            return $this->ok([
+                ['op' => 'remove_object', 'id' => $selectedId],
+                ['op' => 'add_object', 'kind' => $replacement, 'room' => $room],
+            ], 'Móvel selecionado substituído no ambiente 3D.');
+        }
+        if (Str::contains($normalized, ['iluminacao', 'iluminação', 'luz '])) {
+            $preset = match (true) {
+                Str::contains($normalized, ['quente', 'aconchegante']) => 'warm',
+                Str::contains($normalized, ['fria', 'frio']) => 'cool',
+                Str::contains($normalized, ['suave', 'difusa']) => 'soft',
+                Str::contains($normalized, ['entardecer', 'noturna', 'noite']) => 'evening',
+                default => 'daylight',
+            };
+
+            return $this->ok([['op' => 'set_lighting', 'preset' => $preset]], 'Iluminação da simulação atualizada.');
+        }
+        if (Str::contains($normalized, ['gire', 'girar', 'rotacione', 'rotacionar', 'mova', 'mover', 'aumente', 'aumentar', 'diminua', 'diminuir'])) {
+            $object = $this->selectedObject($graph, $selectedId);
+            if ($object === null) {
+                return $this->fail('Selecione um móvel na cena antes de mover, girar ou redimensionar.');
+            }
+            $position = $object['position'] ?? [0, 0, 0];
+            $rotation = (float) ($object['rotation'] ?? 0);
+            $scale = (float) ($object['scale'] ?? 1);
+            if (Str::contains($normalized, ['gire', 'girar', 'rotacione', 'rotacionar'])) {
+                $rotation += Str::contains($normalized, ['esquerda', 'anti-horario', 'anti horário']) ? -15 : 15;
+            }
+            if (Str::contains($normalized, ['mova', 'mover'])) {
+                $position[0] = max(-2.1, min(2.1, (float) ($position[0] ?? 0) + (Str::contains($normalized, ['esquerda']) ? -0.25 : (Str::contains($normalized, ['direita']) ? 0.25 : 0))));
+                $position[2] = max(-1.6, min(1.8, (float) ($position[2] ?? 0) + (Str::contains($normalized, ['frente']) ? -0.25 : (Str::contains($normalized, ['tras', 'trás', 'fundo']) ? 0.25 : 0))));
+            }
+            if (Str::contains($normalized, ['aumente', 'aumentar'])) {
+                $scale = min(2.5, $scale + 0.1);
+            } elseif (Str::contains($normalized, ['diminua', 'diminuir'])) {
+                $scale = max(0.4, $scale - 0.1);
+            }
+
+            return $this->ok([['op' => 'transform', 'id' => $object['id'], 'position' => $position, 'rotation' => $rotation, 'scale' => $scale]], 'Objeto selecionado atualizado na simulação.');
         }
         if (Str::contains($normalized, ['sofa', 'sofá'])) {
             return $this->ok([['op' => 'add_object', 'kind' => 'sofa', 'room' => $this->currentRoom($graph)]], 'Sofá adicionado à simulação. Não veio da fotografia.');
@@ -55,7 +116,7 @@ class SceneCommandInterpreter
                 ['op' => 'paint_kind', 'kind' => 'floor', 'color' => '#d7d2c8', 'material' => 'porcelain'],
             ], 'Preset minimalista aplicado só na simulação.');
         }
-        if (Str::contains($normalized, ['luxo', 'luxuosa', 'luxuoso'])) {
+        if (Str::contains($normalized, ['luxo', 'luxuosa', 'luxuoso', 'alto padrao', 'alto padrão'])) {
             return $this->ok([
                 ['op' => 'paint_kind', 'kind' => 'wall', 'color' => '#e7dcc8'],
                 ['op' => 'paint_kind', 'kind' => 'floor', 'color' => '#cfc6b8', 'material' => 'marble'],
@@ -115,6 +176,36 @@ class SceneCommandInterpreter
         return $graph['active_room'] ?? $graph['rooms'][0]['key'] ?? 'living';
     }
 
+    private function selectedObject(array $graph, ?string $selectedId): ?array
+    {
+        if ($selectedId === null || $selectedId === '') {
+            return null;
+        }
+        foreach ($graph['objects'] ?? [] as $object) {
+            if (($object['id'] ?? null) === $selectedId) {
+                return $object;
+            }
+        }
+
+        return null;
+    }
+
+    private function wallBehindSofaId(array $graph, string $room): string
+    {
+        $fallback = null;
+        foreach ($graph['surfaces'] ?? [] as $surface) {
+            if (($surface['room'] ?? null) !== $room || ($surface['kind'] ?? null) !== 'wall') {
+                continue;
+            }
+            $fallback ??= $surface['id'] ?? null;
+            if (($surface['side'] ?? null) === 'south') {
+                return (string) $surface['id'];
+            }
+        }
+
+        return (string) ($fallback ?? $room.'-wall-south');
+    }
+
     private function ok(array $actions, string $message): array
     {
         return ['ok' => true, 'actions' => $actions, 'message' => $message];
@@ -123,5 +214,10 @@ class SceneCommandInterpreter
     private function fail(string $message): array
     {
         return ['ok' => false, 'actions' => [], 'message' => $message];
+    }
+
+    private function confirm(string $message): array
+    {
+        return ['ok' => false, 'requires_confirmation' => true, 'actions' => [], 'message' => $message];
     }
 }

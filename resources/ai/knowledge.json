@@ -1,0 +1,40 @@
+[
+  {
+    "title": "Como a busca inteligente do FlipControl funciona",
+    "category": "platform",
+    "source_name": "Documentação FlipControl",
+    "source_version": "2026-10-20.1",
+    "license": "Proprietário",
+    "keywords": ["busca", "filtros", "fontes", "anúncios"],
+    "chunks": [
+      "A busca interpreta localização, tipo, teto de preço, quartos, banheiros, vagas, área e preferências. Critérios obrigatórios eliminam itens incompatíveis; preferências aumentam a pontuação. Cada resultado identifica a origem e a indisponibilidade de um provedor é informada sem gerar imóveis fictícios.",
+      "A carteira da conta respeita usuário, empresa e produto. Anúncios externos dependem de conectores configurados e podem ficar temporariamente indisponíveis. Sempre confirme disponibilidade, preço e condição no anúncio original."
+    ]
+  },
+  {
+    "title": "ITBI e registro imobiliário no Brasil",
+    "category": "legal_reference",
+    "source_name": "Planalto — Constituição Federal e Lei de Registros Públicos",
+    "source_url": "https://www.planalto.gov.br/ccivil_03/leis/l6015compilada.htm",
+    "source_version": "consulta 2026-10-20",
+    "license": "Informação pública",
+    "keywords": ["itbi", "registro", "matrícula", "cartório"],
+    "chunks": [
+      "O ITBI é um tributo municipal ligado à transmissão onerosa de bens imóveis. Alíquota, base de cálculo, emissão de guia e procedimentos variam por município; consulte a prefeitura responsável antes de fechar o cálculo.",
+      "A transferência da propriedade imobiliária depende do registro do título no cartório de registro de imóveis competente. A matrícula reúne atos registrais do imóvel. A plataforma auxilia a organização, mas não substitui certidões, cartório ou assessoria jurídica."
+    ]
+  },
+  {
+    "title": "Análise House Flipper e visualizações",
+    "category": "product",
+    "product_slug": "house_flipper",
+    "source_name": "Documentação FlipControl",
+    "source_version": "2026-10-20.1",
+    "license": "Proprietário",
+    "keywords": ["roi", "reforma", "3d", "foto", "visualização"],
+    "chunks": [
+      "A análise de investimento separa preço de aquisição, custos informados, reforma, valor estimado de saída, margem e retorno. Estimativas sem comprovante são apresentadas como hipóteses, não como laudo ou garantia de rentabilidade.",
+      "Visualizações paramétricas e propostas de reforma são simulações. Um panorama só é chamado de tour 360 quando existe ativo panorâmico; um modelo editável só é classificado como 3D real quando há geometria compatível enviada ou gerada de forma verificável."
+    ]
+  }
+]

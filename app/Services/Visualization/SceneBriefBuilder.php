@@ -8,23 +8,28 @@ class SceneBriefBuilder
     {
         $grouped = [];
         foreach ($analyses as $row) {
-            $room = $row['room_guess'] ?: 'unknown';
+            $room = $row['room_guess'] ?: 'unclassified';
             $grouped[$room][] = $row;
         }
         $ambientes = [];
         foreach ($grouped as $room => $rows) {
-            if ($room === 'unknown') {
-                continue;
-            }
             $elements = [];
+            $structuredElements = [];
             $palette = [];
             $ids = [];
+            $provenance = [];
             foreach ($rows as $row) {
                 foreach ($row['elements'] ?? [] as $element) {
                     $label = is_array($element) ? ($element['label'] ?? null) : $element;
                     if ($label) {
                         $elements[] = $label;
                     }
+                    if (is_array($element)) {
+                        $structuredElements[] = $element;
+                    }
+                }
+                if (! empty($row['room_provenance'])) {
+                    $provenance[] = $row['room_provenance'];
                 }
                 if (! empty($row['palette'])) {
                     $palette = $row['palette'];
@@ -39,26 +44,42 @@ class SceneBriefBuilder
                     }
                 }
             }
-            $confidence = (int) collect($rows)->avg('confidence');
+            $roomConfidences = collect($rows)
+                ->map(fn (array $row) => $row['room_confidence'] ?? (($row['room_guess'] ?? null) ? ($row['confidence'] ?? null) : null))
+                ->filter(fn ($value) => $value !== null);
+            $detectionConfidences = collect($rows)->pluck('detection_confidence')->filter(fn ($value) => $value !== null);
             $ambientes[] = [
                 'nome' => $room,
                 'rotulo' => $this->label($room),
                 'imagens_referencia' => array_values(array_unique($ids)),
                 'elementos_visiveis' => array_values(array_unique($elements)),
+                'elementos_estruturados' => $this->uniqueElements($structuredElements),
                 'dimensoes_confirmadas' => null,
-                'confianca_visual' => round($confidence / 100, 2),
+                'confianca_ambiente' => $roomConfidences->isEmpty() ? null : round(((float) $roomConfidences->avg()) / 100, 2),
+                'confianca_deteccao' => $detectionConfidences->isEmpty() ? null : round(((float) $detectionConfidences->avg()) / 100, 2),
+                'confianca_visual' => $roomConfidences->isEmpty() ? null : round(((float) $roomConfidences->avg()) / 100, 2),
+                'classificacao_ambiente' => $room === 'unclassified' ? 'unclassified' : 'classified',
+                'proveniencia_ambiente' => $provenance,
                 'palette' => $palette,
-                'desconhecido' => $ids === [] ? ['sem_foto_deste_ambiente_no_armazenamento'] : [],
+                'desconhecido' => array_values(array_filter([
+                    $ids === [] ? 'sem_foto_deste_ambiente_no_armazenamento' : null,
+                    $room === 'unclassified' ? 'ambiente_nao_classificado_pelas_evidencias' : null,
+                ])),
             ];
         }
         if ($ambientes === []) {
             $ambientes[] = [
-                'nome' => 'living',
-                'rotulo' => 'Sala',
+                'nome' => 'unclassified',
+                'rotulo' => 'Ambiente não classificado',
                 'imagens_referencia' => array_column($photoAssets, 'id'),
                 'elementos_visiveis' => [],
+                'elementos_estruturados' => [],
                 'dimensoes_confirmadas' => null,
-                'confianca_visual' => 0.15,
+                'confianca_ambiente' => null,
+                'confianca_deteccao' => null,
+                'confianca_visual' => null,
+                'classificacao_ambiente' => 'unclassified',
+                'proveniencia_ambiente' => [],
                 'palette' => [],
                 'desconhecido' => ['ambiente_nao_identificado_nas_fotografias'],
             ];
@@ -71,7 +92,8 @@ class SceneBriefBuilder
             'planta_disponivel' => collect($photoAssets)->contains(fn (array $asset) => ($asset['kind'] ?? '') === 'floorplan'),
             'ambientes' => $ambientes,
             'limitations' => [
-                'A confiança é estimativa do classificador, não prova de exatidão.',
+                'A identificação de ambiente usa regras auditáveis sobre objetos detectados ou heurísticas declaradas; não é um classificador neural de cômodos.',
+                'Confiança de detecção de objetos e confiança da inferência de ambiente são medidas distintas.',
                 'Nenhuma medida métrica foi extraída da fotografia.',
                 'Uma foto de um cômodo não gera a planta do imóvel inteiro.',
             ],
@@ -89,7 +111,21 @@ class SceneBriefBuilder
             'garage' => 'Garagem',
             'facade' => 'Fachada',
             'outdoor' => 'Área externa',
+            'dining' => 'Sala de jantar',
+            'unclassified' => 'Ambiente não classificado',
             default => $room,
         };
+    }
+
+    private function uniqueElements(array $elements): array
+    {
+        return collect($elements)
+            ->unique(fn (array $element) => implode('|', [
+                $element['label'] ?? '',
+                json_encode($element['box_xyxy'] ?? []),
+                $element['model'] ?? '',
+            ]))
+            ->values()
+            ->all();
     }
 }

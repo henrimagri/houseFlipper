@@ -1,0 +1,60 @@
+{
+  "job_id": "9aaf332e-a38d-4cc0-9ca8-f6b6cf5ec8a2",
+  "status": "completed",
+  "kind": "photo_simulation",
+  "original_artifact": "original.jpg",
+  "simulation_artifact": "simulation.png",
+  "comparison_artifact": "comparison.png",
+  "segmentation": {
+    "artifact": "mask.png",
+    "overlay_artifact": "segmentation-overlay.png",
+    "model": "facebook/sam2.1-hiera-tiny",
+    "license": "Apache-2.0",
+    "device": "cuda",
+    "latency_ms": 918.17,
+    "peak_vram_mb": 232.94,
+    "prompt_points": [
+      [
+        690.0,
+        215.0
+      ],
+      [
+        520.0,
+        190.0
+      ],
+      [
+        1020.0,
+        180.0
+      ],
+      [
+        390.0,
+        245.0
+      ],
+      [
+        650.0,
+        500.0
+      ]
+    ],
+    "prompt_labels": [
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "mask_count": 5,
+    "coverage_ratio": 0.251891,
+    "dimensions": {
+      "width": 1536,
+      "height": 1024
+    }
+  },
+  "composition": {
+    "color": "#7892ad",
+    "opacity": 0.82,
+    "material": "paint",
+    "method": "luminance_preserving_masked_recolor",
+    "preserves_geometry": true,
+    "limitations": "Simulação 2D guiada por máscara; reflexos complexos e materiais físicos não são reconstruídos."
+  }
+}

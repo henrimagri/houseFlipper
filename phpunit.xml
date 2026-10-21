@@ -32,5 +32,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="AI_PROVIDER" value="deterministic" force="true"/>
+        <env name="AI_VECTOR_ENABLED" value="false" force="true"/>
     </php>
 </phpunit>

@@ -40,7 +40,7 @@ export default function SolucoesHouseFlipper() {
       </section>
       <section>
         <h2 className="text-2xl font-bold">Visualizações 3D</h2>
-        <p className="mt-3 text-slate-600">Há visualização 3D e simulação de reforma nos módulos existentes. Não há fotogrametria nem reconstrução fotorealística a partir de fotos.</p>
+        <p className="mt-3 text-slate-600">Há visualização 3D, profundidade e segmentação neural, simulação de reforma e prévia fotogramétrica para capturas multivista adequadas. A prévia esparsa não é apresentada como levantamento métrico ou reconstrução densa fotorealística.</p>
       </section>
       <section>
         <h2 className="text-2xl font-bold">Mapa Inteligente</h2>

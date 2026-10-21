@@ -40,18 +40,39 @@ class PhotoSceneAnalyzer
     {
         $this->entitlement->assert($user, 'photo_analysis');
         $opportunity = Opportunity::query()->where('user_id', $user->id)->with('photos')->whereKey($opportunityId)->firstOrFail();
-        PropertyPhotoAnalysis::query()->where('subject_type', 'opportunity')->where('subject_id', $opportunityId)->delete();
+        PropertyPhotoAnalysis::query()
+            ->where('subject_type', 'opportunity')
+            ->where('subject_id', $opportunityId)
+            ->whereNotIn('origin', ['neural', 'neural_object_detection'])
+            ->delete();
 
         foreach ($opportunity->photos as $photo) {
+            if ($this->hasNeuralEvidence('opportunity', $opportunityId, (string) $photo->original_name)) {
+                continue;
+            }
             $this->store($user, 'opportunity', $opportunityId, $photo);
         }
 
         return $this->existing('opportunity', $opportunityId);
     }
 
-    public function forget(string $subjectType, int $subjectId): void
+    public function forget(string $subjectType, int $subjectId, bool $preserveNeural = false): void
     {
-        PropertyPhotoAnalysis::query()->where('subject_type', $subjectType)->where('subject_id', $subjectId)->delete();
+        PropertyPhotoAnalysis::query()
+            ->where('subject_type', $subjectType)
+            ->where('subject_id', $subjectId)
+            ->when($preserveNeural, fn ($query) => $query->whereNotIn('origin', ['neural', 'neural_object_detection']))
+            ->delete();
+    }
+
+    public function hasNeuralEvidence(string $subjectType, int $subjectId, string $sourceName): bool
+    {
+        return PropertyPhotoAnalysis::query()
+            ->where('subject_type', $subjectType)
+            ->where('subject_id', $subjectId)
+            ->where('source_name', $sourceName)
+            ->whereIn('origin', ['neural', 'neural_object_detection'])
+            ->exists();
     }
 
     public function existing(string $subjectType, int $subjectId): array
@@ -68,6 +89,9 @@ class PhotoSceneAnalyzer
                 'room_guess' => $row->room_guess,
                 'elements' => $row->elements,
                 'confidence' => $row->confidence,
+                'detection_confidence' => $row->detection_confidence,
+                'room_confidence' => $row->room_confidence ?? ($row->room_guess ? $row->confidence : null),
+                'room_provenance' => $row->room_provenance,
                 'origin' => $row->origin,
                 'quality' => $row->quality,
                 'limitations' => $row->limitations,
@@ -107,6 +131,14 @@ class PhotoSceneAnalyzer
             'room_guess' => $room,
             'elements' => $elements,
             'confidence' => $confidence,
+            'detection_confidence' => null,
+            'room_confidence' => $room ? $confidence : null,
+            'room_provenance' => [
+                'method' => $room ? 'filename_heuristic' : 'unclassified',
+                'source' => 'filename',
+                'is_neural_room_classifier' => false,
+                'classification_status' => $room ? 'classified' : 'unclassified',
+            ],
             'origin' => $origin,
             'quality' => ($sample['ok'] ?? false) ? 'sampled' : (strlen($name) < 4 ? 'unreadable' : 'low'),
             'palette' => $sample['palette'] ?? null,

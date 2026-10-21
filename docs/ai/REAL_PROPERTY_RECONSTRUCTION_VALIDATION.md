@@ -1,0 +1,119 @@
+# Validação com ambiente real multivista autorizado
+
+Data: 20/10/2026
+
+## Resultado executivo
+
+Foi executada uma validação com a cena real `playroom_small` do dataset Meta Eyeful Tower. As fotografias pertencem ao mesmo ambiente, possuem calibração e vistas múltiplas, e foram disponibilizadas sob licença MIT. A licença permite uso comercial desde que os avisos de copyright e licença sejam preservados.
+
+O teste comprovou a execução local de DETR, SAM 2 e Depth Anything V2 sobre fotografia real e comprovou que a malha de referência texturizada do dataset pode ser convertida para GLB, enviada, salva, reaberta e navegada no Three.js. Ele **não comprova uma reconstrução densa local completa**, pois o COLMAP instalado no Windows não possui suporte a GPU e o host não possui WSL2/Linux configurado. Nenhuma GPU externa paga foi contratada.
+
+O ambiente é um espaço interno real de demonstração/playroom. Ele não é apresentado como residência nem como imóvel do proprietário do projeto. Para validar qualidade comercial em um imóvel residencial específico, ainda é necessária uma captura autorizada desse imóvel e uma execução densa em Linux/CUDA.
+
+## Fotografias e autorização
+
+| Item | Resultado |
+|---|---|
+| Origem | Meta Eyeful Tower, cena `playroom_small` |
+| Conteúdo | ambiente real, mesmas instalações, múltiplas câmeras e posições |
+| Imagens originais | 126 JPEG em 1K |
+| Imagens COLMAP sem distorção | 126 |
+| Calibração | `cameras.json`, `cameras.xml` e exportação COLMAP oficial |
+| Licença | MIT; cópia preservada ao lado do GLB convertido |
+| Manifesto local | `storage/app/ai-real-datasets/eyeful-tower/playroom_small/dataset-manifest.json`, com SHA-256 |
+| Uso de portais | nenhum |
+
+O manifesto inicial registra 148 arquivos e 137.839.088 bytes, baixados em 20,768 s. Imagens COLMAP e arquivos esparsos oficiais foram obtidos depois e mantidos na área local de dados, fora do versionamento.
+
+## Análise neural executada
+
+Fotografia analisada: `colmap/images_8/40_DSC0001_0.jpg`, 688 × 458.
+
+| Modelo | Resultado | Tempo | Pico de VRAM |
+|---|---|---:|---:|
+| DETR ResNet-50 | `couch`, confiança 0,80736 | 173,22 ms | 578,72 MB |
+| SAM 2.1 Hiera Tiny | uma região guiada; cobertura 5,9698% | 840,30 ms | 282,72 MB |
+| Depth Anything V2 Small | profundidade relativa 0,107422–7,578125, média 2,720505 | 1.070,51 ms | 186,18 MB |
+
+Tempo total observado da requisição: 5,587 s em CUDA. A GPU disponível é uma NVIDIA GeForce GTX 1660 Ti com 6.144 MiB. DETR reconheceu o conjunto de assentos como `couch`; suas classes COCO não classificam cômodos, materiais, portas ou janelas. SAM 2 segmentou apenas a região induzida pelo ponto. A profundidade é monocular e relativa, sem escala métrica.
+
+## Geometria e processamento
+
+1. As fotos reais, calibrações e exportação esparsa oficiais foram inventariadas.
+2. A análise neural foi executada localmente e os artefatos foram preservados.
+3. O pré-requisito para densificação foi auditado: COLMAP 4.2.1 local sem GPU; WSL2 ausente.
+4. A malha de referência oficial foi aberta e validada: 437.239 vértices, 843.112 faces, uma geometria, dimensões aproximadas de 5,990 × 2,461 × 6,794 m.
+5. A malha OBJ oficial foi convertida para GLB. A textura foi reduzida para 4096 × 4096 e incorporada ao GLB final de 42.307.864 bytes.
+6. O GLB foi importado no cadastro local, passou pelo portão de elegibilidade, foi salvo e reaberto após recarregar a página.
+7. Zoom e rotação manual foram validados no Three.js. sRGB, ACES Filmic e iluminação hemisférica/direcional foram aplicados.
+
+Tempos de geometria: 506,132 s para abrir e inspecionar o OBJ, 2,856 s para exportar a primeira versão e 3,677 s para preparar a textura web. A primeira transferência do GLB de 29 MB pelo servidor PHP de desenvolvimento levou aproximadamente 167 s. O tempo da transferência final de 42 MB não foi medido com cronômetro isolado.
+
+## Resultado visual
+
+O ambiente é reconhecível no render: piso amarelo, assentos marrons, pilhas escuras, paredes e abertura aparecem em posições coerentes. O enquadramento inicial foi corrigido, e a órbita manual revela novos lados da cena. A textura permanece visível após salvar e reabrir.
+
+A qualidade ainda não é comercial: a malha possui contorno fragmentado, vazios, regiões pretas e superfícies incompletas nas áreas sem cobertura. A malha não é estanque, embora tenha orientação de faces consistente. Ela é um único objeto, por isso o GLB importado não oferece seleção semântica individual de parede, piso e móveis. O editor paramétrico existente continua oferecendo seleção e edição de materiais, mas essa capacidade não foi transferida automaticamente para a malha monolítica importada.
+
+## Artefatos
+
+- `evidence/real-property-playroom-small-contact-sheet.jpg`: vistas reais originais.
+- `evidence/real-property-playroom-small-undistorted-contact-sheet.jpg`: vistas usadas pelo COLMAP oficial.
+- `evidence/real-property-playroom-small-vision/`: original, profundidade, máscara, sobreposição e JSON completo.
+- `evidence/real-property-playroom-small-model/geometry-report.json`: topologia, dimensões, textura e tempos.
+- `evidence/real-property-playroom-small-model/eyeful-playroom-small-textured-4k.glb`: malha de referência convertida.
+- `evidence/real-property-playroom-small-threejs.png`: enquadramento inicial.
+- `evidence/real-property-playroom-small-threejs-orbit.png`: órbita manual.
+- `evidence/real-property-playroom-small-threejs-reopened.png`: persistência após recarga.
+- `evidence/real-property-playroom-small-validation-panel.jpg`: fotografia, análise, profundidade e render lado a lado.
+
+## Bloqueios e próximos critérios
+
+A reconstrução de um imóvel real pelo pipeline do produto permanece **não concluída**. Para concluir sem extrapolar evidências, são necessários:
+
+1. instalar e validar WSL2/Linux com COLMAP CUDA no hardware existente, ou obter autorização explícita para um worker remoto;
+2. executar estimativa, densificação, fusão, malha e texturização a partir das fotografias, sem reutilizar a malha de referência;
+3. repetir o teste com fotografias autorizadas de um imóvel residencial do proprietário do projeto;
+4. separar ou rotular a malha em elementos editáveis antes de prometer edição individual de paredes, piso, aberturas e móveis;
+5. comparar câmeras e renders contra várias fotografias, não apenas uma vista.
+
+Esta etapa comprova integração neural, compatibilidade geométrica e visualização real. Ela não comprova fidelidade métrica, preenchimento de áreas ocultas ou reconstrução densa própria.
+
+## Execução independente de 21/10/2026
+
+Uma nova execução utilizou somente as 126 fotografias sem distorção, a calibração COLMAP e os pontos SfM do `playroom_small`. A malha OBJ oficial permaneceu fora do processo gerador e só foi aberta pelo script de comparação depois de o GLB novo estar finalizado.
+
+| Item | Resultado |
+|---|---|
+| Método | fusão de profundidade monocular calibrada e superfície de profundidade |
+| Vistas | 18 selecionadas; 17 aceitas |
+| Profundidade | Depth Anything V2 Small, alinhada por vista com pontos SfM métricos |
+| Nuvem | 104.633 pontos brutos; 87.862 após fusão por voxel |
+| Malha | 6.208 vértices; 12.096 faces; um componente; zero degeneradas |
+| Extensão | diagonal 4,622544443 m |
+| GLB | 245.580 bytes; SHA-256 `5aa3fdfcf14b73aec35813a9c3667c38272dcdd85a06e6c47f87619cd3f60af8` |
+| Tempo | 165,348 s |
+| Referência durante geração | não lida |
+| Three.js | upload pelo editor local concluído; modelo persistido no imóvel de QA |
+
+O Poisson do COLMAP Windows ficou sem progresso útil sob pressão de memória: profundidade 13 chegou a aproximadamente 850 MB e não escreveu saída em mais de 18 minutos; profundidades menores também excederam o limite do teste. O código passou a limitar profundidade, threads e tempo. Ao expirar, exporta o maior componente de uma superfície triangulada diretamente do mapa de profundidade calibrado e preserva separadamente a nuvem fundida multivista.
+
+A comparação isolada, sem ICP, preservou as coordenadas COLMAP originais. Entre os 6.208 vértices gerados e uma amostra da referência, o erro mediano foi 0,108643 m e 46,005% ficaram até 0,10 m. Na direção inversa, a completude até 0,10 m foi 12,68%, com mediana 1,16585 m. Esses números comprovam alinhamento local útil e também demonstram que grande parte do ambiente permanece ausente.
+
+Artefatos principais:
+
+- `storage/app/ai-real-results/playroom-small-independent/depth-fusion-18b/depth-fused.ply`;
+- `storage/app/ai-real-results/playroom-small-independent/depth-fusion-18b/depth-poisson-clean.ply`;
+- `storage/app/ai-real-results/playroom-small-independent/depth-fusion-18b/depth-fusion.glb`;
+- `storage/app/ai-real-results/playroom-small-independent/depth-fusion-18b/result.json`;
+- `storage/app/ai-real-results/playroom-small-independent/depth-fusion-18b/reference-comparison.json`.
+
+Conclusão atualizada: existe agora geometria própria gerada das fotografias e enviada pelo fluxo real do SaaS. Ela é uma reconstrução técnica parcial baseada em profundidade calibrada, não uma reconstrução estéreo densa texturizada. A aprovação comercial continua bloqueada pela baixa completude, ausência de UV/textura própria e falta de validação visual multivista de uma malha densa.
+
+### Validação visual da geometria independente
+
+O GLB independente foi salvo no imóvel local de QA, reaberto após recarregar a rota autenticada e renderizado no visualizador do produto. A órbita manual respondeu ao arraste. A primeira abertura revelou dois problemas do viewer para superfícies abertas: a câmera usava uma direção diagonal fixa e materiais com cores por vértice podiam aparecer quase pretos. O viewer agora enquadra a câmera pelo eixo mais fino da caixa envolvente, renderiza superfícies abertas nos dois lados e usa material não metálico com as cores dos vértices.
+
+A captura `evidence/real-property-independent-depth-fusion-threejs.png` registra o resultado próprio, e não a malha oficial. São visíveis uma superfície de parede, uma abertura e variações de profundidade/cor; ao orbitar, a espessura parcial também fica evidente. A cena ainda não é um cômodo completo nem uma reconstrução comercial: faltam grande parte do ambiente, textura UV e superfícies de outras vistas.
+
+Testes finais desta execução: **4/4** testes focados do worker, **5/5** testes Laravel de visualização neural (36 assertions), **12/12** testes frontend, TypeScript e build Vite aprovados. O worker permaneceu saudável com PyTorch 2.8.0+cu126, CUDA 12.6 e GTX 1660 Ti.

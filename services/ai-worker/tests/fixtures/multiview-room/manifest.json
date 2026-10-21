@@ -1,0 +1,153 @@
+{
+  "license": "Project-owned deterministic synthetic fixture; commercial use permitted.",
+  "purpose": "Technical multiview pipeline validation only; not a real property.",
+  "views": 18,
+  "width": 960,
+  "height": 720,
+  "cameras": [
+    {
+      "file": "view-000.jpg",
+      "position": [
+        -0.704548,
+        -0.35,
+        -6.35
+      ]
+    },
+    {
+      "file": "view-001.jpg",
+      "position": [
+        -0.624664,
+        -0.027891,
+        -6.380604
+      ]
+    },
+    {
+      "file": "view-002.jpg",
+      "position": [
+        -0.54366,
+        0.142725,
+        -6.464924
+      ]
+    },
+    {
+      "file": "view-003.jpg",
+      "position": [
+        -0.461681,
+        0.081605,
+        -6.582316
+      ]
+    },
+    {
+      "file": "view-004.jpg",
+      "position": [
+        -0.378873,
+        -0.182506,
+        -6.704037
+      ]
+    },
+    {
+      "file": "view-005.jpg",
+      "position": [
+        -0.295386,
+        -0.525392,
+        -6.800286
+      ]
+    },
+    {
+      "file": "view-006.jpg",
+      "position": [
+        -0.211369,
+        -0.785788,
+        -6.847498
+      ]
+    },
+    {
+      "file": "view-007.jpg",
+      "position": [
+        -0.126973,
+        -0.841226,
+        -6.834114
+      ]
+    },
+    {
+      "file": "view-008.jpg",
+      "position": [
+        -0.04235,
+        -0.665633,
+        -6.763411
+      ]
+    },
+    {
+      "file": "view-009.jpg",
+      "position": [
+        0.04235,
+        -0.341593,
+        -6.652699
+      ]
+    },
+    {
+      "file": "view-010.jpg",
+      "position": [
+        0.126973,
+        -0.021507,
+        -6.529084
+      ]
+    },
+    {
+      "file": "view-011.jpg",
+      "position": [
+        0.211369,
+        0.144084,
+        -6.422833
+      ]
+    },
+    {
+      "file": "view-012.jpg",
+      "position": [
+        0.295386,
+        0.077299,
+        -6.359957
+      ]
+    },
+    {
+      "file": "view-013.jpg",
+      "position": [
+        0.378873,
+        -0.190451,
+        -6.355853
+      ]
+    },
+    {
+      "file": "view-014.jpg",
+      "position": [
+        0.461681,
+        -0.53324,
+        -6.411524
+      ]
+    },
+    {
+      "file": "view-015.jpg",
+      "position": [
+        0.54366,
+        -0.789848,
+        -6.513341
+      ]
+    },
+    {
+      "file": "view-016.jpg",
+      "position": [
+        0.624664,
+        -0.839589,
+        -6.636375
+      ]
+    },
+    {
+      "file": "view-017.jpg",
+      "position": [
+        0.704548,
+        -0.659069,
+        -6.750503
+      ]
+    }
+  ]
+}

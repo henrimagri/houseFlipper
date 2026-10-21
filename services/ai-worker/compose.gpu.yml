@@ -1,0 +1,37 @@
+services:
+  ai-worker-gpu:
+    image: "${AI_WORKER_GPU_IMAGE:?Defina uma imagem Linux com Python 3.12 e COLMAP 4.2.1 CUDA, fixada por digest}"
+    profiles: ["gpu"]
+    restart: unless-stopped
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=4g,mode=1777
+    ports:
+      - "127.0.0.1:${AI_WORKER_GPU_PORT:-8010}:8010"
+    environment:
+      AI_WORKER_TOKEN: "${AI_WORKER_TOKEN:?Defina um token interno forte}"
+      AI_WORKER_ARTIFACT_ROOT: /worker/artifacts
+      COLMAP_EXECUTABLE: "${COLMAP_EXECUTABLE:-/usr/local/bin/colmap}"
+      COLMAP_DENSE_ENABLED: "true"
+      COLMAP_GPU_BUILD: "true"
+      COLMAP_DENSE_MESHER: "${COLMAP_DENSE_MESHER:-poisson}"
+      COLMAP_DENSE_MAX_IMAGE_SIZE: "${COLMAP_DENSE_MAX_IMAGE_SIZE:-2400}"
+      COLMAP_GPU_INDEX: "${COLMAP_GPU_INDEX:-0}"
+      NVIDIA_VISIBLE_DEVICES: "${NVIDIA_VISIBLE_DEVICES:-all}"
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      HF_HOME: /tmp/huggingface
+      TRANSFORMERS_CACHE: /tmp/huggingface
+    volumes:
+      - ./artifacts:/worker/artifacts
+      - ./app:/worker/app:ro
+      - ./models:/worker/models:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]

@@ -1,0 +1,17 @@
+[
+  {
+    "query": "Quando a compra passa de fato para o nome do adquirente?",
+    "product": "corretor",
+    "expected_title": "ITBI e registro imobiliário no Brasil"
+  },
+  {
+    "query": "Por que um portal pode sumir durante uma consulta?",
+    "product": "corretor",
+    "expected_title": "Como a busca inteligente do FlipControl funciona"
+  },
+  {
+    "query": "Posso tratar o cenário de venda como lucro garantido?",
+    "product": "house_flipper",
+    "expected_title": "Análise House Flipper e visualizações"
+  }
+]
