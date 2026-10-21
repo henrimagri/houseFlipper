@@ -384,3 +384,35 @@ O viewer realça a região selecionada, permite desmarcar, informa que a confian
 Validação desta etapa: worker completo **38/38**; Laravel completo **67/67, 276 assertions** usando o PHP com SQLite; frontend **12/12**; TypeScript e build Vite aprovados. Uma tentativa com outro binário PHP falhou por ausência de `pdo_sqlite`, defeito do runtime e não do código. Resultados grandes permanecem ignorados em `storage/app`.
 
 O backend local respondeu HTTP 200 e o Vite iniciou normalmente. A automação visual não conseguiu adquirir a aba `http://127.0.0.1:5173/app/house-flipper/imoveis/30/3d`: a política interna do controlador recusou a URL local apesar do protocolo HTTP. Nenhuma captura da Fase 9 foi fabricada e a barreira não foi contornada. A inspeção visual nova permanece pendente; as capturas reais da Fase 8 continuam sendo a última evidência visual válida.
+
+## 21/10/2026 — Fase 10: matemática TSDF e consistência multivista
+
+O diagnóstico começou com geometria sintética, antes de alterar os modelos neurais. Um plano frontal perfeito revelou uma falha matemática reproduzível: a extração da Fase 9 ligava os quatro cruzamentos de um tetraedro na ordem incidental das arestas e a integração arredondava amostras de raios para voxels. O plano produzia 3.042 componentes, 2.964 arestas não manifold, orientação inconsistente e deslocamento de meio voxel. A correção ordena o polígono no plano da isossuperfície, deduplica interseções que caem exatamente em um vértice, orienta faces adjacentes, representa coordenadas inteiras como centros de voxel e faz integração projetiva: os raios escolhem blocos candidatos, cada centro de voxel é reprojetado na câmera e `TSDF=(z_observado-z_voxel)/truncamento` é integrado. As consultas e os IDs de arestas continuam globais entre blocos.
+
+Os testes sintéticos cobrem plano frontal, plano inclinado, canto de duas paredes, caixa fechada, esfera, superfície atravessando blocos, transformação COLMAP `world → camera`, profundidade no eixo Z e cancelamento/orçamento. Todas as oito cenas/checks TSDF passaram; planos produzem um componente significativo, orientação consistente e zero arestas não manifold dentro das tolerâncias de 0,5–1,5 voxel. Caixa e esfera usam profundidades analíticas renderizadas de câmeras conhecidas, sem a malha oficial do dataset.
+
+Foi adicionado `multiview_depth.py`. Para cada amostra métrica, o worker reconstrói o ponto 3D, projeta nas câmeras vizinhas, separa fora do campo, oclusão, observação consistente e inconsistente, mede erro relativo e produz mapas densos de confiança/estado. Os estados são `não observado`, `incerto`, `inconsistente` e `confiável`; a confiança combina residual de calibração, repetição, consistência e descontinuidade. O mapa é usado como peso no TSDF e como filtro opcional na fusão calibrada. `none` permanece padrão porque nenhuma configuração filtrada superou o baseline completo.
+
+O relatório de calibração agora inclui âncoras, inliers, razão de inliers, mediana/P90/P95 relativa, mediana/P90 absoluta, faixa Z, pixels válidos, parâmetros de escala/deslocamento e motivo de rejeição. No ensaio de 42 vistas, 39 foram aceitas: 29–526 âncoras, mediana 111; mediana dos erros medianos por vista 2,20%, máximo 8,30% e P90 máximo 19,82%. As três vistas `53_*` foram rejeitadas por somente 2, 9 e 13 âncoras. Isso e os resíduos espacialmente localizados indicam que um novo fator global por câmera poderia afastar âncoras SfM já boas; nenhuma otimização conjunta arbitrária foi aplicada.
+
+Comparação real, gerada sem ler a referência e avaliada depois com a mesma amostragem determinística/sem ICP:
+
+| Candidato | Vistas de fusão | Voxel | Componentes totais | Bordas / não manifold | Precisão 10 cm | Completude 10 cm | Decisão |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Fase 8 ativa | 39 | — | 14 significativos | 12.052 / 2.326 | 50,73% | 55,81% | preservada |
+| Fase 9 TSDF 6 cm | 39 | 6 cm | 728 | 49.412 / 14.636 | 52,99% | 47,44% | rejeitada |
+| Fase 10, sem filtro | 39 | 6 cm | 40 | 2.426 / 0 | 57,43% | 50,09% | rejeitada: cobertura inferior à Fase 8 |
+| Fase 10, moderado | 39 | 6 cm | 41 | 2.748 / 0 | 57,88% | 49,83% | rejeitada |
+| Fase 10, rigoroso | 39 | 6 cm | 34 | 2.692 / 0 | 57,64% | 49,72% | rejeitada |
+| Fase 10, sem filtro | 39 | 4 cm | 108 | 5.692 / 0 | 50,50% | 52,02% | rejeitada |
+| Fase 10, holdout `45_*` | 36 + 3 reservadas | 6 cm | 35 | 2.616 / 0 | 56,72% | 50,56% | rejeitada |
+
+As três vistas `45_*` do último ensaio ficaram fora da estimativa de confiança e da fusão. Elas somaram 40.662 observações consistentes, 1.083 inconsistentes e 597 ocluídas em 41.745 comparações válidas. O P90 dos pares reservados variou conforme a câmera e chegou a 16,84%; os detalhes por par estão em `multiview-consistency-report.json`.
+
+O candidato holdout reproduzido levou 39,913 s, usou 1.529.221.120 bytes de RSS amostrado, pico CUDA PyTorch de 195.219.968 bytes e 4.423.680 bytes estimados para os blocos TSDF. Não houve bloco descartado. A fusão calibrada moderada com holdout foi testada separadamente e também regrediu: precisão 45,36%, completude 54,78%, 22 componentes, 24.019 bordas e 2.628 arestas não manifold. Nenhum candidato recebeu textura, substituiu o GLB ativo ou alterou os 57,51% de cobertura fotográfica da Fase 8. `final_model_eligible` continua falso.
+
+A aplicação e a API local responderam HTTP 200. Playwright não está instalado. O controlador oficial do navegador encontrou apenas a aba interna de falha `data:` e recusou adquirir autoridade por política; nenhuma alternativa CDP ou contorno foi tentada. Logo, não há nova aprovação visual do canvas. O roteiro manual permanece: abrir o imóvel 30 em `/app/house-flipper/imoveis/30/3d`, confirmar a Fase 8, testar enquadramento/órbita/zoom/vistas, selecionar e pintar uma região, desfazer/refazer, recarregar para conferir persistência, iniciar/cancelar um job e verificar que candidatos rejeitados não substituem o GLB.
+
+Estado da Fase 10: matemática TSDF **implementada e testada**; consistência/mapas de confiança **implementados e testados**; experimentos real/holdout **executados e rejeitados pelo gate**; QA visual novo **bloqueado**. Próxima prioridade: correção espacial de baixa frequência dos mapas monoculares usando correspondências densas verificadas ou estéreo multivista, sem alterar as âncoras SfM já consistentes e sem treinar outro modelo antes de demonstrar necessidade.
+
+Validação final da Fase 10: worker Python/FastAPI **48/48** em 22,82 s; Laravel **67/67, 276 assertions** em 4,485 s; frontend **12/12**; TypeScript/Vite aprovado em 10,66 s. O aviso conhecido de chunks acima de 500 kB permanece, sem regressão funcional associada nesta fase.

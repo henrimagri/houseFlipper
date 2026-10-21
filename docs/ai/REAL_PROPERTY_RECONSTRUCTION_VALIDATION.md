@@ -187,3 +187,51 @@ Os candidatos volumétricos não foram texturizados nem enviados ao imóvel de Q
 A Fase 8 continua sendo a melhor prévia disponível, ainda sem qualidade comercial. O próximo avanço geométrico depende de mapas de profundidade multivista mais consistentes ou densificação estéreo real; suavizar/agrupar componentes deste TSDF sem essa evidência apenas ocultaria o erro.
 
 O teste visual novo ficou bloqueado pela política de acesso da automação à aba localhost. Servidor/Vite foram verificados por HTTP 200, mas isso não substitui inspeção do canvas. As vistas da Fase 8 permanecem a referência visual; nenhuma captura nova foi declarada.
+
+## Fase 10 — profundidade multivista e TSDF matematicamente corrigida
+
+A referência oficial permaneceu fora da geração. O gerador leu somente as fotografias autorizadas, câmeras COLMAP, pontos SfM e profundidades Depth Anything V2. A referência foi aberta por `compare_reference_geometry.py` somente depois de cada PLY e `result.json` estarem gravados. As mesmas 10.000 amostras determinísticas, coordenadas COLMAP e ausência de ICP foram preservadas.
+
+Falhas corrigidas:
+
+- o valor TSDF era associado ao voxel obtido por `floor` da amostra de raio, causando viés de meio voxel;
+- raios esparsos deixavam linhas não observadas mesmo para um plano completo;
+- quadriláteros dos tetraedros eram triangulados na ordem das arestas, criando cruzamentos, componentes e não manifold;
+- interseções exatamente no mesmo vértice de grade mantinham IDs diferentes;
+- a cor da nuvem usava coordenadas da profundidade sobre RGB sem redimensionamento;
+- confiança era apenas um escalar por câmera e não era aplicada por voxel/pixel.
+
+O teste mínimo que reproduziu o defeito usou um plano analítico a 1,975 m e três câmeras. Antes: 6.241 vértices, 12.168 faces, 3.042 componentes, 9.360 bordas, 2.964 arestas não manifold e orientação inconsistente. Depois da integração projetiva e extração ordenada, as cenas sintéticas de plano, plano inclinado, canto, caixa, esfera e fronteira de bloco passaram sem não manifold nas superfícies significativas e com erros dentro das tolerâncias de voxel documentadas nos testes.
+
+Resultados reais principais:
+
+| Métrica | Fase 8 | Fase 9 6 cm | Fase 10 6 cm, sem filtro | Fase 10 4 cm, sem filtro | Fase 10 6 cm, holdout |
+|---|---:|---:|---:|---:|---:|
+| Vistas fundidas | 39 | 39 | 39 | 39 | 36; 3 reservadas |
+| Vértices / faces | 132.538 / 263.104 | 37.154 / 67.686 limpos | 37.740 / 73.146 | 111.757 / 218.194 | 39.341 / 76.186 |
+| Componentes | 14 significativos | 728 | 40 | 108 | 35 |
+| Bordas / não manifold | 12.052 / 2.326 | 49.412 / 14.636 | 2.426 / 0 | 5.692 / 0 | 2.616 / 0 |
+| Precisão mediana | 9,8261 cm | 9,3568 cm | 8,2092 cm | 9,8872 cm | 8,4702 cm |
+| Precisão 5/10/20 cm | 25,11% / 50,73% / 77,52% | 22,46% / 52,99% / 81,81% | 30,87% / 57,43% / 83,39% | 26,03% / 50,50% / 79,32% | 29,87% / 56,72% / 82,52% |
+| Completude mediana | 7,8980 cm | 11,4979 cm | 9,9226 cm | 8,8012 cm | 9,6256 cm |
+| Completude 5/10/20 cm | 32,43% / 55,81% / 66,06% | 25,72% / 47,44% / 58,56% | 34,60% / 50,09% / 59,96% | 35,40% / 52,02% / 60,37% | 34,73% / 50,56% / 60,11% |
+| Decisão | ativa | rejeitada | rejeitada | rejeitada | rejeitada |
+
+O candidato de 6 cm demonstra que a maior parte da fragmentação da Fase 9 vinha da matemática TSDF: componentes, bordas e não manifold caíram sem suavização, preenchimento de regiões ocultas ou aumento indiscriminado do voxel. Ainda assim, sua completude fica 5,72 pontos percentuais abaixo da Fase 8. O candidato de 4 cm recupera parte da cobertura, mas perde precisão e aumenta componentes/tempo. Nenhum oferece ganho global suficiente.
+
+Calibração por fotografia: 39/42 vistas aceitas, entre 29 e 526 âncoras e mediana de 111. A mediana dos resíduos relativos medianos é 2,20%; o pior valor mediano é 8,30% e o maior P90 é 19,82%. `53_DSC0001_117.jpg`, `53_DSC0043_120.jpg` e `53_DSC0085_123.jpg` foram rejeitadas com 2, 9 e 13 âncoras. Parâmetros e percentis completos permanecem em `phase10-tsdf-42-6cm-holdout-v2/fit-report.json`.
+
+Consistência reservada: `45_DSC0001_45.jpg`, `45_DSC0043_48.jpg` e `45_DSC0085_51.jpg` não participaram da confiança nem da fusão. Seus relatórios registram respectivamente 14.014/279, 13.725/43 e 12.923/761 observações consistentes/inconsistentes. Isso demonstra coerência predominante, mas também regiões locais incompatíveis que um único ajuste global de escala não corrige com segurança.
+
+Recursos do ensaio holdout reproduzido: 39,913 s, RSS amostrado 1,529 GB, pico CUDA alocado pelo PyTorch 195,220 MB, 432 blocos/4,424 MB estimados e zero descarte por orçamento. A configuração de 4 cm usou 962 blocos/9,851 MB e levou 74,734 s. A VRAM é do contador do PyTorch; o RSS é amostrado nas transições de estágio, não um medidor contínuo do sistema.
+
+Artefatos locais ignorados pelo Git:
+
+- `phase10-tsdf-42-none-v1`;
+- `phase10-tsdf-42-moderate-v2`;
+- `phase10-tsdf-42-strict-v1`;
+- `phase10-tsdf-42-4cm-none-v1`;
+- `phase10-tsdf-42-6cm-holdout-v2`;
+- `phase10-calibrated-42-moderate-holdout-v1`.
+
+Cada pasta válida contém PLY bruto/limpo, `result.json`, `fit-report.json`, relatório de consistência, mapas de confiança NPZ, manifesto, topologia, hashes e comparação posterior. Nenhum candidato rejeitado foi fototexturizado ou enviado ao imóvel. A Fase 8 e seu atlas de 57,51% permanecem ativos.

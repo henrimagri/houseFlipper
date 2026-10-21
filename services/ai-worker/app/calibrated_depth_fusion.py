@@ -20,6 +20,7 @@ from .vision import vision_pipeline
 from .photo_texturing import TextureCamera, texture_mesh_from_photos
 from .surface_stitching import stitch_nearby_surfaces
 from .sparse_tsdf import SparseTsdfVolume, TsdfConfig
+from .multiview_depth import ConsistencyConfig, DepthObservation, evaluate_multiview_consistency
 
 
 Progress = Callable[[str, int, dict[str, Any]], None]
@@ -131,6 +132,7 @@ def _fit_metric_depth(
     predicted_z = 1.0 / predicted_inverse[valid]
     observed_z = sample[mask, 1][valid]
     relative_error = np.abs(predicted_z - observed_z) / np.maximum(observed_z, 1e-6)
+    absolute_error = np.abs(predicted_z - observed_z)
     median_error = float(np.median(relative_error))
     if median_error > 0.45:
         return None
@@ -139,9 +141,43 @@ def _fit_metric_depth(
         "intercept": float(intercept),
         "samples": len(samples),
         "inliers": int(valid.sum()),
+        "inlier_ratio": float(valid.sum() / len(samples)),
         "median_relative_error": median_error,
+        "p90_relative_error": float(np.quantile(relative_error, 0.90)),
+        "p95_relative_error": float(np.quantile(relative_error, 0.95)),
+        "median_absolute_error_m": float(np.median(absolute_error)),
+        "p90_absolute_error_m": float(np.quantile(absolute_error, 0.90)),
+        "valid_pixel_percent": float(np.mean(np.isfinite(relative)) * 100.0),
         "z_min": float(np.quantile(observed_z, 0.02)),
         "z_max": float(np.quantile(observed_z, 0.98)),
+    }
+
+
+def _fit_rejection_reason(
+    relative: np.ndarray,
+    view: View,
+    camera: Camera,
+    points: dict[int, np.ndarray],
+) -> dict[str, Any]:
+    height, width = relative.shape
+    scale_x, scale_y = width / camera.width, height / camera.height
+    anchors = 0
+    for x, y, point_id in view.observations:
+        world = points.get(point_id)
+        if world is None:
+            continue
+        z = float((view.rotation @ world + view.translation)[2])
+        px = min(width - 1, max(0, int(round(x * scale_x))))
+        py = min(height - 1, max(0, int(round(y * scale_y))))
+        if z > 0.05 and math.isfinite(float(relative[py, px])):
+            anchors += 1
+    return {
+        "anchor_samples": anchors,
+        "valid_pixel_percent": float(np.mean(np.isfinite(relative)) * 100.0),
+        "reason": (
+            "insufficient_sfm_anchors" if anchors < 24
+            else "unstable_inverse_depth_fit_or_relative_error_above_limit"
+        ),
     }
 
 
@@ -152,9 +188,11 @@ def _view_cloud(
     camera: Camera,
     fit: dict[str, Any],
     stride: int,
+    confidence_map: np.ndarray | None = None,
+    minimum_confidence: float = 0.0,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    rgb = np.asarray(image.convert("RGB"))
     height, width = relative.shape
+    rgb = np.asarray(image.resize((width, height)).convert("RGB"))
     scale_x, scale_y = width / camera.width, height / camera.height
     focal_x, focal_y = camera.focal * scale_x, camera.focal * scale_y
     cx, cy = camera.cx * scale_x, camera.cy * scale_y
@@ -169,6 +207,10 @@ def _view_cloud(
     valid = np.isfinite(z) & np.isfinite(z_right) & np.isfinite(z_down)
     valid &= np.abs(z_right - z) / np.maximum(z, 1e-6) < 0.18
     valid &= np.abs(z_down - z) / np.maximum(z, 1e-6) < 0.18
+    if confidence_map is not None:
+        if confidence_map.shape != relative.shape:
+            raise ValueError("O mapa de confiança precisa acompanhar a profundidade relativa.")
+        valid &= confidence_map[grid_y, grid_x] >= minimum_confidence
 
     def camera_points(px: np.ndarray, py: np.ndarray, depth: np.ndarray) -> np.ndarray:
         return np.stack(((px - cx) / focal_x * depth, (py - cy) / focal_y * depth, depth), axis=-1)
@@ -336,8 +378,23 @@ def reconstruct_calibrated_depth(
     started = time.perf_counter()
     output.mkdir(parents=True, exist_ok=False)
     stages: list[dict[str, Any]] = []
+    sampled_peak_rss = 0
+    cuda_peak_reset = False
+    try:
+        import torch
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
+            cuda_peak_reset = True
+    except Exception:
+        pass
 
     def report(stage: str, percent: int, **details: Any) -> None:
+        nonlocal sampled_peak_rss
+        try:
+            import psutil
+            sampled_peak_rss = max(sampled_peak_rss, int(psutil.Process().memory_info().rss))
+        except Exception:
+            pass
         entry = {"stage": stage, "percent": percent, "time": time.time(), **details}
         stages.append(entry)
         (output / "progress.json").write_text(json.dumps(entry, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -363,6 +420,7 @@ def reconstruct_calibrated_depth(
     surface_offset = 0
     fit_reports: list[dict[str, Any]] = []
     accepted_views: list[View] = []
+    prepared_views: list[dict[str, Any]] = []
     tsdf = None
     if method == "tsdf":
         tsdf_voxel = max(0.01, min(float(os.environ.get("AI_TSDF_VOXEL", "0.035")), 0.12))
@@ -385,39 +443,199 @@ def reconstruct_calibrated_depth(
             relative = vision_pipeline.predict_relative_depth(image)
             fit = _fit_metric_depth(relative, view, cameras[view.camera_id], sparse_points)
             if fit is None:
-                fit_reports.append({"image": view.name, "accepted": False})
+                fit_reports.append({
+                    "image": view.name,
+                    "accepted": False,
+                    **_fit_rejection_reason(relative, view, cameras[view.camera_id], sparse_points),
+                })
                 continue
-            points, view_normals, view_colors, view_faces = _view_cloud(image, relative, view, cameras[view.camera_id], fit, stride)
-            if len(points) < 100:
-                fit_reports.append({"image": view.name, "accepted": False, "reason": "insufficient_filtered_points", **fit})
-                continue
-            if tsdf is not None:
-                camera = cameras[view.camera_id]
-                height, width = relative.shape
-                scale_x, scale_y = width / camera.width, height / camera.height
-                tsdf.integrate(
-                    depth=_metric_depth(relative, fit),
-                    color=np.asarray(image.resize((width, height)).convert("RGB")),
-                    focal_x=camera.focal * scale_x,
-                    focal_y=camera.focal * scale_y,
-                    cx=camera.cx * scale_x,
-                    cy=camera.cy * scale_y,
-                    rotation=view.rotation,
-                    translation=view.translation,
-                    confidence=max(0.08, 1.0 - float(fit["median_relative_error"])),
-                    cancel=cancel,
-                )
-            clouds.append(points)
-            normals.append(view_normals)
-            colors.append(view_colors)
-            surface_faces.append(view_faces + surface_offset)
-            surface_offset += len(points)
-            accepted_views.append(view)
-            fit_reports.append({"image": view.name, "accepted": True, "points": len(points), **fit})
-        report("estimating_depth", 10 + int(45 * (index + 1) / len(selected)), processed=index + 1, accepted=len(clouds))
+            camera = cameras[view.camera_id]
+            height, width = relative.shape
+            scale_x, scale_y = width / camera.width, height / camera.height
+            prepared_views.append({
+                "view": view,
+                "camera": camera,
+                "image": image.copy(),
+                "relative": relative,
+                "metric": _metric_depth(relative, fit),
+                "fit": fit,
+                "intrinsics": (
+                    camera.focal * scale_x,
+                    camera.focal * scale_y,
+                    camera.cx * scale_x,
+                    camera.cy * scale_y,
+                ),
+            })
+            fit_reports.append({"image": view.name, "accepted": True, **fit})
+        report("estimating_depth", 10 + int(30 * (index + 1) / len(selected)), processed=index + 1, accepted=len(prepared_views))
+
+    if len(prepared_views) < 8:
+        raise RuntimeError(f"Somente {len(prepared_views)} vistas produziram profundidade alinhada; mínimo técnico: 8.")
+
+    # Keep the unfiltered fusion as the production default until a filtered
+    # candidate passes the comparative and visual gates on an authorized scene.
+    filter_mode = os.environ.get("AI_MULTIVIEW_FILTER", "none").strip().lower()
+    if filter_mode not in {"none", "moderate", "strict"}:
+        raise ValueError("AI_MULTIVIEW_FILTER deve ser none, moderate ou strict.")
+    relative_tolerance = {
+        "none": 0.14,
+        "moderate": 0.10,
+        "strict": 0.06,
+    }[filter_mode]
+    holdout_prefixes = tuple(
+        value.strip() for value in os.environ.get("AI_VALIDATION_HOLDOUT_PREFIX", "").split(",")
+        if value.strip()
+    )
+    training_views = [
+        item for item in prepared_views
+        if not holdout_prefixes or not item["view"].name.startswith(holdout_prefixes)
+    ]
+    holdout_views = [
+        item for item in prepared_views
+        if holdout_prefixes and item["view"].name.startswith(holdout_prefixes)
+    ]
+    if len(training_views) < 8:
+        raise RuntimeError("O conjunto de treino restante após o holdout possui menos de oito vistas.")
+    holdout_names = {item["view"].name for item in holdout_views}
+    for fit_report in fit_reports:
+        if fit_report.get("accepted"):
+            fit_report["role"] = (
+                "validation_holdout" if fit_report["image"] in holdout_names else "fusion"
+            )
+    observations = [
+        DepthObservation(
+            name=item["view"].name,
+            depth=item["metric"],
+            rotation=item["view"].rotation,
+            translation=item["view"].translation,
+            focal_x=item["intrinsics"][0],
+            focal_y=item["intrinsics"][1],
+            cx=item["intrinsics"][2],
+            cy=item["intrinsics"][3],
+            calibration_confidence=max(0.05, 1.0 - float(item["fit"]["p90_relative_error"])),
+        )
+        for item in training_views
+    ]
+    confidence_maps, state_maps, consistency_report = evaluate_multiview_consistency(
+        observations,
+        ConsistencyConfig(
+            pixel_stride=max(4, min(int(os.environ.get("AI_MULTIVIEW_STRIDE", "12")), 32)),
+            relative_tolerance=relative_tolerance,
+            absolute_tolerance=max(0.005, min(float(os.environ.get("AI_MULTIVIEW_ABSOLUTE_TOLERANCE", "0.025")), 0.25)),
+            maximum_neighbours=max(2, min(int(os.environ.get("AI_MULTIVIEW_NEIGHBOURS", "8")), 16)),
+            minimum_pair_samples=max(12, min(int(os.environ.get("AI_MULTIVIEW_MINIMUM_PAIR_SAMPLES", "24")), 500)),
+        ),
+    )
+    consistency_report["filter_mode"] = filter_mode
+    consistency_report["validation_holdout"] = {
+        "prefixes": list(holdout_prefixes),
+        "views": [item["view"].name for item in holdout_views],
+        "used_during_confidence_estimation": False,
+        "used_during_fusion": False,
+    }
+    if holdout_views:
+        holdout_observations = observations + [
+            DepthObservation(
+                name=item["view"].name,
+                depth=item["metric"],
+                rotation=item["view"].rotation,
+                translation=item["view"].translation,
+                focal_x=item["intrinsics"][0],
+                focal_y=item["intrinsics"][1],
+                cx=item["intrinsics"][2],
+                cy=item["intrinsics"][3],
+                calibration_confidence=max(0.05, 1.0 - float(item["fit"]["p90_relative_error"])),
+            )
+            for item in holdout_views
+        ]
+        holdout_confidence, holdout_states, holdout_report = evaluate_multiview_consistency(
+            holdout_observations,
+            ConsistencyConfig(
+                pixel_stride=max(4, min(int(os.environ.get("AI_MULTIVIEW_STRIDE", "12")), 32)),
+                relative_tolerance=relative_tolerance,
+                absolute_tolerance=max(0.005, min(float(os.environ.get("AI_MULTIVIEW_ABSOLUTE_TOLERANCE", "0.025")), 0.25)),
+                maximum_neighbours=max(2, min(int(os.environ.get("AI_MULTIVIEW_NEIGHBOURS", "8")), 16)),
+                minimum_pair_samples=max(12, min(int(os.environ.get("AI_MULTIVIEW_MINIMUM_PAIR_SAMPLES", "24")), 500)),
+            ),
+        )
+        consistency_report["validation_holdout"].update({
+            "view_reports": [
+                report for report in holdout_report["view_reports"] if report["image"] in holdout_names
+            ],
+            "pair_reports": [
+                report for report in holdout_report["pair_reports"] if report["source"] in holdout_names
+            ],
+        })
+        confidence_maps.update({name: holdout_confidence[name] for name in holdout_names})
+        state_maps.update({name: holdout_states[name] for name in holdout_names})
+    consistency_path = output / "multiview-consistency-report.json"
+    consistency_path.write_text(json.dumps(consistency_report, ensure_ascii=False, indent=2), encoding="utf-8")
+    confidence_manifest = {}
+    confidence_archive = {}
+    for confidence_index, item in enumerate(prepared_views):
+        key = f"view_{confidence_index:03d}"
+        name = item["view"].name
+        confidence_archive[f"{key}_confidence"] = confidence_maps[name].astype(np.float16)
+        confidence_archive[f"{key}_state"] = state_maps[name]
+        confidence_manifest[key] = name
+    np.savez_compressed(output / "depth-confidence-maps.npz", **confidence_archive)
+    (output / "depth-confidence-manifest.json").write_text(
+        json.dumps(confidence_manifest, ensure_ascii=False, indent=2), encoding="utf-8",
+    )
+    report(
+        "checking_multiview_consistency", 45,
+        filter_mode=filter_mode,
+        **consistency_report["summary"],
+    )
+
+    minimum_confidence = {"none": 0.0, "moderate": 0.22, "strict": 0.48}[filter_mode]
+    for item in training_views:
+        if cancel and cancel():
+            raise InterruptedError("Reconstrução cancelada pelo usuário.")
+        view = item["view"]
+        confidence = confidence_maps[view.name]
+        if filter_mode == "none":
+            confidence = np.full(item["metric"].shape, max(
+                0.08, 1.0 - float(item["fit"]["median_relative_error"]),
+            ), dtype=np.float32)
+        points, view_normals, view_colors, view_faces = _view_cloud(
+            item["image"], item["relative"], view, item["camera"], item["fit"], stride,
+            confidence_map=confidence,
+            minimum_confidence=minimum_confidence,
+        )
+        if len(points) < 100:
+            next(report for report in fit_reports if report["image"] == view.name).update({
+                "accepted": False,
+                "reason": "insufficient_multiview_confident_points",
+                "points": len(points),
+            })
+            continue
+        if tsdf is not None:
+            tsdf.integrate(
+                depth=item["metric"],
+                color=np.asarray(item["image"].resize((item["metric"].shape[1], item["metric"].shape[0])).convert("RGB")),
+                focal_x=item["intrinsics"][0],
+                focal_y=item["intrinsics"][1],
+                cx=item["intrinsics"][2],
+                cy=item["intrinsics"][3],
+                rotation=view.rotation,
+                translation=view.translation,
+                confidence=confidence,
+                cancel=cancel,
+            )
+        clouds.append(points)
+        normals.append(view_normals)
+        colors.append(view_colors)
+        surface_faces.append(view_faces + surface_offset)
+        surface_offset += len(points)
+        accepted_views.append(view)
+        next(report for report in fit_reports if report["image"] == view.name).update({
+            "points": len(points),
+            "mean_multiview_confidence": float(np.mean(confidence[confidence > 0])) if np.any(confidence > 0) else 0.0,
+        })
 
     if len(clouds) < 8:
-        raise RuntimeError(f"Somente {len(clouds)} vistas produziram profundidade alinhada; mínimo técnico: 8.")
+        raise RuntimeError(f"Somente {len(clouds)} vistas preservaram profundidade multivista; mínimo técnico: 8.")
     report("fusing_depth_maps", 58, accepted_views=len(clouds))
     raw_points = np.concatenate(clouds)
     raw_normals = np.concatenate(normals)
@@ -614,9 +832,19 @@ def reconstruct_calibrated_depth(
         output / "stitching-report.json",
         output / "tsdf-report.json",
         output / "topology-report.json",
+        consistency_path,
+        output / "depth-confidence-maps.npz",
+        output / "depth-confidence-manifest.json",
     ):
         if artifact.is_file():
             hashes[artifact.name] = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    cuda_peak = None
+    if cuda_peak_reset:
+        try:
+            import torch
+            cuda_peak = int(torch.cuda.max_memory_allocated())
+        except Exception:
+            pass
     result = {
         "status": "completed" if glb.is_file() else "rejected",
         "method": meshing_method,
@@ -624,6 +852,7 @@ def reconstruct_calibrated_depth(
         "reference_mesh_read": False,
         "inputs": {"available_views": len(available), "selected_views": len(selected), "accepted_views": len(clouds)},
         "fit_reports": fit_reports,
+        "multiview_consistency": consistency_report,
         "fusion_metrics": fusion_metrics,
         "tsdf": tsdf_report,
         "topology": topology,
@@ -644,13 +873,25 @@ def reconstruct_calibrated_depth(
             "stitching_report": "stitching-report.json" if (output / "stitching-report.json").is_file() else None,
             "tsdf_report": "tsdf-report.json" if (output / "tsdf-report.json").is_file() else None,
             "topology_report": "topology-report.json",
+            "multiview_consistency_report": consistency_path.name,
+            "depth_confidence_maps": "depth-confidence-maps.npz",
+            "depth_confidence_manifest": "depth-confidence-manifest.json",
         },
         "hashes": hashes,
         "stages": stages,
         "elapsed_seconds": round(time.perf_counter() - started, 3),
+        "runtime_resources": {
+            "sampled_peak_process_rss_bytes": sampled_peak_rss or None,
+            "cuda_peak_allocated_bytes": cuda_peak,
+            "tsdf_estimated_block_memory_bytes": (
+                tsdf_report.get("estimated_block_memory_bytes") if tsdf_report else None
+            ),
+            "measurement_note": "RSS amostrado nas transições de estágio; CUDA usa o contador de pico do PyTorch.",
+        },
         "limitations": [
             "A profundidade monocular foi alinhada por vista aos pontos SfM; não equivale a estéreo denso COLMAP.",
             "A TSDF aloca apenas a banda truncada observada; regiões sem observação permanecem ausentes.",
+            "Os mapas de confiança registram reprojeção geométrica e calibração; não são medições físicas nem classes semânticas.",
             "Quando o Poisson excede o limite de execução, a malha preserva os componentes significativos das superfícies calibradas e fundidas por voxel.",
             "Faces sem projeção fotográfica válida usam um bloco neutro do atlas e são contabilizadas separadamente.",
             "Regiões arquitetônicas são candidatos geométricos corrigíveis, não classes semânticas confirmadas.",
