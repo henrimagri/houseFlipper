@@ -117,3 +117,23 @@ Os demais estados iniciais continuam válidos até evidência específica nova. 
 ## Atualização executada — máscara manual e histórico fotográfico
 
 `MASTER_PHOTO_MASK_VALIDATION.md` registra implementação e execução real de pincel/borracha raster, correção da proporção/coordenadas, undo/redo de traços, validação de limites e vínculo independente entre simulação e seus parâmetros. Estado desses itens: **implementado e testado**, incluindo foto real autorizada, composição no worker e recarga no navegador. Pixels fora da máscara ficaram idênticos. O modo SAM por pontos foi preservado; seu resultado automático ainda não pode ser retocado diretamente como máscara raster. Segmentação arquitetônica avaliada, simulação física/PBR sobre a foto, catálogo avançado e qualidade comercial geral permanecem parciais.
+
+## Comparação funcional solicitada — referência Suvinil
+
+Referências públicas consultadas: [criar ambiente](https://www.simulador3d.com.br/suvinil2.3/?cena=criarAmbienteNovo&id_cliente=) e [cena](https://www.simulador3d.com.br/suvinil2.3/?cena=cena03&id_cliente=). A coluna Suvinil distingue controles encontrados no HTML de funções não verificadas no runtime; não é aprovação de paridade visual. Nenhum asset ou código foi copiado.
+
+| Capacidade | Referência Suvinil observada | House Flipper atual | Estado e evidência |
+|---|---|---|---|
+| Ambientes prontos | Categorias de cômodo no HTML | Seis templates paramétricos | Parcial; sala inspecionada, demais sem QA individual |
+| Criar por dimensões | Campos de largura/comprimento/altura | Criação sem foto e medidas informadas | Implementado e testado; API e canvas |
+| Pintar paredes | Controles de cor/código | Parede independente por ID, clique e seletor | Implementado e testado; pintura/undo/recarga |
+| Pisos e teto | Comportamento não verificado | Seis superfícies e ações específicas | Parcial; seleção do teto inspecionada, materiais completos pendentes |
+| Materiais/acabamentos | Controles fosco/acetinado/brilhante | Acabamento persistido e materiais procedurais | Parcial; catálogo físico/PBR reduzido |
+| Móveis editáveis | Mover/girar/escalar no HTML | Transformação, ocultar, duplicar/remover; dois GLBs licenciados | Parcial; faltam catálogo amplo, snap/bloqueio/colisão |
+| Iluminação | Runtime não verificado | Ambiente/direcional, sombras, comandos estruturados | Parcial; sem validação física ou benchmark amplo |
+| Navegação 3D | Runtime não verificado | Órbita, zoom e vistas frontal/lateral/superior | Implementado e testado no editor; primeira pessoa pendente |
+| Salvar cena | Controle de salvar/login no HTML | Persistência, versões e comparação somente leitura | Implementado e testado com recarga |
+| Editar fotografia | Entrada fotográfica no HTML | SAM por pontos e máscara manual verdadeira | Manual implementado/testado em foto real; seleção neural ainda em avaliação |
+| Histórico/undo/redo | Não verificado | Cena persistida e histórico de traços; resultados por job | Implementado e testado; histórico da cena limitado a 12 passos |
+| Assistente IA | Não verificado | Operações estruturadas e autorização Laravel | Parcial; não é agente geral com streaming completo |
+| Reconstrução multivista | Não verificado | Fusão parcial ativa e pipeline denso preparado | Parcial/bloqueado para execução densa local; Fase 8 preservada |

@@ -206,8 +206,8 @@ class VisionPipeline:
         started = _start_measurement()
         inputs = processor(
             images=image,
-            input_points=[[[point] for point in safe_points]],
-            input_labels=[[[label] for label in point_labels]],
+            input_points=[[safe_points]],
+            input_labels=[[point_labels]],
             return_tensors="pt",
         ).to(_device())
         if torch.cuda.is_available():
@@ -216,7 +216,9 @@ class VisionPipeline:
             outputs = model(**inputs, multimask_output=False)
         masks = processor.post_process_masks(outputs.pred_masks.float().cpu(), inputs["original_sizes"])[0]
         latency_ms, vram_mb = _finish_measurement(started)
-        combined = masks.squeeze(1).any(dim=0).numpy().astype(np.uint8) * 255
+        if masks.ndim != 4 or tuple(masks.shape[:2]) != (1, 1):
+            raise ValueError("SAM 2 deve retornar uma máscara para o único objeto solicitado.")
+        combined = masks[0, 0].numpy().astype(np.uint8) * 255
         combined = self.refine_surface_mask(combined, safe_points, point_labels)
         mask_path = output_dir / "mask.png"
         Image.fromarray(combined, mode="L").save(mask_path)

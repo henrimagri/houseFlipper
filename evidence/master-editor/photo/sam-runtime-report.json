@@ -1,0 +1,63 @@
+{
+  "job_id": "c0809a2e-38b8-4b31-afce-c0d9b70f057e",
+  "status": "completed",
+  "kind": "photo_simulation",
+  "original_artifact": "original.jpg",
+  "simulation_artifact": "simulation.png",
+  "comparison_artifact": "comparison.png",
+  "segmentation": {
+    "artifact": "mask.png",
+    "overlay_artifact": "segmentation-overlay.png",
+    "model": "facebook/sam2.1-hiera-tiny",
+    "license": "Apache-2.0",
+    "device": "cuda",
+    "latency_ms": 1282.79,
+    "peak_vram_mb": 396.62,
+    "prompt_points": [
+      [
+        371.0,
+        299.0
+      ],
+      [
+        459.0,
+        401.0
+      ],
+      [
+        501.0,
+        521.0
+      ]
+    ],
+    "prompt_labels": [
+      1,
+      0,
+      0
+    ],
+    "mask_count": 1,
+    "coverage_ratio": 0.066318,
+    "dimensions": {
+      "width": 1082,
+      "height": 723
+    },
+    "edge_refinement": "connected_positive_regions+morphological_close+antialiased_composition"
+  },
+  "detection": {
+    "model": "facebook/detr-resnet-50",
+    "license": "Apache-2.0",
+    "device": "cuda",
+    "threshold": 0.72,
+    "latency_ms": 1170.7,
+    "peak_vram_mb": 429.61,
+    "objects": [],
+    "limitations": "Classes limitadas ao conjunto COCO; ausência de detecção não prova ausência do objeto."
+  },
+  "composition": {
+    "color": "#336699",
+    "opacity": 0.82,
+    "material": "paint",
+    "mask_mode": "sam",
+    "method": "luminance_preserving_masked_recolor",
+    "preserves_geometry": true,
+    "automatic_exclusions": [],
+    "limitations": "Simulação 2D guiada por máscara; reflexos complexos e materiais físicos não são reconstruídos."
+  }
+}

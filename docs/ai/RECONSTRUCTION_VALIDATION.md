@@ -113,3 +113,11 @@ Houve QA efetivo do canvas paramétrico no navegador oficial: ambiente sem fotos
 ## Master ASTRA — regressão após máscara manual
 
 Python 106/106, Laravel completo 89/89, frontend 21/21 e build aprovados. O novo pipeline manual opera em CPU, sem inferência neural, e preserva pixels fora da seleção. Executado QA fotográfico real com playroom e comparação independente, conforme `MASTER_PHOTO_MASK_VALIDATION.md`. Isso não fornece novas métricas ou aprovação de geometria 3D; Fase 8 permanece ativa.
+
+## 21/10/2026 — Master ASTRA: correção dos prompts SAM e inferência real
+
+Corrigido o agrupamento dos pontos de inclusão/exclusão como um único objeto no SAM 2; antes cada ponto gerava uma máscara independente posteriormente unida. Saídas com múltiplos objetos agora são rejeitadas. Dois testes reproduziram a falha; suíte Python completa 108/108 em 38,08 s. Script offline compara agrupamentos com os mesmos pontos/foto/refinamento e gera hashes.
+
+Foto MIT real playroom_small 40_DSC0001.jpg: comparação CPU concluída e overlays inspecionados; parede selecionada e melhor preservação qualitativa de tomadas/controles, sem ground truth para medir IoU. Fluxo real Laravel → worker CUDA → histórico → navegador também executado: Simulação 80, SAM uma máscara/6,6318% de cobertura; DETR executou mas não detectou objetos acima de 0,72. Verificação independente: 51.880 pixels alterados, zero fora da máscara. Captura real e relatórios em evidence/master-editor/photo/sam-*. Detalhes, tempos, recursos, avisos e limitações em MASTER_SAM_VALIDATION.md.
+
+Fase 8 preservada, sem novas métricas de reconstrução nem promoção. Refinamento manual da máscara SAM e qualidade comercial continuam parciais; comparação funcional solicitada com Suvinil adicionada à COMMERCIAL_READINESS_MATRIX.md. Não houve novo download de modelos, instalação pesada ou alteração da infraestrutura.

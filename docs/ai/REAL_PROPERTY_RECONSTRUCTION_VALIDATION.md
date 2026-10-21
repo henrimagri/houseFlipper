@@ -343,3 +343,11 @@ O navegador oficial permitiu inspecionar o **editor paramétrico**, com pintura,
 Executados dois jobs de pintura manual com a fotografia MIT `images-jpeg-1k/40/40_DSC0001.jpg`, do mesmo playroom autorizado. Upload, composição, importação, comparação e reabertura foram inspecionados no navegador. A versão com recorte apagado modificou 7.343 pixels (0,93866% da foto), zero fora da máscara; original derivado preservado pixel a pixel. Hashes/medição reproduzível: `MASTER_PHOTO_MASK_VALIDATION.md` e `evidence/master-editor/photo/validation.json`.
 
 Este resultado comprova somente pintura fotográfica manual localizada. Não houve geração de profundidade, nova malha, métrica geométrica ou promoção de reconstrução. A licença foi preservada junto às capturas; dataset e imagens integrais continuam locais.
+
+## 21/10/2026 — Master ASTRA: correção dos prompts SAM e inferência real
+
+Corrigido o agrupamento dos pontos de inclusão/exclusão como um único objeto no SAM 2; antes cada ponto gerava uma máscara independente posteriormente unida. Saídas com múltiplos objetos agora são rejeitadas. Dois testes reproduziram a falha; suíte Python completa 108/108 em 38,08 s. Script offline compara agrupamentos com os mesmos pontos/foto/refinamento e gera hashes.
+
+Foto MIT real playroom_small 40_DSC0001.jpg: comparação CPU concluída e overlays inspecionados; parede selecionada e melhor preservação qualitativa de tomadas/controles, sem ground truth para medir IoU. Fluxo real Laravel → worker CUDA → histórico → navegador também executado: Simulação 80, SAM uma máscara/6,6318% de cobertura; DETR executou mas não detectou objetos acima de 0,72. Verificação independente: 51.880 pixels alterados, zero fora da máscara. Captura real e relatórios em evidence/master-editor/photo/sam-*. Detalhes, tempos, recursos, avisos e limitações em MASTER_SAM_VALIDATION.md.
+
+Fase 8 preservada, sem novas métricas de reconstrução nem promoção. Refinamento manual da máscara SAM e qualidade comercial continuam parciais; comparação funcional solicitada com Suvinil adicionada à COMMERCIAL_READINESS_MATRIX.md. Não houve novo download de modelos, instalação pesada ou alteração da infraestrutura.
