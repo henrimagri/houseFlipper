@@ -52,6 +52,9 @@ def test_fragmented_mesh_is_rejected_by_connectivity_metrics() -> None:
     assert quality["status"] == "rejected"
     assert quality["viewer_eligible"] is False
     assert quality["metrics"]["connected_components"] == 10
+    assert quality["metrics"]["connected_components_total"] == 10
+    assert quality["metrics"]["connected_components_significant"] == 0
+    assert quality["metrics"]["significant_component_minimum_faces"] == 100
     assert quality["metrics"]["largest_component_face_ratio"] == 0.1
     assert any("componentes demais" in reason for reason in quality["reasons"])
     assert any("maior componente" in reason for reason in quality["reasons"])

@@ -1,0 +1,354 @@
+{
+  "phase": 11,
+  "dataset": "Meta Eyeful Tower playroom_small",
+  "license": "MIT",
+  "reference_used_during_generation": false,
+  "opencv": "4.13.0",
+  "split": {
+    "development_views": 33,
+    "parameter_prefix": "44_",
+    "final_prefix": "45_",
+    "reserved_views_used_for_generation": false
+  },
+  "stereo": {
+    "summary": {
+      "attempted_pairs": 12,
+      "usable_pairs": 12,
+      "views_with_evidence": 12,
+      "valid_pixels": 155298,
+      "sfm_validation_samples": 732,
+      "median_pair_sfm_relative_error": 0.011386829718551894
+    },
+    "pairs": [
+      {
+        "left": "41_DSC0085_15.jpg",
+        "right": "40_DSC0085_6.jpg",
+        "rectification": {
+          "shared_points": 176,
+          "epipolar_axis": "vertical_disparity",
+          "median_orthogonal_error_px": 0.03710833206339714,
+          "p90_orthogonal_error_px": 0.1383642847193869
+        },
+        "valid_fraction": 0.06431985294117647,
+        "sfm_validation": {
+          "samples": 74,
+          "median_relative_error": 0.010838351182061605,
+          "p90_relative_error": 0.12848392036891057
+        }
+      },
+      {
+        "left": "41_DSC0001_9.jpg",
+        "right": "40_DSC0001_0.jpg",
+        "rectification": {
+          "shared_points": 178,
+          "epipolar_axis": "vertical_disparity",
+          "median_orthogonal_error_px": 0.04920592321323625,
+          "p90_orthogonal_error_px": 0.14489100722981904
+        },
+        "valid_fraction": 0.04248529411764706,
+        "sfm_validation": {
+          "samples": 153,
+          "median_relative_error": 0.00896992723575176,
+          "p90_relative_error": 0.02270423457156961
+        }
+      },
+      {
+        "left": "42_DSC0001_18.jpg",
+        "right": "41_DSC0001_9.jpg",
+        "rectification": {
+          "shared_points": 176,
+          "epipolar_axis": "vertical_disparity",
+          "median_orthogonal_error_px": 0.04050038133448197,
+          "p90_orthogonal_error_px": 0.10663088708021462
+        },
+        "valid_fraction": 0.054441176470588236,
+        "sfm_validation": {
+          "samples": 131,
+          "median_relative_error": 0.017634934416617867,
+          "p90_relative_error": 0.04377569620101462
+        }
+      },
+      {
+        "left": "42_DSC0085_24.jpg",
+        "right": "41_DSC0085_15.jpg",
+        "rectification": {
+          "shared_points": 156,
+          "epipolar_axis": "vertical_disparity",
+          "median_orthogonal_error_px": 0.04120132971920043,
+          "p90_orthogonal_error_px": 0.1112474763476996
+        },
+        "valid_fraction": 0.07303676470588236,
+        "sfm_validation": {
+          "samples": 58,
+          "median_relative_error": 0.02389600184855204,
+          "p90_relative_error": 0.23512313516425754
+        }
+      },
+      {
+        "left": "43_DSC0001_27.jpg",
+        "right": "42_DSC0001_18.jpg",
+        "rectification": {
+          "shared_points": 156,
+          "epipolar_axis": "vertical_disparity",
+          "median_orthogonal_error_px": 0.03364647649053154,
+          "p90_orthogonal_error_px": 0.09204610027487092
+        },
+        "valid_fraction": 0.0299662558685446,
+        "sfm_validation": {
+          "samples": 86,
+          "median_relative_error": 0.010041441636819878,
+          "p90_relative_error": 0.034322488203900686
+        }
+      },
+      {
+        "left": "41_DSC0043_12.jpg",
+        "right": "40_DSC0043_3.jpg",
+        "rectification": {
+          "shared_points": 106,
+          "epipolar_axis": "vertical_disparity",
+          "median_orthogonal_error_px": 0.04181781233339166,
+          "p90_orthogonal_error_px": 0.17234577885147928
+        },
+        "valid_fraction": 0.06362132352941176,
+        "sfm_validation": {
+          "samples": 30,
+          "median_relative_error": 0.012423029951524608,
+          "p90_relative_error": 1.34616004035749
+        }
+      },
+      {
+        "left": "43_DSC0085_33.jpg",
+        "right": "42_DSC0085_24.jpg",
+        "rectification": {
+          "shared_points": 102,
+          "epipolar_axis": "vertical_disparity",
+          "median_orthogonal_error_px": 0.033779369470011034,
+          "p90_orthogonal_error_px": 0.15010226188834402
+        },
+        "valid_fraction": 0.047579225352112675,
+        "sfm_validation": {
+          "samples": 43,
+          "median_relative_error": 0.011935308255042184,
+          "p90_relative_error": 0.06500648674020312
+        }
+      },
+      {
+        "left": "42_DSC0043_21.jpg",
+        "right": "41_DSC0043_12.jpg",
+        "rectification": {
+          "shared_points": 78,
+          "epipolar_axis": "vertical_disparity",
+          "median_orthogonal_error_px": 0.04060668956861946,
+          "p90_orthogonal_error_px": 0.09741786975276909
+        },
+        "valid_fraction": 0.054588235294117646,
+        "sfm_validation": {
+          "samples": 44,
+          "median_relative_error": 0.01579331577313754,
+          "p90_relative_error": 0.034678276727484865
+        }
+      },
+      {
+        "left": "43_DSC0043_30.jpg",
+        "right": "42_DSC0043_21.jpg",
+        "rectification": {
+          "shared_points": 54,
+          "epipolar_axis": "vertical_disparity",
+          "median_orthogonal_error_px": 0.02855713018598749,
+          "p90_orthogonal_error_px": 0.09176033250910226
+        },
+        "valid_fraction": 0.03608788145539906,
+        "sfm_validation": {
+          "samples": 32,
+          "median_relative_error": 0.006994303062072225,
+          "p90_relative_error": 0.032166785305187025
+        }
+      },
+      {
+        "left": "47_DSC0001_63.jpg",
+        "right": "46_DSC0001_54.jpg",
+        "rectification": {
+          "shared_points": 60,
+          "epipolar_axis": "vertical_disparity",
+          "median_orthogonal_error_px": 0.034816743018240004,
+          "p90_orthogonal_error_px": 0.11971408401781504
+        },
+        "valid_fraction": 0.02692476580796253,
+        "sfm_validation": {
+          "samples": 13,
+          "median_relative_error": 0.02181748342037017,
+          "p90_relative_error": 0.04416282155124965
+        }
+      },
+      {
+        "left": "47_DSC0085_69.jpg",
+        "right": "46_DSC0085_60.jpg",
+        "rectification": {
+          "shared_points": 50,
+          "epipolar_axis": "vertical_disparity",
+          "median_orthogonal_error_px": 0.04554833217528653,
+          "p90_orthogonal_error_px": 0.1998829646442687
+        },
+        "valid_fraction": 0.02661372950819672,
+        "sfm_validation": {
+          "samples": 33,
+          "median_relative_error": 0.006145377145930934,
+          "p90_relative_error": 0.017184439452145407
+        }
+      },
+      {
+        "left": "49_DSC0085_87.jpg",
+        "right": "48_DSC0085_78.jpg",
+        "rectification": {
+          "shared_points": 44,
+          "epipolar_axis": "vertical_disparity",
+          "median_orthogonal_error_px": 0.04626273051513863,
+          "p90_orthogonal_error_px": 0.2101252703134635
+        },
+        "valid_fraction": 0.050645539906103286,
+        "sfm_validation": {
+          "samples": 35,
+          "median_relative_error": 0.008391820152324378,
+          "p90_relative_error": 0.02733622853047747
+        }
+      }
+    ]
+  },
+  "candidates": {
+    "A": {
+      "directory": "phase11-A-original-v1",
+      "elapsed_seconds": 39.832,
+      "vertices": 39552,
+      "faces": 76392,
+      "components_total": 52,
+      "components_significant": 4,
+      "boundary_edges": 2820,
+      "nonmanifold_edges": 0,
+      "accuracy": {
+        "median": 0.08478570729494095,
+        "p90": 0.2521352767944336,
+        "within_5cm": 0.3041,
+        "within_10cm": 0.5616,
+        "within_20cm": 0.8234
+      },
+      "completeness": {
+        "median": 0.09432286769151688,
+        "p90": 1.0845177173614502,
+        "within_5cm": 0.3533,
+        "within_10cm": 0.5099,
+        "within_20cm": 0.6021
+      },
+      "runtime_resources": {
+        "sampled_peak_process_rss_bytes": 1519009792,
+        "cuda_peak_allocated_bytes": 195219968,
+        "tsdf_estimated_block_memory_bytes": 4423680,
+        "measurement_note": "RSS amostrado nas transições de estágio; CUDA usa o contador de pico do PyTorch."
+      },
+      "hashes": {
+        "depth-fused.ply": "77a17a905023e4add86c4754813bd0c0ec4c5213b15b0c1eca01f8ca22d52d5d",
+        "depth-poisson-raw.ply": "24d7c0c08092d3bcafff325593c8f55b7b274fc706a1a851bcdab7e0f4a09329",
+        "depth-poisson-clean.ply": "24d7c0c08092d3bcafff325593c8f55b7b274fc706a1a851bcdab7e0f4a09329",
+        "fusion-report.json": "74ccbede0f3a63c6390f77350c28079fa54bda473078af43e2e116b18622d5d1",
+        "tsdf-report.json": "3496af33be36731e64a5399730a5746235d9e2613ea7474a0d7cfd14ee126a1f",
+        "topology-report.json": "8e665a669e638e1056212c2eb157769aada6cad265fd5adcfcb31294fdb08198",
+        "multiview-consistency-report.json": "531383c8e4ec056b0c5735fc72bac17a1b00ff3c9a3f2b5ec5e11baf2589a757",
+        "depth-confidence-maps.npz": "48658c1906c8e116eb62608dd6f3b11bc1dab5fee62942f13ea86d28b00d8a6a",
+        "depth-confidence-manifest.json": "8e2a49eecda7917e6a005e417dd1f759bb30b4ba163b26c5f8c89a6e8691785c"
+      }
+    },
+    "B": {
+      "directory": "phase11-B-corrected-v1",
+      "elapsed_seconds": 42.257,
+      "vertices": 40071,
+      "faces": 77472,
+      "components_total": 52,
+      "components_significant": 4,
+      "boundary_edges": 2834,
+      "nonmanifold_edges": 0,
+      "accuracy": {
+        "median": 0.08404818177223206,
+        "p90": 0.2524878680706024,
+        "within_5cm": 0.3065,
+        "within_10cm": 0.5646,
+        "within_20cm": 0.827
+      },
+      "completeness": {
+        "median": 0.09135998040437698,
+        "p90": 1.0856101512908936,
+        "within_5cm": 0.3676,
+        "within_10cm": 0.5123,
+        "within_20cm": 0.6015
+      },
+      "runtime_resources": {
+        "sampled_peak_process_rss_bytes": 1660088320,
+        "cuda_peak_allocated_bytes": 195219968,
+        "tsdf_estimated_block_memory_bytes": 4433920,
+        "measurement_note": "RSS amostrado nas transições de estágio; CUDA usa o contador de pico do PyTorch."
+      },
+      "hashes": {
+        "depth-fused.ply": "1fe0bebb82b28d8c856d00948bb6389b9f6ebd5b0cd4684fcff4036341c43ecb",
+        "depth-poisson-raw.ply": "7fb5aa157e85e7310661670ae8ebc820fdffccde23a9da4588c32f64a7a0b342",
+        "depth-poisson-clean.ply": "7fb5aa157e85e7310661670ae8ebc820fdffccde23a9da4588c32f64a7a0b342",
+        "fusion-report.json": "438b5a51f67cc2925fa064cc0e1f92dd1c000294a88ee943cf682f903b017fed",
+        "tsdf-report.json": "825ff50e2a3808b90947773d9a206c19b785401370c1d50cb5db5d83beba3cf8",
+        "topology-report.json": "ef0e3018c1afd764f5db4e570cdbff6f9fbe94015a89e3a400ea521577a60686",
+        "multiview-consistency-report.json": "ca8a6b24ec8f207575de34dfc59868d55aa2114b6832fb517debb60af7a9b423",
+        "depth-confidence-maps.npz": "7e25fdabb2ff8e9c2f2bb2d3de4066a29aefb61bdcd29fefa6880f79c0991604",
+        "depth-confidence-manifest.json": "8e2a49eecda7917e6a005e417dd1f759bb30b4ba163b26c5f8c89a6e8691785c",
+        "stereo-report.json": "9eec6ef030596e637c98a39d9c092247da4ab4a2744ce8bd6809052e319be71e",
+        "stereo-evidence.npz": "2d179d26cf5c2cf535a8e63d6e387222244a895816934427bccb1cc48878e6c4",
+        "stereo-evidence-manifest.json": "3d982f1ef1c63d6cc1afe882d257ea7e8f18be1e989796a10220e2ce2af59cb5"
+      }
+    },
+    "C": {
+      "directory": "phase11-C-hybrid-v1",
+      "elapsed_seconds": 42.088,
+      "vertices": 39953,
+      "faces": 77236,
+      "components_total": 49,
+      "components_significant": 4,
+      "boundary_edges": 2828,
+      "nonmanifold_edges": 0,
+      "accuracy": {
+        "median": 0.08394042402505875,
+        "p90": 0.2499431073665619,
+        "within_5cm": 0.3036,
+        "within_10cm": 0.5663,
+        "within_20cm": 0.8258
+      },
+      "completeness": {
+        "median": 0.09076949954032898,
+        "p90": 1.0899401903152466,
+        "within_5cm": 0.3697,
+        "within_10cm": 0.5132,
+        "within_20cm": 0.6008
+      },
+      "runtime_resources": {
+        "sampled_peak_process_rss_bytes": 1653080064,
+        "cuda_peak_allocated_bytes": 195219968,
+        "tsdf_estimated_block_memory_bytes": 4433920,
+        "measurement_note": "RSS amostrado nas transições de estágio; CUDA usa o contador de pico do PyTorch."
+      },
+      "hashes": {
+        "depth-fused.ply": "b76b6b570e9fb74c4e0fd8cda49486e05ca6a7407c2a70fbe257563d75fcdca0",
+        "depth-poisson-raw.ply": "67cc988a333b75e1bf268f02b3b6616f60f6654ce02ec59a142812da05816c6b",
+        "depth-poisson-clean.ply": "67cc988a333b75e1bf268f02b3b6616f60f6654ce02ec59a142812da05816c6b",
+        "fusion-report.json": "52e8f8f521398ea2d20491c28e8f6a073f2cd813fea85ff4fb4142fd3efc6d0e",
+        "tsdf-report.json": "abe964ba1d6d91bd4fcaa4a17d375fc16ee95fc21fc24e777888c4a1919019f6",
+        "topology-report.json": "84fd8b377b5a449daa2e667d5d487c95f7dd1e29132ba710520920090db133f0",
+        "multiview-consistency-report.json": "95ef3212a01c8c1446f5f83416fa192c4ad03bf740396b5b31768df80a99501a",
+        "depth-confidence-maps.npz": "1f5feca903ffd4eed92ca1f58e3c25f0870f29d161521cbbad7da914b344263a",
+        "depth-confidence-manifest.json": "8e2a49eecda7917e6a005e417dd1f759bb30b4ba163b26c5f8c89a6e8691785c",
+        "stereo-report.json": "5f7e03a0357fb900618514d21ddde2e5bdafe8b8560ac223e0866a45c45e100e",
+        "stereo-evidence.npz": "2d179d26cf5c2cf535a8e63d6e387222244a895816934427bccb1cc48878e6c4",
+        "stereo-evidence-manifest.json": "3d982f1ef1c63d6cc1afe882d257ea7e8f18be1e989796a10220e2ce2af59cb5"
+      }
+    }
+  },
+  "decision": {
+    "active_model": "phase8",
+    "promoted": false,
+    "reason": "phase11 hybrid completeness@10cm 51.32% remains below phase8 55.81%",
+    "photo_texturing_executed": false
+  }
+}

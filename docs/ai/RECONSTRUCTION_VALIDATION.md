@@ -57,3 +57,30 @@ QA manual reproduzível enquanto a automação local estiver bloqueada:
 7. confirmar que um resultado `rejected` não altera o modelo ativo.
 
 HTTP 200 e build não equivalem a validação do canvas. Sem Playwright instalado e com a política do controlador oficial recusando a aba local, a inspeção visual nova permanece pendente e não é marcada como aprovada.
+## Fase 11 — protocolo e resultado
+
+### Implementação verificável
+
+- `calibrated_stereo.py`: pares por evidência SfM e captura; pose relativa COLMAP; retificação horizontal/vertical; SGBM CPU; consistência esquerda/direita; oclusão; erro fotométrico; confiança; profundidade Z; retorno ao grid original; validação SfM; correção local limitada e híbrida.
+- `calibrated_depth_fusion.py`: estratégias `AI_STEREO_STRATEGY=original|corrected|hybrid`, limites de resolução/pares/confiança, arquivos de evidência, isolamento de `AI_PARAMETER_HOLDOUT_PREFIX` e `AI_VALIDATION_HOLDOUT_PREFIX`, cancelamento e integração com a TSDF corrigida.
+- `multiview_depth.py`: confiança máxima requer a hipótese observada pela fonte e por pelo menos duas vistas-alvo.
+- `reconstruction.py`: componentes totais e significativos são emitidos separadamente, com limiar documentado.
+- Laravel: candidato elegível para visualização é importado para auditoria, mas não substitui um primário existente sem `final_model_eligible=true`.
+
+### Casos sintéticos
+
+Plano frontal recupera 2,0 m dentro de 8%; transformação world→camera e pose relativa são conferidas; baixa textura não produz profundidade densa; iluminação desigual reduz o suporte; pouca sobreposição e baseline insuficiente são rejeitados antes do matcher; faixa ocluída perde suporte; correção espacial preserva âncoras, descontinuidades e limite de 22%. Os testes TSDF anteriores de plano inclinado, canto, caixa, esfera e fronteira de bloco continuam ativos e foram executados junto com os novos testes direcionados.
+
+### Experimento real
+
+Configuração fixa: 42 vistas selecionadas, 33 de desenvolvimento após reservar `44_*` e `45_*`; TSDF 6 cm; truncamento 18 cm; peso 1,25; stride 7; 12 pares; largura 640; até dois pares por vista; confiança mínima 0,32; textura desativada. A/B/C levaram 39,832/42,257/42,088 s.
+
+Resultado C: 56,63% de precisão e 51,32% de completude a 10 cm; medianas 8,39 e 9,08 cm; 49 componentes totais, 4 significativos, 2.828 bordas abertas, zero não manifold, zero face inválida e zero face degenerada no relatório topológico. A melhora controlada sobre A foi pequena e a completude permaneceu inferior aos 55,81% da Fase 8. Resultado: **rejeitado para promoção**, sem textura e sem substituição do modelo ativo.
+
+### QA do produto
+
+O canvas real abriu em `http://127.0.0.1:5173/app/house-flipper/imoveis/30/3d`, com 497×619 pixels, seleção de `Parede candidata`, confiança geométrica estimada de 62% e alternância confirmada das vistas lateral e superior. Não foi instalado Playwright no projeto; a inspeção utilizou a automação oficial do navegador disponível. A pintura, desfazer/refazer, persistência e isolamento por tenant continuam cobertos pelos testes já existentes; esta execução não alterou o modelo ativo nem dados do usuário.
+
+### Gate
+
+Fase 8 permanece ativa. A Fase 11 comprova que SGBM calibrado é operacional no dataset e melhora discretamente A, mas sua cobertura de 2,66–7,30% por par é insuficiente para recuperar a completude perdida. Nenhuma região desconhecida foi promovida como estéreo. `final_model_eligible=false` continua obrigatório até avaliação geométrica e visual superior.

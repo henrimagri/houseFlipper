@@ -11,6 +11,18 @@ import { roomLabel, visualizationModeLabel, type ModelViewerDiagnostic, type Pho
 type WorkspaceMode = 'photo_edit' | 'scene_3d' | 'reconstruction_3d';
 type ReconstructionMethod = 'auto' | 'calibrated' | 'tsdf' | 'dense_colmap';
 
+function reconstructionMethodDescription(result: Record<string, unknown>): string {
+  const actual = String(result.actual_method ?? 'em processamento');
+  const fallback = result.calibrated_depth_fallback as Record<string, unknown> | undefined;
+  const stereo = fallback?.calibrated_stereo as Record<string, unknown> | undefined;
+  const strategy = String(stereo?.strategy ?? 'original');
+  if (strategy === 'corrected') return `${actual} · profundidade monocular com correção estéreo local experimental`;
+  if (strategy === 'hybrid') return `${actual} · fusão híbrida de estéreo verificado e profundidade monocular`;
+  if (actual.includes('tsdf')) return `${actual} · TSDF com profundidade monocular calibrada`;
+  if (actual.includes('calibrated')) return `${actual} · prévia geométrica incompleta`;
+  return actual;
+}
+
 export default function PropertyViewer() {
   const { id = '' } = useParams();
   const location = useLocation();
@@ -354,7 +366,10 @@ export default function PropertyViewer() {
                 <button type="button" disabled={busy || !captureConfirmed || capturePhotos.length < 8} onClick={() => void reconstruct()} className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"><Box className="h-4 w-4" /> Iniciar reconstrução ({capturePhotos.length}/8 mín.)</button>
                 {busy && <button type="button" onClick={() => void cancelReconstruction()} className="rounded-xl border border-rose-300/40 px-4 py-2.5 text-sm font-black text-rose-200">Cancelar com segurança</button>}
               </div>
-              {data.processing_jobs?.find(item => item.kind === 'photogrammetry')?.result && <p className="mt-3 text-xs text-slate-400">Método solicitado: {String(data.processing_jobs.find(item => item.kind === 'photogrammetry')?.result?.requested_method ?? 'não informado')} · método efetivo: {String(data.processing_jobs.find(item => item.kind === 'photogrammetry')?.result?.actual_method ?? 'em processamento')}</p>}
+              {data.processing_jobs?.find(item => item.kind === 'photogrammetry')?.result && (() => {
+                const result = data.processing_jobs?.find(item => item.kind === 'photogrammetry')?.result as Record<string, unknown>;
+                return <p className="mt-3 text-xs text-slate-400">Método solicitado: {String(result.requested_method ?? 'não informado')} · método efetivo: {reconstructionMethodDescription(result)}</p>;
+              })()}
             </div>
           </div>
         </div>

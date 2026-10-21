@@ -235,3 +235,59 @@ Artefatos locais ignorados pelo Git:
 - `phase10-calibrated-42-moderate-holdout-v1`.
 
 Cada pasta válida contém PLY bruto/limpo, `result.json`, `fit-report.json`, relatório de consistência, mapas de confiança NPZ, manifesto, topologia, hashes e comparação posterior. Nenhum candidato rejeitado foi fototexturizado ou enviado ao imóvel. A Fase 8 e seu atlas de 57,51% permanecem ativos.
+## Fase 11 — estéreo real e correção espacial de profundidade
+
+As fotografias continuam sendo as 126 vistas reais e autorizadas do Meta Eyeful Tower `playroom_small`, com a licença MIT preservada localmente. A malha oficial não foi aberta por seleção de pares, retificação, SGBM, correção, confiança ou TSDF. Ela foi lida por `compare_reference_geometry.py` somente depois que cada candidato e seu `result.json` estavam concluídos.
+
+### Separação sem vazamento
+
+- desenvolvimento/fusão: 33 das 42 vistas selecionadas e aceitas;
+- seleção de parâmetros: `44_DSC0001_36`, `44_DSC0043_39` e `44_DSC0085_42`;
+- avaliação final: `45_DSC0001_45`, `45_DSC0043_48` e `45_DSC0085_51`;
+- nenhuma das seis vistas reservadas participou de pares SGBM, correção local, confiança de geração ou TSDF.
+
+### Medição estéreo
+
+O OpenCV 4.13.0 instalado foi usado em CPU. Os pares foram escolhidos por interseção de pontos SfM, baseline, ângulo, nitidez e iluminação. A retificação revelou que as câmeras úteis do conjunto possuem disparidade predominantemente vertical. As imagens retificadas são giradas temporariamente para o SGBM horizontal, e disparidade, oclusão e confiança voltam ao eixo original antes de `reprojectImageTo3D` e da transformação para Z da câmera COLMAP.
+
+| Par esquerdo / direito efetivo | Erro ortogonal mediano / P90 | Pixels válidos | Erro SfM mediano / P90 | Amostras SfM |
+|---|---:|---:|---:|---:|
+| 41_DSC0085_15 / 40_DSC0085_6 | 0,0371 / 0,1384 px | 6,43% | 1,08% / 12,85% | 74 |
+| 41_DSC0001_9 / 40_DSC0001_0 | 0,0492 / 0,1449 px | 4,25% | 0,90% / 2,27% | 153 |
+| 42_DSC0001_18 / 41_DSC0001_9 | 0,0405 / 0,1066 px | 5,44% | 1,76% / 4,38% | 131 |
+| 42_DSC0085_24 / 41_DSC0085_15 | 0,0412 / 0,1112 px | 7,30% | 2,39% / 23,51% | 58 |
+| 43_DSC0001_27 / 42_DSC0001_18 | 0,0336 / 0,0920 px | 3,00% | 1,00% / 3,43% | 86 |
+| 41_DSC0043_12 / 40_DSC0043_3 | 0,0418 / 0,1723 px | 6,36% | 1,24% / 134,62% | 30 |
+| 43_DSC0085_33 / 42_DSC0085_24 | 0,0338 / 0,1501 px | 4,76% | 1,19% / 6,50% | 43 |
+| 42_DSC0043_21 / 41_DSC0043_12 | 0,0406 / 0,0974 px | 5,46% | 1,58% / 3,47% | 44 |
+| 43_DSC0043_30 / 42_DSC0043_21 | 0,0286 / 0,0918 px | 3,61% | 0,70% / 3,22% | 32 |
+| 47_DSC0001_63 / 46_DSC0001_54 | 0,0348 / 0,1197 px | 2,69% | 2,18% / 4,42% | 13 |
+| 47_DSC0085_69 / 46_DSC0085_60 | 0,0455 / 0,1999 px | 2,66% | 0,61% / 1,72% | 33 |
+| 49_DSC0085_87 / 48_DSC0085_78 | 0,0463 / 0,2101 px | 5,06% | 0,84% / 2,73% | 35 |
+
+Total: 155.298 pixels aceitos e 732 comparações SfM. O P90 extremo de um par demonstra que a qualidade não é uniforme; a razão estéreo/monocular fora do limite de 22% é descartada. As áreas sem correspondência permanecem monoculares e são registradas como tal.
+
+### Estratégias A, B e C
+
+| Métrica | Fase 8 ativa | A original | B corrigida | C híbrida |
+|---|---:|---:|---:|---:|
+| Precisão 5/10/20 cm | 25,11 / 50,73 / 77,52% | 30,41 / 56,16 / 82,34% | 30,65 / 56,46 / 82,70% | 30,36 / 56,63 / 82,58% |
+| Completude 5/10/20 cm | — / 55,81 / — | 35,33 / 50,99 / 60,21% | 36,76 / 51,23 / 60,15% | 36,97 / 51,32 / 60,08% |
+| Erro mediano gerado→referência | 9,83 cm | 8,48 cm | 8,40 cm | 8,39 cm |
+| Erro mediano referência→gerado | — | 9,43 cm | 9,14 cm | 9,08 cm |
+| Componentes totais / significativos | — / 14 | 52 / 4 | 52 / 4 | 49 / 4 |
+| Bordas abertas / não manifold | 12.052 / 2.326 | 2.820 / 0 | 2.834 / 0 | 2.828 / 0 |
+| Tempo | — | 39,832 s | 42,257 s | 42,088 s |
+| RSS amostrado | — | 1,519 GB | 1,660 GB | 1,653 GB |
+
+O número significativo utiliza a mesma regra explícita em A/B/C: no mínimo 100 faces ou 0,2% das faces, o que for maior. Ele não é comparado como se fosse equivalente aos 14 componentes significativos da Fase 8 sem registrar a diferença de malha/metodologia.
+
+C apresenta ganho pequeno e reproduzível sobre A, mas permanece abaixo da completude de 10 cm da Fase 8. O gate rejeitou a promoção; a fototexturização não foi executada e a cobertura de 57,51% da Fase 8 permanece como evidência ativa. Os resultados A/B/C são prévias geométricas incompletas, não reconstruções comerciais do cômodo inteiro.
+
+### Consistência e validação visual
+
+Na estratégia C, 338.489 observações foram consistentes, 18.129 inconsistentes e 17.917 ocluídas. O estado confiável exige fonte mais duas vistas-alvo: 59.792 amostras atenderam esse critério e 2.001 com um único par permaneceram incertas. As vistas finais tiveram 12.818/1.005, 13.122/18 e 11.978/1.098 amostras consistentes/inconsistentes.
+
+O navegador local abriu o GLB ativo, renderizou canvas 497×619, permitiu selecionar uma parede candidata e alternar as vistas lateral e superior. O candidato C não foi aberto como modelo ativo porque falhou no gate de completude; portanto não há afirmação de QA visual dele. O único aviso do console foi a depreciação de `THREE.Clock`.
+
+Artefatos reproduzíveis locais: `phase11-A-original-v1`, `phase11-B-corrected-v1` e `phase11-C-hybrid-v1`. Cada diretório contém geometria, topologia, comparação posterior, hashes e, para B/C, `stereo-report.json`, `stereo-evidence.npz` e manifesto. Permanecem ignorados pelo Git por conterem dataset e artefatos volumosos. Evidência versionada: `evidence/phase11-stereo-summary.json` e `evidence/phase11-stereo-evidence.jpg`, com as duas fotografias autorizadas do primeiro par, disparidade, profundidade Z aceita e confiança.

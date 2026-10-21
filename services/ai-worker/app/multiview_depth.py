@@ -162,7 +162,10 @@ def evaluate_multiview_consistency(
         )
         sampled_state = np.ones(len(px), dtype=np.uint8)
         sampled_state[has_comparison & (inconsistent > consistent)] = 2
-        sampled_state[has_comparison & (ratio >= 0.60)] = 3
+        # A source plus two independent target observations is the minimum for
+        # the reliable state. A single pair remains useful but stays uncertain.
+        repeated_observation = checked >= 2
+        sampled_state[has_comparison & repeated_observation & (ratio >= 0.60)] = 3
 
         right = np.roll(source.depth, -config.pixel_stride, axis=1)
         down = np.roll(source.depth, -config.pixel_stride, axis=0)
@@ -207,6 +210,7 @@ def evaluate_multiview_consistency(
             "occluded_samples": int(np.sum(occluded)),
             "mean_confidence": float(np.mean(sampled_confidence[valid_source])) if np.any(valid_source) else 0.0,
             "reliable_samples": int(np.sum(sampled_state == 3)),
+            "single_pair_only_samples": int(np.sum(has_comparison & ~repeated_observation)),
             "uncertain_samples": int(np.sum(sampled_state == 1)),
             "inconsistent_classified_samples": int(np.sum(sampled_state == 2)),
         })

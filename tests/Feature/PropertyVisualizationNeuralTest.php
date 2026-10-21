@@ -61,6 +61,68 @@ class PropertyVisualizationNeuralTest extends TestCase
         ]);
     }
 
+    public function test_inferior_reconstruction_candidate_does_not_replace_existing_primary_model(): void
+    {
+        Storage::fake('local');
+        config()->set('ai.worker.token', 'test-worker-token');
+        [$owner, $property] = $this->accountWithProperty('reconstruction-gate-owner');
+        Sanctum::actingAs($owner);
+        $this->withHeader('X-Product-Context', 'house_flipper')
+            ->getJson('/api/visualizations/propriedades/'.$property->id)->assertOk();
+        $visualization = PropertyVisualization::query()->where('subject_id', $property->id)->firstOrFail();
+        Storage::disk('local')->put('visualizations/phase8.glb', 'phase-8-model');
+        $primary = $visualization->assets()->create([
+            'kind' => 'glb', 'room_key' => 'reconstruction_preview', 'path' => 'visualizations/phase8.glb',
+            'original_name' => 'phase8.glb', 'mime_type' => 'model/gltf-binary', 'size_bytes' => 13,
+            'checksum' => hash('sha256', 'phase-8-model'), 'is_primary' => true,
+        ]);
+        $photos = collect(range(1, 8))->map(function (int $index) use ($visualization) {
+            $path = "visualizations/capture-{$index}.jpg";
+            Storage::disk('local')->put($path, "photo-{$index}");
+
+            return $visualization->assets()->create([
+                'kind' => 'photo', 'path' => $path, 'original_name' => "capture-{$index}.jpg",
+                'mime_type' => 'image/jpeg', 'size_bytes' => 7,
+                'checksum' => hash('sha256', "photo-{$index}"),
+            ]);
+        });
+        $jobId = '11111111-1111-4111-8111-111111111111';
+        Http::fake(function ($request) use ($jobId) {
+            if (str_ends_with($request->url(), '/v1/3d/reconstruct')) {
+                return Http::response([
+                    'job_id' => $jobId,
+                    'status' => 'completed',
+                    'artifacts' => ['glb' => 'depth-fusion.glb'],
+                    'geometry_quality' => [
+                        'viewer_eligible' => true,
+                        'final_model_eligible' => false,
+                        'reasons' => ['Completude inferior ao modelo ativo.'],
+                    ],
+                    'limitations' => ['Candidato experimental não promovido.'],
+                ]);
+            }
+
+            return Http::response('candidate-model', 200, ['Content-Type' => 'model/gltf-binary']);
+        });
+
+        $this->withHeader('X-Product-Context', 'house_flipper')
+            ->postJson('/api/visualizations/propriedades/'.$property->id.'/reconstruct', [
+                'asset_ids' => $photos->pluck('id')->all(),
+                'capture_confirmed' => true,
+                'method' => 'tsdf',
+            ])->assertOk();
+
+        $this->assertTrue($primary->fresh()->is_primary);
+        $this->assertDatabaseHas('property_visualization_assets', [
+            'property_visualization_id' => $visualization->id,
+            'original_name' => 'reconstruction-preview.glb',
+            'is_primary' => false,
+        ]);
+        $job = $visualization->processingJobs()->latest('id')->firstOrFail();
+        $this->assertFalse($job->result['promotion']['promoted']);
+        $this->assertTrue($job->result['promotion']['previous_primary_preserved']);
+    }
+
     public function test_neural_artifacts_are_private_and_associated_with_the_owned_property(): void
     {
         Storage::fake('local');

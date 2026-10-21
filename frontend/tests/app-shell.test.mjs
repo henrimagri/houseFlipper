@@ -203,6 +203,8 @@ test('property visualization separates photo editing, scene creation, and valida
   assert.match(screen, /Editar fotografia/);
   assert.match(screen, /Criar ambiente 3D/);
   assert.match(screen, /Reconstruir em 3D/);
+  assert.match(screen, /correção estéreo local experimental/);
+  assert.match(screen, /fusão híbrida de estéreo verificado/);
   assert.match(screen, /viewer_eligible === true/);
   assert.match(screen, /Modelo ainda não elegível para o viewer/);
   assert.match(screen, /artefatos ajudam no diagnóstico, mas não são apresentados como modelo final/i);

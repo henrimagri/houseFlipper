@@ -383,11 +383,17 @@ class PropertyVisualizationService
         abort_unless($jobId !== '' && hash_equals($jobId, (string) ($result['job_id'] ?? '')), 502, 'O worker retornou um identificador de job inconsistente.');
         $this->importWorkerArtifact($visualization, $jobId, data_get($result, 'artifacts.sparse_point_cloud'), 'point_cloud', 'sparse.ply', 'application/octet-stream');
         $this->importWorkerArtifact($visualization, $jobId, data_get($result, 'artifacts.mesh'), 'reconstruction_mesh', 'mesh.ply', 'application/octet-stream');
+        $previousPrimary = $visualization->assets()
+            ->whereIn('kind', ['glb', 'gltf'])
+            ->where('is_primary', true)
+            ->first();
         $viewerEligible = data_get($result, 'geometry_quality.viewer_eligible') === true;
         $model = $viewerEligible
             ? $this->importWorkerArtifact($visualization, $jobId, data_get($result, 'artifacts.glb'), 'glb', 'reconstruction-preview.glb', 'model/gltf-binary', 'reconstruction_preview')
             : null;
-        if ($model) {
+        $promotionEligible = data_get($result, 'geometry_quality.final_model_eligible') === true;
+        $promote = $model && (! $previousPrimary || $promotionEligible);
+        if ($promote) {
             $visualization->assets()->whereIn('kind', ['glb', 'gltf'])->where('id', '!=', $model->id)->update(['is_primary' => false]);
             $model->forceFill(['is_primary' => true])->save();
             $visualization->fill([
@@ -395,7 +401,7 @@ class PropertyVisualizationService
                 'origin_label' => 'Prévia fotogramétrica gerada das fotos',
                 'limitations' => implode(' ', data_get($result, 'limitations', [])),
             ])->save();
-        } else {
+        } elseif (! $previousPrimary) {
             $visualization->fill([
                 'status' => is_array($visualization->scene_graph) ? 'photo_referenced' : 'insufficient',
                 'level' => is_array($visualization->scene_graph) ? 'photo_referenced' : 'fallback_gallery',
@@ -406,7 +412,15 @@ class PropertyVisualizationService
                 ])),
             ])->save();
         }
-        $job->fill(['status' => 'completed', 'completed_at' => now()])->save();
+        $storedResult = $result;
+        $storedResult['promotion'] = [
+            'promoted' => (bool) $promote,
+            'previous_primary_preserved' => (bool) ($previousPrimary && ! $promote),
+            'reason' => $promote
+                ? ($previousPrimary ? 'candidate_passed_final_gate' : 'first_viewer_eligible_preview')
+                : ($model ? 'candidate_requires_geometric_and_visual_approval' : 'candidate_not_viewer_eligible'),
+        ];
+        $job->fill(['result' => $storedResult, 'status' => 'completed', 'completed_at' => now()])->save();
     }
 
     public function simulatePhoto(

@@ -416,3 +416,40 @@ A aplicação e a API local responderam HTTP 200. Playwright não está instalad
 Estado da Fase 10: matemática TSDF **implementada e testada**; consistência/mapas de confiança **implementados e testados**; experimentos real/holdout **executados e rejeitados pelo gate**; QA visual novo **bloqueado**. Próxima prioridade: correção espacial de baixa frequência dos mapas monoculares usando correspondências densas verificadas ou estéreo multivista, sem alterar as âncoras SfM já consistentes e sem treinar outro modelo antes de demonstrar necessidade.
 
 Validação final da Fase 10: worker Python/FastAPI **48/48** em 22,82 s; Laravel **67/67, 276 assertions** em 4,485 s; frontend **12/12**; TypeScript/Vite aprovado em 10,66 s. O aviso conhecido de chunks acima de 500 kB permanece, sem regressão funcional associada nesta fase.
+## 21/10/2026 — Fase 11: estéreo calibrado e correção local conservadora
+
+Estado: **implementado e testado; candidato híbrido rejeitado para promoção**.
+
+O runtime existente foi preservado: Python 3.12.10, OpenCV 4.13.0 no Windows e GTX 1660 Ti de 6 GB. Não houve instalação de Open3D, WSL2, driver, peso neural ou serviço pago. O OpenCV presente fornece `stereoRectify`, `initUndistortRectifyMap`, `StereoSGBM` e `reprojectImageTo3D`; `ximgproc` não está instalado e não foi necessário.
+
+Foi criado `calibrated_stereo.py` com seleção determinística de pares por pontos SfM compartilhados, baseline, ângulo, nitidez e diferença de iluminação; transformação relativa COLMAP; retificação horizontal e vertical; SGBM em CPU; consistência esquerda/direita; máscara de oclusão; erro fotométrico; confiança por textura; profundidade em Z da câmera; retorno ao grid original; validação contra pontos SfM; e correção local regularizada com limite de 22%, preservação de bordas e das âncoras SfM. O dataset usa pares predominantemente verticais: girar temporariamente as imagens retificadas para o matcher horizontal foi necessário e é desfeito antes da reprojeção 3D.
+
+Testes sintéticos cobrem transformação world→camera, plano frontal métrico, baixa textura, diferença de iluminação, pouca sobreposição, baseline insuficiente, oclusão e correção local. A confiança multivista só classifica uma hipótese como confiável depois de duas vistas-alvo consistentes, isto é, três vistas no total. As divisões ficaram isoladas: `44_*` para seleção de parâmetros, `45_*` para avaliação final e as demais para desenvolvimento/fusão. Nenhuma vista reservada participou dos pares, correções ou TSDF.
+
+### Evidência real autorizada
+
+Foram executados 12 pares de `playroom_small`, todos com disparidade válida. A retificação teve erro ortogonal mediano entre 0,0286 e 0,0492 px; a cobertura válida por par ficou entre 2,66% e 7,30%. Foram preservados 155.298 pixels estéreo válidos em 12 vistas e 732 comparações independentes com pontos SfM. A mediana entre as medianas relativas por par foi 1,1387%. Um par (`41_DSC0043_12`/`40_DSC0043_3`) teve P90 de 134,62%; seus outliers foram rejeitados pelo limite local, em vez de promovidos como medida.
+
+Pares: `41_DSC0085_15↔40_DSC0085_6`, `41_DSC0001_9↔40_DSC0001_0`, `42_DSC0001_18↔41_DSC0001_9`, `42_DSC0085_24↔41_DSC0085_15`, `43_DSC0001_27↔42_DSC0001_18`, `41_DSC0043_12↔40_DSC0043_3`, `43_DSC0085_33↔42_DSC0085_24`, `42_DSC0043_21↔41_DSC0043_12`, `43_DSC0043_30↔42_DSC0043_21`, `47_DSC0001_63↔46_DSC0001_54`, `47_DSC0085_69↔46_DSC0085_60` e `49_DSC0085_87↔48_DSC0085_78`.
+
+### Comparação controlada
+
+Mesmos 33 mapas de desenvolvimento, voxel TSDF de 6 cm, truncamento de 18 cm, peso mínimo 1,25, sem filtro e sem fototexturização:
+
+| Estratégia | Vértices / faces | Componentes total / significativos | Bordas / não manifold | Precisão 5/10/20 cm | Completude 5/10/20 cm | Erro mediano precisão / completude |
+|---|---:|---:|---:|---:|---:|---:|
+| A — monocular original | 39.552 / 76.392 | 52 / 4 | 2.820 / 0 | 30,41% / 56,16% / 82,34% | 35,33% / 50,99% / 60,21% | 8,48 / 9,43 cm |
+| B — correção local | 40.071 / 77.472 | 52 / 4 | 2.834 / 0 | 30,65% / 56,46% / 82,70% | 36,76% / 51,23% / 60,15% | 8,40 / 9,14 cm |
+| C — híbrida | 39.953 / 77.236 | 49 / 4 | 2.828 / 0 | 30,36% / 56,63% / 82,58% | 36,97% / 51,32% / 60,08% | 8,39 / 9,08 cm |
+
+O candidato C melhorou A em 0,47 ponto percentual de precisão e 0,33 ponto de completude a 10 cm, reduziu três componentes totais e manteve zero aresta não manifold. Ainda perde 4,49 pontos de completude para a Fase 8 ativa (55,81%); por isso não recebeu textura, não substituiu o GLB ativo e `final_model_eligible` permanece falso. A Fase 8 continua como melhor prévia.
+
+Consistência de três ou mais vistas em C: 338.489 amostras consistentes, 18.129 inconsistentes, 17.917 ocluídas, 59.792 amostras de desenvolvimento confiáveis e 2.001 sustentadas por apenas um par, mantidas como incertas. As seis vistas reservadas permaneceram fora da geração e foram avaliadas somente depois.
+
+Recursos A/B/C: 39,832/42,257/42,088 s; RSS amostrado 1,519/1,660/1,653 GB; pico PyTorch CUDA 195.219.968 bytes; memória estimada dos blocos TSDF cerca de 4,43 MB. Artefatos locais, fora do Git: `phase11-A-original-v1`, `phase11-B-corrected-v1` e `phase11-C-hybrid-v1`, com `stereo-report.json`, `stereo-evidence.npz`, hashes, topologia e comparação posterior à referência.
+
+O gate Laravel agora importa um candidato auditável sem retirar `is_primary` do modelo existente quando `final_model_eligible` é falso. O frontend apresenta se o método efetivo é monocular calibrado, correção estéreo local ou fusão híbrida. QA oficial no navegador abriu o GLB ativo em canvas 497×619, selecionou uma `Parede candidata` com confiança estimada de 62% e alternou as vistas lateral e superior. O único log observado foi a depreciação conhecida de `THREE.Clock`; não houve erro de carregamento. Como C foi reprovado antes do gate final, não houve captura nem alegação visual dele.
+
+Verificações desta etapa: worker completo **57/57**; Laravel completo **68/68, 282 assertions**; frontend **12/12**; TypeScript e build Vite aprovados; permanece somente o aviso conhecido de chunks maiores que 500 kB. A comparação real A/B/C e o QA do canvas foram executados.
+
+Próxima prioridade: aumentar a cobertura estéreo confiável com mais pares geometricamente úteis e consistência explícita entre dois pares independentes por vista, sem relaxar o gate de outliers. O limite principal continua sendo cobertura: o SGBM mede apenas 2,66–7,30% por par neste conjunto.

@@ -21,6 +21,11 @@ from .photo_texturing import TextureCamera, texture_mesh_from_photos
 from .surface_stitching import stitch_nearby_surfaces
 from .sparse_tsdf import SparseTsdfVolume, TsdfConfig
 from .multiview_depth import ConsistencyConfig, DepthObservation, evaluate_multiview_consistency
+from .calibrated_stereo import (
+    StereoConfig,
+    build_stereo_evidence,
+    conservative_local_depth_correction,
+)
 
 
 Progress = Callable[[str, int, dict[str, Any]], None]
@@ -190,13 +195,16 @@ def _view_cloud(
     stride: int,
     confidence_map: np.ndarray | None = None,
     minimum_confidence: float = 0.0,
+    metric_depth: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     height, width = relative.shape
     rgb = np.asarray(image.resize((width, height)).convert("RGB"))
     scale_x, scale_y = width / camera.width, height / camera.height
     focal_x, focal_y = camera.focal * scale_x, camera.focal * scale_y
     cx, cy = camera.cx * scale_x, camera.cy * scale_y
-    metric = _metric_depth(relative, fit)
+    metric = metric_depth if metric_depth is not None else _metric_depth(relative, fit)
+    if metric.shape != relative.shape:
+        raise ValueError("A profundidade métrica precisa acompanhar o mapa relativo.")
 
     ys = np.arange(stride, height - stride, stride)
     xs = np.arange(stride, width - stride, stride)
@@ -486,21 +494,112 @@ def reconstruct_calibrated_depth(
         value.strip() for value in os.environ.get("AI_VALIDATION_HOLDOUT_PREFIX", "").split(",")
         if value.strip()
     )
+    parameter_prefixes = tuple(
+        value.strip() for value in os.environ.get("AI_PARAMETER_HOLDOUT_PREFIX", "").split(",")
+        if value.strip()
+    )
     training_views = [
         item for item in prepared_views
-        if not holdout_prefixes or not item["view"].name.startswith(holdout_prefixes)
+        if not item["view"].name.startswith(holdout_prefixes + parameter_prefixes)
     ]
     holdout_views = [
         item for item in prepared_views
         if holdout_prefixes and item["view"].name.startswith(holdout_prefixes)
     ]
+    parameter_views = [
+        item for item in prepared_views
+        if parameter_prefixes and item["view"].name.startswith(parameter_prefixes)
+    ]
     if len(training_views) < 8:
         raise RuntimeError("O conjunto de treino restante após o holdout possui menos de oito vistas.")
     holdout_names = {item["view"].name for item in holdout_views}
+    parameter_names = {item["view"].name for item in parameter_views}
     for fit_report in fit_reports:
         if fit_report.get("accepted"):
             fit_report["role"] = (
-                "validation_holdout" if fit_report["image"] in holdout_names else "fusion"
+                "final_evaluation_holdout" if fit_report["image"] in holdout_names
+                else "parameter_selection_holdout" if fit_report["image"] in parameter_names
+                else "development_fusion"
+            )
+
+    stereo_strategy = os.environ.get("AI_STEREO_STRATEGY", "original").strip().lower()
+    if stereo_strategy not in {"original", "corrected", "hybrid"}:
+        raise ValueError("AI_STEREO_STRATEGY deve ser original, corrected ou hybrid.")
+    stereo_report: dict[str, Any] = {
+        "strategy": stereo_strategy,
+        "executed": False,
+        "reason": "original_monocular_baseline",
+    }
+    correction_reports: list[dict[str, Any]] = []
+    stereo_results = []
+    if stereo_strategy != "original":
+        report("estimating_calibrated_stereo", 42, strategy=stereo_strategy)
+        stereo_config = StereoConfig(
+            width=max(320, min(int(os.environ.get("AI_STEREO_WIDTH", "640")), 1280)),
+            minimum_shared_points=max(16, min(int(os.environ.get("AI_STEREO_MIN_SHARED_POINTS", "24")), 500)),
+            minimum_baseline=max(0.005, min(float(os.environ.get("AI_STEREO_MIN_BASELINE", "0.035")), 1.0)),
+            maximum_baseline=max(0.05, min(float(os.environ.get("AI_STEREO_MAX_BASELINE", "0.8")), 5.0)),
+            minimum_angle_degrees=max(0.0, min(float(os.environ.get("AI_STEREO_MIN_ANGLE", "0.0")), 20.0)),
+            maximum_angle_degrees=max(2.0, min(float(os.environ.get("AI_STEREO_MAX_ANGLE", "32")), 90.0)),
+            maximum_pairs=max(1, min(int(os.environ.get("AI_STEREO_MAX_PAIRS", "12")), 64)),
+            maximum_pairs_per_view=max(1, min(int(os.environ.get("AI_STEREO_PAIRS_PER_VIEW", "2")), 6)),
+            number_of_disparities=max(16, min(int(os.environ.get("AI_STEREO_DISPARITIES", "128")), 512)),
+            minimum_confidence=max(0.15, min(float(os.environ.get("AI_STEREO_MIN_CONFIDENCE", "0.32")), 0.95)),
+        )
+        target_shapes = {item["view"].name: item["metric"].shape for item in training_views}
+        stereo_depth, stereo_confidence, stereo_report, stereo_results = build_stereo_evidence(
+            [item["view"] for item in training_views], cameras, images, target_shapes,
+            stereo_config, sparse_points=sparse_points, cancel=cancel,
+        )
+        stereo_report["strategy"] = stereo_strategy
+        stereo_report["executed"] = True
+        stereo_report["split_isolation"] = {
+            "development_views": [item["view"].name for item in training_views],
+            "parameter_selection_views": [item["view"].name for item in parameter_views],
+            "final_evaluation_views": [item["view"].name for item in holdout_views],
+            "parameter_or_final_views_used_for_pairs": False,
+            "parameter_or_final_views_used_for_correction": False,
+        }
+        for item in training_views:
+            name = item["view"].name
+            if name not in stereo_depth:
+                continue
+            anchor_mask = np.zeros(item["metric"].shape, dtype=bool)
+            height, width = anchor_mask.shape
+            camera = item["camera"]
+            for x, y, point_id in item["view"].observations:
+                if point_id not in sparse_points:
+                    continue
+                px = min(width - 1, max(0, int(round(x * width / camera.width))))
+                py = min(height - 1, max(0, int(round(y * height / camera.height))))
+                anchor_mask[py, px] = True
+            original_metric = item["metric"]
+            corrected, hybrid, correction = conservative_local_depth_correction(
+                original_metric, stereo_depth[name], stereo_confidence[name],
+                anchor_mask=anchor_mask,
+                minimum_confidence=stereo_config.minimum_confidence,
+                maximum_relative_change=max(0.05, min(float(os.environ.get("AI_STEREO_MAX_RELATIVE_CHANGE", "0.22")), 0.40)),
+            )
+            item["metric_original"] = original_metric
+            item["metric"] = corrected if stereo_strategy == "corrected" else hybrid
+            correction_reports.append({"image": name, **correction})
+        stereo_report["corrections"] = correction_reports
+        (output / "stereo-report.json").write_text(
+            json.dumps(stereo_report, ensure_ascii=False, indent=2), encoding="utf-8",
+        )
+        stereo_archive: dict[str, np.ndarray] = {}
+        stereo_manifest: dict[str, Any] = {}
+        for stereo_index, stereo_result in enumerate(stereo_results):
+            key = f"pair_{stereo_index:03d}"
+            stereo_archive[f"{key}_disparity_rectified"] = stereo_result.disparity.astype(np.float16)
+            stereo_archive[f"{key}_depth_original_grid"] = stereo_result.depth.astype(np.float16)
+            stereo_archive[f"{key}_confidence_original_grid"] = stereo_result.confidence.astype(np.float16)
+            stereo_archive[f"{key}_occlusion_rectified"] = stereo_result.occlusion.astype(np.uint8)
+            stereo_manifest[key] = {"left": stereo_result.left_name, "right": stereo_result.right_name}
+        if stereo_archive:
+            np.savez_compressed(output / "stereo-evidence.npz", **stereo_archive)
+            (output / "stereo-evidence-manifest.json").write_text(
+                json.dumps(stereo_manifest, ensure_ascii=False, indent=2), encoding="utf-8",
             )
     observations = [
         DepthObservation(
@@ -533,8 +632,20 @@ def reconstruct_calibrated_depth(
         "used_during_confidence_estimation": False,
         "used_during_fusion": False,
     }
-    if holdout_views:
-        holdout_observations = observations + [
+    consistency_report["parameter_selection_holdout"] = {
+        "prefixes": list(parameter_prefixes),
+        "views": [item["view"].name for item in parameter_views],
+        "used_during_confidence_estimation": False,
+        "used_during_fusion": False,
+    }
+    for reserved_label, reserved_views in (
+        ("validation_holdout", holdout_views),
+        ("parameter_selection_holdout", parameter_views),
+    ):
+        if not reserved_views:
+            continue
+        reserved_names = {item["view"].name for item in reserved_views}
+        reserved_observations = observations + [
             DepthObservation(
                 name=item["view"].name,
                 depth=item["metric"],
@@ -546,10 +657,10 @@ def reconstruct_calibrated_depth(
                 cy=item["intrinsics"][3],
                 calibration_confidence=max(0.05, 1.0 - float(item["fit"]["p90_relative_error"])),
             )
-            for item in holdout_views
+            for item in reserved_views
         ]
-        holdout_confidence, holdout_states, holdout_report = evaluate_multiview_consistency(
-            holdout_observations,
+        reserved_confidence, reserved_states, reserved_report = evaluate_multiview_consistency(
+            reserved_observations,
             ConsistencyConfig(
                 pixel_stride=max(4, min(int(os.environ.get("AI_MULTIVIEW_STRIDE", "12")), 32)),
                 relative_tolerance=relative_tolerance,
@@ -558,16 +669,16 @@ def reconstruct_calibrated_depth(
                 minimum_pair_samples=max(12, min(int(os.environ.get("AI_MULTIVIEW_MINIMUM_PAIR_SAMPLES", "24")), 500)),
             ),
         )
-        consistency_report["validation_holdout"].update({
+        consistency_report[reserved_label].update({
             "view_reports": [
-                report for report in holdout_report["view_reports"] if report["image"] in holdout_names
+                report for report in reserved_report["view_reports"] if report["image"] in reserved_names
             ],
             "pair_reports": [
-                report for report in holdout_report["pair_reports"] if report["source"] in holdout_names
+                report for report in reserved_report["pair_reports"] if report["source"] in reserved_names
             ],
         })
-        confidence_maps.update({name: holdout_confidence[name] for name in holdout_names})
-        state_maps.update({name: holdout_states[name] for name in holdout_names})
+        confidence_maps.update({name: reserved_confidence[name] for name in reserved_names})
+        state_maps.update({name: reserved_states[name] for name in reserved_names})
     consistency_path = output / "multiview-consistency-report.json"
     consistency_path.write_text(json.dumps(consistency_report, ensure_ascii=False, indent=2), encoding="utf-8")
     confidence_manifest = {}
@@ -602,6 +713,7 @@ def reconstruct_calibrated_depth(
             item["image"], item["relative"], view, item["camera"], item["fit"], stride,
             confidence_map=confidence,
             minimum_confidence=minimum_confidence,
+            metric_depth=item["metric"],
         )
         if len(points) < 100:
             next(report for report in fit_reports if report["image"] == view.name).update({
@@ -835,6 +947,9 @@ def reconstruct_calibrated_depth(
         consistency_path,
         output / "depth-confidence-maps.npz",
         output / "depth-confidence-manifest.json",
+        output / "stereo-report.json",
+        output / "stereo-evidence.npz",
+        output / "stereo-evidence-manifest.json",
     ):
         if artifact.is_file():
             hashes[artifact.name] = hashlib.sha256(artifact.read_bytes()).hexdigest()
@@ -853,6 +968,7 @@ def reconstruct_calibrated_depth(
         "inputs": {"available_views": len(available), "selected_views": len(selected), "accepted_views": len(clouds)},
         "fit_reports": fit_reports,
         "multiview_consistency": consistency_report,
+        "calibrated_stereo": stereo_report,
         "fusion_metrics": fusion_metrics,
         "tsdf": tsdf_report,
         "topology": topology,
@@ -876,6 +992,9 @@ def reconstruct_calibrated_depth(
             "multiview_consistency_report": consistency_path.name,
             "depth_confidence_maps": "depth-confidence-maps.npz",
             "depth_confidence_manifest": "depth-confidence-manifest.json",
+            "stereo_report": "stereo-report.json" if (output / "stereo-report.json").is_file() else None,
+            "stereo_evidence": "stereo-evidence.npz" if (output / "stereo-evidence.npz").is_file() else None,
+            "stereo_evidence_manifest": "stereo-evidence-manifest.json" if (output / "stereo-evidence-manifest.json").is_file() else None,
         },
         "hashes": hashes,
         "stages": stages,
@@ -889,7 +1008,7 @@ def reconstruct_calibrated_depth(
             "measurement_note": "RSS amostrado nas transições de estágio; CUDA usa o contador de pico do PyTorch.",
         },
         "limitations": [
-            "A profundidade monocular foi alinhada por vista aos pontos SfM; não equivale a estéreo denso COLMAP.",
+            "A profundidade monocular foi alinhada por vista aos pontos SfM; o estéreo SGBM acrescenta medições apenas onde retificação, consistência esquerda/direita e confiança são válidas.",
             "A TSDF aloca apenas a banda truncada observada; regiões sem observação permanecem ausentes.",
             "Os mapas de confiança registram reprojeção geométrica e calibração; não são medições físicas nem classes semânticas.",
             "Quando o Poisson excede o limite de execução, a malha preserva os componentes significativos das superfícies calibradas e fundidas por voxel.",

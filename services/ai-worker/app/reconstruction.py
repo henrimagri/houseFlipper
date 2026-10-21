@@ -185,6 +185,8 @@ def evaluate_geometry(
     used_vertex_count = 0
     component_count = 0
     largest_component_faces = 0
+    significant_component_count = 0
+    significant_component_minimum_faces = 0
     if finite_vertices and vertex_count:
         extents = np.ptp(vertices, axis=0)
         bounds_diagonal = float(np.linalg.norm(extents))
@@ -208,6 +210,10 @@ def evaluate_geometry(
         component_sizes = _face_component_sizes(faces)
         component_count = len(component_sizes)
         largest_component_faces = max(component_sizes, default=0)
+        significant_component_minimum_faces = max(100, int(face_count * 0.002))
+        significant_component_count = sum(
+            size >= significant_component_minimum_faces for size in component_sizes
+        )
 
     degenerate_ratio = float(degenerate_count / face_count) if face_count else 1.0
     faces_per_vertex = float(face_count / used_vertex_count) if used_vertex_count else 0.0
@@ -223,6 +229,9 @@ def evaluate_geometry(
         "source_sparse_points": source_points,
         "faces_per_vertex": round(faces_per_vertex, 6),
         "connected_components": component_count,
+        "connected_components_total": component_count,
+        "connected_components_significant": significant_component_count,
+        "significant_component_minimum_faces": significant_component_minimum_faces,
         "largest_component_faces": largest_component_faces,
         "largest_component_face_ratio": round(largest_component_ratio, 6),
         "degenerate_faces": degenerate_count,
