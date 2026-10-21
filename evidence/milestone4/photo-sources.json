@@ -1,0 +1,31 @@
+{
+  "retrieved": "2026-10-21",
+  "usage": "Local photo painting and detection QA; separate properties, never combined as multiview reconstruction. No training.",
+  "images": [
+    {
+      "file": "kitchen.jpg",
+      "environment": "kitchen",
+      "author": "NeONBRAND",
+      "license": "CC0-1.0",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "source": "https://commons.wikimedia.org/wiki/File:Blue_white_kitchen_interior_(Unsplash).jpg",
+      "asset": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/26/Blue_white_kitchen_interior_%28Unsplash%29.jpg/1280px-Blue_white_kitchen_interior_%28Unsplash%29.jpg",
+      "sha256": "d693df7e80730e000b58c8f2eedc6b34adfe579218cb97ee183b2cee329ef61a",
+      "bytes": 216647,
+      "modifications": "Source: Wikimedia 1280px rendition. QA derivatives: neural mask overlay and simulated paint; original retained."
+    },
+    {
+      "file": "bedroom.jpg",
+      "environment": "bedroom",
+      "author": "Nenad Stojković / Shixart1985",
+      "license": "CC-BY-2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "source": "https://commons.wikimedia.org/wiki/File:Cozy_bedroom_with_a_large_bed_and_simple_decor_in_a_modern_home.jpg",
+      "asset": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/91/Cozy_bedroom_with_a_large_bed_and_simple_decor_in_a_modern_home.jpg/1280px-Cozy_bedroom_with_a_large_bed_and_simple_decor_in_a_modern_home.jpg",
+      "sha256": "cfe3c1073b5e852fe1f85a2bccb64e90431b0caa43a7e09e047bab4b122b974d",
+      "bytes": 246119,
+      "modifications": "Source: Wikimedia 1280px rendition. QA derivatives: neural mask overlay and simulated paint; original retained."
+    }
+  ],
+  "ground_truth_masks": false
+}

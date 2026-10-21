@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { appendStrokePoint, drawMask, hasMaskPixels, imagePoint, maskHistory, MAX_MASK_STROKES, MAX_STROKE_POINTS, validPhotoColor } from '../src/lib/photoMask.mjs';
+import { appendStrokePoint, createRequestGate, drawMask, grayscaleMaskToOverlay, hasMaskPixels, imagePoint, maskHistory, MAX_MASK_STROKES, MAX_STROKE_POINTS, validPhotoColor } from '../src/lib/photoMask.mjs';
 
 const paint = { mode: 'paint', radius: 0.025, points: [{ x: 0.2, y: 0.3 }] };
 const erase = { mode: 'erase', radius: 0.05, points: [{ x: 0.2, y: 0.3 }, { x: 0.6, y: 0.8 }] };
@@ -82,4 +82,64 @@ test('empty masks are detected using alpha, not stale RGB or existence of paint 
 test('only complete six-digit hexadecimal colors permit applying a simulation', () => {
   for (const color of ['#aabbcc', '#ABCDEF', '#000000']) assert.equal(validPhotoColor(color), true);
   for (const color of ['', '#', '#abc', '#gggggg', '#1234567', 'red', '#123456\n']) assert.equal(validPhotoColor(color), false);
+});
+
+test('opaque black neural PNG pixels are excluded and white pixels become overlay alpha', () => {
+  const pixels = new Uint8ClampedArray([0, 0, 0, 255, 255, 255, 255, 255, 128, 128, 128, 255, 255, 255, 255, 0]);
+  const output = grayscaleMaskToOverlay(pixels);
+  assert.deepEqual([...output], [34, 211, 238, 0, 34, 211, 238, 255, 34, 211, 238, 128, 34, 211, 238, 0]);
+  assert.deepEqual([...pixels.slice(0, 4)], [0, 0, 0, 255]);
+  assert.equal(hasMaskPixels(grayscaleMaskToOverlay(new Uint8ClampedArray([0, 0, 0, 255]))), false);
+});
+
+test('zoom, pan and viewport resize preserve normalized positions on the photograph', () => {
+  const expected = { x: 0.25, y: 0.75 };
+  for (const [width, height] of [[640, 360], [200, 600], [1024, 1024]]) {
+    for (const zoom of [1, 1.5, 4]) {
+      const rect = { left: 30 - 121, top: 90 + 47, width: width * zoom, height: height * zoom };
+      const point = imagePoint(rect.left + rect.width * expected.x, rect.top + rect.height * expected.y, rect);
+      assert.deepEqual(point, expected);
+    }
+  }
+});
+
+test('manual undo and reset keep the same neural base and redraw it before corrections', () => {
+  const base = { identity: 'private-neural-selection' };
+  let state = { strokes: [paint, erase], redo: [] };
+  const calls = [];
+  const context = Object.fromEntries(['clearRect', 'save', 'drawImage', 'beginPath', 'arc', 'fill', 'moveTo', 'lineTo', 'stroke', 'restore'].map(name => [name, (...args) => calls.push([name, ...args])]));
+  state = maskHistory(state, { type: 'undo' });
+  drawMask(context, 800, 400, state.strokes, base);
+  assert.equal(calls.find(call => call[0] === 'drawImage')[1], base);
+  assert.ok(calls.findIndex(call => call[0] === 'drawImage') < calls.findIndex(call => call[0] === 'arc'));
+  state = maskHistory(state, { type: 'reset' });
+  calls.length = 0;
+  drawMask(context, 800, 400, state.strokes, base);
+  assert.equal(calls.find(call => call[0] === 'drawImage')[1], base);
+  assert.equal(calls.some(call => call[0] === 'arc'), false);
+});
+
+test('request mutex rejects duplicate submissions until the active request ends', () => {
+  const gate = createRequestGate();
+  const first = gate.start();
+  assert.ok(first instanceof AbortController);
+  assert.equal(gate.start(), null);
+  assert.equal(gate.current(first), true);
+  gate.end(first);
+  assert.equal(gate.current(first), false);
+  assert.ok(gate.start());
+});
+
+test('cancelled and stale async responses cannot own a newer request', () => {
+  const gate = createRequestGate();
+  const first = gate.start();
+  gate.cancel();
+  assert.equal(first.signal.aborted, true);
+  const second = gate.start();
+  assert.equal(gate.current(first), false);
+  gate.end(first);
+  assert.equal(gate.current(second), true);
+  gate.cancel();
+  assert.equal(gate.current(second), false);
+  assert.equal(second.signal.aborted, true);
 });

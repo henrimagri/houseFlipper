@@ -1,0 +1,305 @@
+{
+  "device": "cuda",
+  "threads": 4,
+  "ground_truth_available": false,
+  "automatic_quality_approved": false,
+  "cases": [
+    {
+      "name": "40_DSC0001.jpg",
+      "sha256": "6ca67b203d84ef3b0fcd7817221f57e83e1df21107db13a3ba295971e40b690e",
+      "selection": {
+        "job_id": "c5f024cc-ce98-400b-839e-a4a0ea9df8b8",
+        "status": "completed",
+        "kind": "vision_segmentation",
+        "segmentation": {
+          "artifact": "mask.png",
+          "overlay_artifact": "segmentation-overlay.png",
+          "model": "facebook/sam2.1-hiera-tiny",
+          "license": "Apache-2.0",
+          "device": "cuda",
+          "latency_ms": 1892.32,
+          "peak_vram_mb": 232.94,
+          "prompt_points": [
+            [
+              370.0,
+              300.0
+            ],
+            [
+              460.0,
+              400.0
+            ],
+            [
+              500.0,
+              520.0
+            ]
+          ],
+          "prompt_labels": [
+            1,
+            0,
+            0
+          ],
+          "mask_count": 1,
+          "coverage_ratio": 0.066123,
+          "dimensions": {
+            "width": 1082,
+            "height": 723
+          },
+          "edge_refinement": "connected_positive_regions_preserving_holes_and_thin_edges",
+          "provenance": "sam2_prompted_mask",
+          "model_used": true
+        },
+        "limitations": "M\u00e1scara SAM guiada por pontos; revise os limites antes de aplicar pintura."
+      },
+      "strokes": [
+        {
+          "mode": "erase",
+          "radius": 0.015,
+          "points": [
+            {
+              "x": 0.3422756706753006,
+              "y": 0.4155124653739612
+            }
+          ]
+        },
+        {
+          "mode": "paint",
+          "radius": 0.008,
+          "points": [
+            {
+              "x": 0.37727567067530066,
+              "y": 0.4155124653739612
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "finish": "matte",
+          "job_id": "e0401f52-4ef1-4018-aeb8-5f5eab9122d9",
+          "selected_pixels": 51351,
+          "changed_outside_mask": 0,
+          "model_used": false,
+          "center_erased": true
+        },
+        {
+          "finish": "satin",
+          "job_id": "4b38ca69-66f2-47bb-8063-4a4e82fff9e9",
+          "selected_pixels": 51351,
+          "changed_outside_mask": 0,
+          "model_used": false,
+          "center_erased": true
+        },
+        {
+          "finish": "semigloss",
+          "job_id": "841b7ae2-b119-44ea-8b4b-8aeacd333843",
+          "selected_pixels": 51351,
+          "changed_outside_mask": 0,
+          "model_used": false,
+          "center_erased": true
+        }
+      ],
+      "base_unchanged": true,
+      "total_seconds": 5.4235
+    },
+    {
+      "name": "kitchen.jpg",
+      "sha256": "d693df7e80730e000b58c8f2eedc6b34adfe579218cb97ee183b2cee329ef61a",
+      "selection": {
+        "job_id": "fe33a7ee-c63f-4ec8-814c-61cd057b0372",
+        "status": "completed",
+        "kind": "vision_segmentation",
+        "segmentation": {
+          "artifact": "mask.png",
+          "overlay_artifact": "segmentation-overlay.png",
+          "model": "facebook/sam2.1-hiera-tiny",
+          "license": "Apache-2.0",
+          "device": "cuda",
+          "latency_ms": 643.51,
+          "peak_vram_mb": 264.94,
+          "prompt_points": [
+            [
+              1160.0,
+              250.0
+            ],
+            [
+              1020.0,
+              450.0
+            ],
+            [
+              810.0,
+              420.0
+            ]
+          ],
+          "prompt_labels": [
+            1,
+            0,
+            0
+          ],
+          "mask_count": 1,
+          "coverage_ratio": 0.043538,
+          "dimensions": {
+            "width": 1280,
+            "height": 853
+          },
+          "edge_refinement": "connected_positive_regions_preserving_holes_and_thin_edges",
+          "provenance": "sam2_prompted_mask",
+          "model_used": true
+        },
+        "limitations": "M\u00e1scara SAM guiada por pontos; revise os limites antes de aplicar pintura."
+      },
+      "strokes": [
+        {
+          "mode": "erase",
+          "radius": 0.015,
+          "points": [
+            {
+              "x": 0.9069585613760751,
+              "y": 0.2934272300469484
+            }
+          ]
+        },
+        {
+          "mode": "paint",
+          "radius": 0.008,
+          "points": [
+            {
+              "x": 0.9419585613760751,
+              "y": 0.2934272300469484
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "finish": "matte",
+          "job_id": "80d3aa1d-e684-4781-8708-c50de6f1614b",
+          "selected_pixels": 47012,
+          "changed_outside_mask": 0,
+          "model_used": false,
+          "center_erased": true
+        },
+        {
+          "finish": "satin",
+          "job_id": "dee471e4-95b5-4182-9cf4-5b1ab56e93f4",
+          "selected_pixels": 47012,
+          "changed_outside_mask": 0,
+          "model_used": false,
+          "center_erased": true
+        },
+        {
+          "finish": "semigloss",
+          "job_id": "80e1902f-05e5-467b-8ce8-4f9a1f90b2fe",
+          "selected_pixels": 47012,
+          "changed_outside_mask": 0,
+          "model_used": false,
+          "center_erased": true
+        }
+      ],
+      "base_unchanged": true,
+      "total_seconds": 5.2203
+    },
+    {
+      "name": "bedroom.jpg",
+      "sha256": "cfe3c1073b5e852fe1f85a2bccb64e90431b0caa43a7e09e047bab4b122b974d",
+      "selection": {
+        "job_id": "af9b3889-3fb0-48f3-baf3-19f0bc931d62",
+        "status": "completed",
+        "kind": "vision_segmentation",
+        "segmentation": {
+          "artifact": "mask.png",
+          "overlay_artifact": "segmentation-overlay.png",
+          "model": "facebook/sam2.1-hiera-tiny",
+          "license": "Apache-2.0",
+          "device": "cuda",
+          "latency_ms": 2392.95,
+          "peak_vram_mb": 264.94,
+          "prompt_points": [
+            [
+              300.0,
+              160.0
+            ],
+            [
+              700.0,
+              500.0
+            ],
+            [
+              330.0,
+              330.0
+            ],
+            [
+              130.0,
+              200.0
+            ]
+          ],
+          "prompt_labels": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "mask_count": 1,
+          "coverage_ratio": 0.127292,
+          "dimensions": {
+            "width": 1280,
+            "height": 854
+          },
+          "edge_refinement": "connected_positive_regions_preserving_holes_and_thin_edges",
+          "provenance": "sam2_prompted_mask",
+          "model_used": true
+        },
+        "limitations": "M\u00e1scara SAM guiada por pontos; revise os limites antes de aplicar pintura."
+      },
+      "strokes": [
+        {
+          "mode": "erase",
+          "radius": 0.015,
+          "points": [
+            {
+              "x": 0.23455824863174354,
+              "y": 0.18757327080890973
+            }
+          ]
+        },
+        {
+          "mode": "paint",
+          "radius": 0.008,
+          "points": [
+            {
+              "x": 0.26955824863174355,
+              "y": 0.18757327080890973
+            }
+          ]
+        }
+      ],
+      "results": [
+        {
+          "finish": "matte",
+          "job_id": "fc67d0c0-aa97-4bbe-aa2c-5c624df48661",
+          "selected_pixels": 138621,
+          "changed_outside_mask": 0,
+          "model_used": false,
+          "center_erased": true
+        },
+        {
+          "finish": "satin",
+          "job_id": "660b9ec8-730e-43e6-8f61-c01231c20e8d",
+          "selected_pixels": 138621,
+          "changed_outside_mask": 0,
+          "model_used": false,
+          "center_erased": true
+        },
+        {
+          "finish": "semigloss",
+          "job_id": "ac62bc13-242e-492f-921d-034864ffb0e8",
+          "selected_pixels": 138621,
+          "changed_outside_mask": 0,
+          "model_used": false,
+          "center_erased": true
+        }
+      ],
+      "base_unchanged": true,
+      "total_seconds": 7.0793
+    }
+  ],
+  "report_correction": "Header corrected after inspection: CUDA_VISIBLE_DEVICES empty did not disable CUDA on this Windows run. Per-case actual model device/VRAM were preserved; composition uses CPU."
+}

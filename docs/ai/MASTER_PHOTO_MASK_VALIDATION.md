@@ -49,3 +49,9 @@ O pico é do processo do worker, inclui importação PyTorch/sondas e ambos os j
 Não houve nova inferência SAM real neste marco; sua compatibilidade foi testada com mocks. O manual começa com máscara vazia e não permite ainda retocar diretamente o raster produzido pelo SAM. A máscara no canvas é uma prévia reduzida: antialiasing pode diferir na borda por aproximadamente um pixel; o worker é a autoridade do resultado persistido. Há somente pintura e madeira procedural, sem reprojeção de piso/perspectiva física. Falta comparação deslizante, catálogo de materiais licenciado maior, seleção automática arquitetônica avaliada, QA amplo de superfícies/reflexos e mais fotografias residenciais autorizadas.
 
 Próxima prioridade local: tornar a máscara automática revisável antes da composição e aproximar a qualidade de materiais/aberturas do editor paramétrico. Fila durável/limites de recurso, streaming da IA, cobrança e expansão dos produtos permanecem na matriz geral. Reconstrução densa depende do ensaio Linux/CUDA autorizado; a malha Fase 8 permanece ativa, sem novas métricas ou promoção.
+
+## Marco 4 — base neural + ajustes manuais
+
+Fluxo agora conserva a máscara SAM original e seus prompts, aplica traços sobre uma cópia, permite restaurar a base, gera prévia antes de confirmar e reabre seleção/cor/acabamento persistidos. Corrigido o clareamento indevido da cor usando referência de luminância apenas da área selecionada. Três fotos autorizadas × três acabamentos: zero alterações fora da máscara. Quarto e cozinha exercitados no navegador, incluindo zoom, undo/redo, prévia invalidada, salvamento e recarga.
+
+Relatório, capturas, testes e limitações: [MILESTONE4_PHOTO_REFINEMENT.md](MILESTONE4_PHOTO_REFINEMENT.md). Corte neural parcial ainda requer retoque; acabamento é aproximação visual. Interromper acompanhamento não significa cancelar GPU. Originais e bases preservados; sem nova reconstrução ou promoção de malha.

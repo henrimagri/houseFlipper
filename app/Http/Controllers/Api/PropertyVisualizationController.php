@@ -97,6 +97,35 @@ class PropertyVisualizationController extends Controller
         )]);
     }
 
+    public function selectPhoto(Request $request, string $subjectType, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'asset_id' => ['required', 'integer', 'min:1'],
+            'points' => ['required', 'array', 'min:1', 'max:16'],
+            'points.*' => ['required', 'array:x,y,label'],
+            'points.*.x' => ['required', 'numeric', 'between:0,20000'],
+            'points.*.y' => ['required', 'numeric', 'between:0,20000'],
+            'points.*.label' => ['required', 'integer', 'in:0,1'],
+        ]);
+        if (! collect($data['points'])->contains('label', 1)) {
+            throw ValidationException::withMessages(['points' => 'Inclua ao menos um ponto positivo para selecionar a superfície.']);
+        }
+
+        return response()->json(['data' => $this->visualizations->selectPhoto($request->user(), $this->subjectType($subjectType), $id, (int) $data['asset_id'], $data['points'])]);
+    }
+
+    public function confirmPhotoPreview(Request $request, string $subjectType, int $id, int $previewId): JsonResponse
+    {
+        return response()->json(['data' => $this->visualizations->confirmPhotoPreview($request->user(), $this->subjectType($subjectType), $id, $previewId)]);
+    }
+
+    public function discardPhotoPreview(Request $request, string $subjectType, int $id, int $previewId): JsonResponse
+    {
+        $this->visualizations->discardPhotoPreview($request->user(), $this->subjectType($subjectType), $id, $previewId);
+
+        return response()->json(['data' => ['status' => 'cancelled']]);
+    }
+
     public function simulatePhoto(Request $request, string $subjectType, int $id): JsonResponse
     {
         $data = $request->validate([
@@ -104,7 +133,10 @@ class PropertyVisualizationController extends Controller
             'color' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'opacity' => ['nullable', 'numeric', 'between:0.1,1'],
             'material' => ['nullable', 'string', 'in:paint,wood'],
-            'mask_mode' => ['nullable', 'string', 'in:sam,manual'],
+            'mask_mode' => ['nullable', 'string', 'in:sam,manual,refined'],
+            'base_mask_asset_id' => ['required_if:mask_mode,refined', 'nullable', 'integer', 'min:1'],
+            'finish' => ['nullable', 'in:matte,satin,semigloss'],
+            'preview' => ['sometimes', 'boolean'],
             'mask_strokes' => ['required_if:mask_mode,manual', 'array', 'max:64'],
             'mask_strokes.*' => ['required', 'array:mode,radius,points'],
             'mask_strokes.*.mode' => ['required', 'string', 'in:paint,erase'],
@@ -128,6 +160,9 @@ class PropertyVisualizationController extends Controller
         if (($data['mask_mode'] ?? 'sam') === 'manual' && ! empty($data['points'])) {
             throw ValidationException::withMessages(['points' => 'Use somente traços no modo manual.']);
         }
+        if (($data['mask_mode'] ?? 'sam') !== 'refined' && ! empty($data['base_mask_asset_id'])) {
+            throw ValidationException::withMessages(['base_mask_asset_id' => 'A máscara base exige o modo refinado.']);
+        }
 
         return response()->json(['data' => $this->visualizations->simulatePhoto(
             $request->user(),
@@ -140,6 +175,9 @@ class PropertyVisualizationController extends Controller
             $data['material'] ?? 'paint',
             $data['mask_mode'] ?? 'sam',
             $data['mask_strokes'] ?? [],
+            isset($data['base_mask_asset_id']) ? (int) $data['base_mask_asset_id'] : null,
+            $data['finish'] ?? 'matte',
+            (bool) ($data['preview'] ?? false),
         )]);
     }
 

@@ -154,6 +154,9 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
     Route::post('/visualizations/{subjectType}/{id}/rebuild', [PropertyVisualizationController::class, 'rebuild'])->middleware('throttle:visualization-upload')->whereNumber('id');
     Route::post('/visualizations/{subjectType}/{id}/vision', [PropertyVisualizationController::class, 'analyzeNeural'])->middleware('throttle:visualization-upload')->whereNumber('id');
     Route::post('/visualizations/{subjectType}/{id}/photo-simulations', [PropertyVisualizationController::class, 'simulatePhoto'])->middleware('throttle:visualization-upload')->whereNumber('id');
+    Route::post('/visualizations/{subjectType}/{id}/photo-selections', [PropertyVisualizationController::class, 'selectPhoto'])->middleware('throttle:visualization-upload')->whereNumber('id');
+    Route::post('/visualizations/{subjectType}/{id}/photo-simulations/{previewId}/confirm', [PropertyVisualizationController::class, 'confirmPhotoPreview'])->whereNumber(['id', 'previewId']);
+    Route::delete('/visualizations/{subjectType}/{id}/photo-simulations/{previewId}', [PropertyVisualizationController::class, 'discardPhotoPreview'])->whereNumber(['id', 'previewId']);
     Route::post('/visualizations/{subjectType}/{id}/reconstruct', [PropertyVisualizationController::class, 'reconstructPhotogrammetry'])->middleware('throttle:visualization-upload')->whereNumber('id');
     Route::get('/visualizations/{subjectType}/{id}/reconstruction-jobs/{job}', [PropertyVisualizationController::class, 'reconstructionJob'])->whereNumber(['id', 'job']);
     Route::delete('/visualizations/{subjectType}/{id}/reconstruction-jobs/{job}', [PropertyVisualizationController::class, 'cancelReconstructionJob'])->whereNumber(['id', 'job']);

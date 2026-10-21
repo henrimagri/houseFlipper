@@ -7,7 +7,7 @@ import PropertyMaquetteViewer from '@/components/PropertyMaquetteViewer';
 import PropertyPhotoEditor from '@/components/PropertyPhotoEditor';
 import PropertyPhotoSceneEditor from '@/components/PropertyPhotoSceneEditor';
 import CreateEditableRoom, { type RoomInput } from '@/components/CreateEditableRoom';
-import { roomLabel, visualizationModeLabel, type ModelViewerDiagnostic, type PhotoEditRequest, type PhotoEditSimulation, type VisualizationAsset, type VisualizationPayload, type SceneGraph } from '@/lib/propertyVisualization';
+import { roomLabel, visualizationModeLabel, type ModelViewerDiagnostic, type PhotoEditPoint, type PhotoSelection, type PhotoEditRequest, type PhotoEditSimulation, type VisualizationAsset, type VisualizationPayload, type SceneGraph } from '@/lib/propertyVisualization';
 
 type WorkspaceMode = 'photo_edit' | 'scene_3d' | 'reconstruction_3d';
 type ReconstructionMethod = 'auto' | 'calibrated' | 'tsdf' | 'dense_colmap';
@@ -255,23 +255,31 @@ export default function PropertyViewer() {
     setNotice('Link copiado. Quem abrir precisa da mesma conta autorizada.');
   }
 
-  async function applyPhotoSimulation(request: PhotoEditRequest, _source: VisualizationAsset): Promise<PhotoEditSimulation> {
-    if (request.mask_mode !== 'manual' && request.points.every(point => point.label === 0)) throw new Error('Marque ao menos um ponto da superfície que deseja alterar.');
-    setBusy(true);
-    setNotice(request.mask_mode === 'manual' ? 'Aplicando a máscara desenhada sobre uma cópia da fotografia...' : 'Refinando a máscara e preservando sombras e iluminação da fotografia...');
+  async function preparePhotoSelection(assetId: number, points: PhotoEditPoint[], signal: AbortSignal): Promise<PhotoSelection> {
     try {
-      const response = await api.post(`/visualizations/${subjectType}/${id}/photo-simulations`, request);
-      const payload = response.data.data as VisualizationPayload;
-      setData(payload);
-      const simulation = payload.photo_editing?.simulations?.[0];
-      if (!simulation) throw new Error('O processamento terminou sem devolver a versão editada.');
-      setNotice('Simulação processada e salva sem alterar a fotografia original.');
-      return simulation;
-    } catch (exception: any) {
-      throw new Error(exception.response?.data?.message ?? exception.message ?? 'Não foi possível processar a simulação.');
-    } finally {
-      setBusy(false);
-    }
+      const response = await api.post(`/visualizations/${subjectType}/${id}/photo-selections`, { asset_id: assetId, points }, { signal, timeout: 300000 });
+      return response.data.data as PhotoSelection;
+    } catch (exception: any) { throw new Error(exception.response?.data?.message ?? exception.message ?? 'Não foi possível gerar a seleção neural.'); }
+  }
+
+  async function applyPhotoSimulation(request: PhotoEditRequest, _source: VisualizationAsset, signal: AbortSignal): Promise<PhotoEditSimulation> {
+    try {
+      const response = await api.post(`/visualizations/${subjectType}/${id}/photo-simulations`, { ...request, preview: true }, { signal, timeout: 300000 });
+      return response.data.data as PhotoEditSimulation;
+    } catch (exception: any) { throw new Error(exception.response?.data?.message ?? exception.message ?? 'Não foi possível processar a prévia.'); }
+  }
+
+  async function confirmPhotoSimulation(previewId: number, signal: AbortSignal): Promise<PhotoEditSimulation> {
+    try {
+      const response = await api.post(`/visualizations/${subjectType}/${id}/photo-simulations/${previewId}/confirm`, {}, { signal });
+      const saved = response.data.data as PhotoEditSimulation;
+      if (!signal.aborted) setData(current => current ? { ...current, photo_editing: { simulations: [saved, ...(current.photo_editing?.simulations ?? []).filter(item => item.id !== saved.id)] } } : current);
+      return saved;
+    } catch (exception: any) { throw new Error(exception.response?.data?.message ?? exception.message ?? 'Não foi possível salvar a versão.'); }
+  }
+
+  async function discardPhotoPreview(previewId: number): Promise<void> {
+    await api.delete(`/visualizations/${subjectType}/${id}/photo-simulations/${previewId}`);
   }
 
   const hasFloorplan = useMemo(() => Boolean(data?.gallery.some(item => item.kind === 'floorplan')), [data]);
@@ -342,7 +350,7 @@ export default function PropertyViewer() {
     </div>
 
     <section className={`rounded-3xl border border-slate-200 bg-slate-950 dark:border-slate-700 ${fullscreen ? 'fixed inset-3 z-50 overflow-auto' : 'overflow-hidden'}`}>
-      {mode === 'photo_edit' && <PropertyPhotoEditor photos={availablePhotos} simulations={data.photo_editing?.simulations ?? []} busy={busy} onAnalyze={analyzeNeural} onApply={applyPhotoSimulation} />}
+      {mode === 'photo_edit' && <PropertyPhotoEditor photos={availablePhotos} simulations={data.photo_editing?.simulations ?? []} busy={busy} onAnalyze={analyzeNeural} onPrepare={preparePhotoSelection} onApply={applyPhotoSimulation} onConfirm={confirmPhotoSimulation} onDiscardPreview={discardPhotoPreview} />}
 
       {mode === 'scene_3d' && <>
         <div className="flex flex-wrap items-center gap-3 border-b border-white/10 px-4 py-3 text-slate-200">

@@ -27,6 +27,14 @@ class AiWorkerClient
             ])->throw()->json();
     }
 
+    public function segmentPhoto(string $contents, string $filename, array $points): array
+    {
+        return $this->http()->timeout((int) config('ai.worker.processing_timeout', 1800))
+            ->attach('file', $contents, $filename)
+            ->post($this->endpoint('/v1/vision/segment'), ['points' => json_encode($points, JSON_THROW_ON_ERROR)])
+            ->throw()->json();
+    }
+
     public function simulatePhoto(
         string $contents,
         string $filename,
@@ -36,18 +44,25 @@ class AiWorkerClient
         string $material = 'paint',
         string $maskMode = 'sam',
         array $maskStrokes = [],
+        ?string $baseMask = null,
+        string $finish = 'matte',
     ): array {
-        return $this->http()
+        $request = $this->http()
             ->timeout((int) config('ai.worker.processing_timeout', 1800))
-            ->attach('file', $contents, $filename)
-            ->post($this->endpoint('/v1/vision/simulate'), [
-                'color' => $color,
-                'points' => $points === [] ? null : json_encode($points, JSON_THROW_ON_ERROR),
-                'opacity' => $opacity,
-                'material' => $material,
-                'mask_mode' => $maskMode,
-                ...($maskMode === 'manual' ? ['mask_strokes' => json_encode($maskStrokes, JSON_THROW_ON_ERROR)] : []),
-            ])->throw()->json();
+            ->attach('file', $contents, $filename);
+        if ($baseMask !== null) {
+            $request->attach('base_mask', $baseMask, 'base-mask.png');
+        }
+
+        return $request->post($this->endpoint('/v1/vision/simulate'), [
+            'color' => $color,
+            'points' => $points === [] ? null : json_encode($points, JSON_THROW_ON_ERROR),
+            'opacity' => $opacity,
+            'material' => $material,
+            'mask_mode' => $maskMode,
+            'finish' => $finish,
+            ...(in_array($maskMode, ['manual', 'refined'], true) ? ['mask_strokes' => json_encode($maskStrokes, JSON_THROW_ON_ERROR)] : []),
+        ])->throw()->json();
     }
 
     public function reconstruct(array $files, string $method, string $scope, string $idempotencyKey): array

@@ -52,6 +52,8 @@ export type VisualizationAsset = {
 
 export type PhotoEditPoint = { x: number; y: number; label: 0 | 1 };
 export type PhotoMaskStroke = { mode: 'paint' | 'erase'; radius: number; points: Array<{ x: number; y: number }> };
+export type PhotoSelection = { mask_asset_id: number; mask_url: string; source_asset_id: number; points: PhotoEditPoint[]; dimensions: { width: number; height: number } };
+export type PhotoFinish = 'matte' | 'satin' | 'semigloss';
 
 export type PhotoEditRequest = {
   asset_id: number;
@@ -59,8 +61,11 @@ export type PhotoEditRequest = {
   opacity: number;
   material: 'paint' | 'wood';
   points: PhotoEditPoint[];
-  mask_mode?: 'sam' | 'manual';
+  mask_mode?: 'sam' | 'manual' | 'refined';
   mask_strokes?: PhotoMaskStroke[];
+  base_mask_asset_id?: number;
+  finish?: PhotoFinish;
+  preview?: boolean;
 };
 
 export type PhotoEditSimulation = {
@@ -76,9 +81,15 @@ export type PhotoEditSimulation = {
   opacity: number;
   material: 'paint' | 'wood';
   points: PhotoEditPoint[];
-  mask_mode?: 'sam' | 'manual';
+  mask_mode?: 'sam' | 'manual' | 'refined';
   mask_strokes?: PhotoMaskStroke[];
   metadata_available?: boolean;
+  preview_id?: number;
+  base_mask_asset_id?: number | null;
+  mask_url?: string | null;
+  base_mask_url?: string | null;
+  finish?: PhotoFinish;
+  dimensions?: { width: number; height: number } | null;
 };
 
 export type ModelViewerDiagnostic = {

@@ -16,6 +16,8 @@ use App\Services\Ai\AiWorkerClient;
 use App\Services\Ai\ProductEntitlement;
 use App\Services\DocumentMalwareScanner;
 use App\Support\OpportunityPhotoPathPolicy;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -110,30 +112,8 @@ class PropertyVisualizationService
                 $job = $sourceJobs->first();
             }
             $result = $job?->result ?? [];
-            $promptPoints = collect(data_get($result, 'segmentation.prompt_points', []));
-            $promptLabels = collect(data_get($result, 'segmentation.prompt_labels', []));
 
-            return [
-                'id' => 'asset-'.$simulation->id,
-                'status' => 'completed',
-                'source_asset_id' => $sourceId,
-                'source_url' => $source ? '/api/visualizations/'.$subjectType.'/'.$subjectId.'/assets/'.$source->id.'/file' : null,
-                'result_url' => '/api/visualizations/'.$subjectType.'/'.$subjectId.'/assets/'.$simulation->id.'/file',
-                'comparison_url' => optional($visualization->assets->firstWhere('id', data_get($result, 'assets.comparison_id')), fn (PropertyVisualizationAsset $asset) => '/api/visualizations/'.$subjectType.'/'.$subjectId.'/assets/'.$asset->id.'/file'),
-                'mask_mode' => data_get($result, 'editor_input.mask_mode', 'sam'),
-                'mask_strokes' => data_get($result, 'editor_input.mask_strokes', []),
-                'metadata_available' => $job !== null,
-                'color' => data_get($result, 'composition.color', '#d8c6ae'),
-                'opacity' => data_get($result, 'composition.opacity', 0.72),
-                'material' => data_get($result, 'composition.material', 'paint'),
-                'points' => $promptPoints->map(fn ($point, int $index) => [
-                    'x' => (float) ($point[0] ?? 0),
-                    'y' => (float) ($point[1] ?? 0),
-                    'label' => (int) ($promptLabels->get($index, 1)),
-                ])->all(),
-                'created_at' => optional($simulation->created_at)->toISOString(),
-                'label' => 'Simulação '.$simulation->id,
-            ];
+            return $this->photoSimulationPayload($visualization, $simulation, $result, $subjectType, $subjectId, $job !== null);
         })->values()->all();
 
         if ($visualization->level !== $level || $visualization->status !== $status) {
@@ -468,6 +448,35 @@ class PropertyVisualizationService
         $job->fill(['result' => $storedResult, 'status' => 'completed', 'completed_at' => now()])->save();
     }
 
+    public function selectPhoto(User $user, string $subjectType, int $subjectId, int $assetId, array $points): array
+    {
+        $this->entitlement->assert($user, 'renovation_simulation');
+        $visualization = $this->show($user, $subjectType, $subjectId);
+        $asset = $visualization->assets()->whereIn('kind', ['photo', 'panorama'])->whereKey($assetId)->firstOrFail();
+        $disk = Storage::disk(config('visualizations.disk'));
+        abort_unless($disk->exists($asset->path), 404, 'Fotografia não encontrada.');
+        $job = $this->startPhotoProcessingJob($visualization, $user, 'photo_selection', [$assetId]);
+        try {
+            $result = $this->worker->segmentPhoto($disk->get($asset->path), $asset->original_name, $points);
+            abort_unless(($result['status'] ?? null) === 'completed', 502, 'O worker não concluiu a seleção.');
+            $mask = $this->importWorkerArtifact($visualization, $result['job_id'], data_get($result, 'segmentation.artifact'), 'segmentation_mask', 'neural-mask.png', 'image/png', 'source_'.$assetId);
+            abort_unless($mask, 502, 'O worker não devolveu a máscara da seleção.');
+            $this->validateMaskBytes($disk->get($mask->path));
+            $result['assets'] = ['mask_id' => $mask->id];
+            $result['editor_input'] = ['points' => $points];
+            $job->fill(['worker_job_id' => $result['job_id'], 'result' => $result, 'status' => 'completed', 'completed_at' => now()])->save();
+
+            return ['mask_asset_id' => $mask->id, 'mask_url' => $this->photoAssetUrl($subjectType, $subjectId, $mask->id), 'source_asset_id' => $assetId,
+                'points' => $points, 'dimensions' => data_get($result, 'segmentation.dimensions')];
+        } catch (\Throwable $exception) {
+            $job->fill(['status' => 'failed', 'error' => 'Falha ao preparar a seleção da fotografia.', 'completed_at' => now()])->save();
+            if ($exception instanceof RequestException || $exception instanceof ConnectionException) {
+                abort(502, 'O serviço de seleção está indisponível. Tente novamente.');
+            }
+            throw $exception;
+        }
+    }
+
     public function simulatePhoto(
         User $user,
         string $subjectType,
@@ -479,40 +488,184 @@ class PropertyVisualizationService
         string $material = 'paint',
         string $maskMode = 'sam',
         array $maskStrokes = [],
+        ?int $baseMaskAssetId = null,
+        string $finish = 'matte',
+        bool $preview = false,
     ): array {
         $this->entitlement->assert($user, 'renovation_simulation');
         $visualization = $this->show($user, $subjectType, $subjectId);
         $asset = $visualization->assets()->whereIn('kind', ['photo', 'panorama'])->whereKey($assetId)->firstOrFail();
         $disk = Storage::disk(config('visualizations.disk'));
         abort_unless($disk->exists($asset->path), 404, 'Fotografia não encontrada.');
-        $job = $this->startProcessingJob($visualization, $user, 'photo_simulation', [$asset->id]);
+        $baseMask = null;
+        $selectionPoints = null;
+        $selectionDimensions = null;
+        if ($maskMode === 'refined') {
+            $mask = $visualization->assets()->whereKey($baseMaskAssetId)->where('kind', 'segmentation_mask')->where('room_key', 'source_'.$assetId)->firstOrFail();
+            $selection = $visualization->processingJobs()->where('kind', 'photo_selection')->where('status', 'completed')
+                ->where('result->assets->mask_id', $mask->id)->get()
+                ->first(fn (PropertyProcessingJob $selection) => in_array($assetId, $selection->input_asset_ids ?? [], true));
+            abort_unless($selection, 422, 'Utilize uma máscara neural preparada para esta fotografia.');
+            $selectionPoints = $this->photoPromptPoints($selection->result);
+            $selectionDimensions = data_get($selection->result, 'segmentation.dimensions');
+            abort_unless($disk->exists($mask->path), 404, 'Máscara base não encontrada.');
+            $baseMask = $disk->get($mask->path);
+            abort_unless(hash_equals($mask->checksum, hash('sha256', $baseMask)), 422, 'A máscara base foi alterada; prepare outra seleção.');
+            $this->validateMaskBytes($baseMask);
+        }
+        $job = $this->startPhotoProcessingJob($visualization, $user, $preview ? 'photo_preview' : 'photo_simulation', [$asset->id]);
 
         try {
             $result = $this->worker->simulatePhoto(
                 $disk->get($asset->path),
                 $asset->original_name,
                 $color,
-                $points,
+                $maskMode === 'refined' ? [] : $points,
                 $opacity,
                 $material,
                 $maskMode,
                 $maskStrokes,
+                $baseMask,
+                $finish,
             );
-            $result['editor_input'] = ['mask_mode' => $maskMode, 'mask_strokes' => $maskStrokes];
+            abort_unless(($result['status'] ?? null) === 'completed', 502, 'O worker não concluiu a simulação.');
+            $result['editor_input'] = ['mask_mode' => $maskMode, 'mask_strokes' => $maskStrokes, 'base_mask_asset_id' => $baseMaskAssetId, 'finish' => $finish, 'points' => $points];
+            if ($maskMode === 'refined') {
+                $result['editor_input']['selection_points'] = $selectionPoints;
+                $result['editor_input']['selection_dimensions'] = $selectionDimensions;
+            }
             $sourceKey = 'source_'.$asset->id;
-            $this->importWorkerArtifact($visualization, $result['job_id'], data_get($result, 'segmentation.artifact'), 'segmentation_mask', 'paint-mask.png', 'image/png', $sourceKey);
+            $mask = $this->importWorkerArtifact($visualization, $result['job_id'], data_get($result, 'segmentation.artifact'), 'segmentation_mask', 'paint-mask.png', 'image/png', $sourceKey);
+            abort_if($preview && ! $mask, 502, 'A prévia não contém a máscara aplicada.');
             $this->importWorkerArtifact($visualization, $result['job_id'], data_get($result, 'segmentation.overlay_artifact'), 'vision_overlay', 'paint-mask-overlay.png', 'image/png', $sourceKey);
             $comparison = $this->importWorkerArtifact($visualization, $result['job_id'], data_get($result, 'comparison_artifact'), 'photo_comparison', 'antes-depois-'.$asset->id.'.png', 'image/png', $sourceKey);
-            $simulation = $this->importWorkerArtifact($visualization, $result['job_id'], data_get($result, 'simulation_artifact'), 'photo_simulation', 'simulacao-'.$asset->id.'.png', 'image/png', $sourceKey);
+            $simulation = $this->importWorkerArtifact($visualization, $result['job_id'], data_get($result, 'simulation_artifact'), $preview ? 'photo_preview' : 'photo_simulation', 'simulacao-'.$asset->id.'.png', 'image/png', $sourceKey);
             abort_unless($simulation, 502, 'O worker não devolveu a imagem da simulação.');
-            $result['assets'] = ['simulation_id' => $simulation->id, 'comparison_id' => $comparison?->id];
+            $result['assets'] = ['simulation_id' => $simulation->id, 'comparison_id' => $comparison?->id, 'mask_id' => $mask?->id];
             $job->fill(['worker_job_id' => $result['job_id'], 'result' => $result, 'status' => 'completed', 'completed_at' => now()])->save();
+
+            if ($preview) {
+                return $this->photoSimulationPayload($visualization->fresh('assets'), $simulation, $result, $subjectType, $subjectId);
+            }
 
             return $this->payload($visualization->fresh('assets', 'versions'), $user, $subjectType, $subjectId);
         } catch (\Throwable $exception) {
-            $job->fill(['status' => 'failed', 'error' => Str::limit($exception->getMessage(), 1000, ''), 'completed_at' => now()])->save();
+            $job->fill(['status' => 'failed', 'error' => 'Falha ao compor a simulação fotográfica.', 'completed_at' => now()])->save();
+            if ($exception instanceof RequestException || $exception instanceof ConnectionException) {
+                abort(502, 'O serviço de pintura está indisponível. A versão não foi salva. Tente novamente.');
+            }
             throw $exception;
         }
+    }
+
+    private function photoAssetUrl(string $subjectType, int $subjectId, ?int $assetId): ?string
+    {
+        return $assetId ? '/api/visualizations/'.$subjectType.'/'.$subjectId.'/assets/'.$assetId.'/file' : null;
+    }
+
+    private function photoSimulationPayload(PropertyVisualization $visualization, PropertyVisualizationAsset $simulation, array $result, string $subjectType, int $subjectId, bool $metadataAvailable = true): array
+    {
+        $sourceId = (int) substr((string) $simulation->room_key, 7);
+        $points = data_get($result, 'editor_input.selection_points');
+        $dimensions = data_get($result, 'editor_input.selection_dimensions', data_get($result, 'segmentation.dimensions'));
+        // Recover earlier refined versions from their authorized immutable neural selection.
+        if ($points === null && data_get($result, 'editor_input.mask_mode') === 'refined' && ($baseId = data_get($result, 'editor_input.base_mask_asset_id'))) {
+            $selection = $visualization->processingJobs()->where('kind', 'photo_selection')->where('status', 'completed')
+                ->where('result->assets->mask_id', $baseId)->get()
+                ->first(fn (PropertyProcessingJob $selection) => in_array($sourceId, $selection->input_asset_ids ?? [], true));
+            if ($selection) {
+                $points = $this->photoPromptPoints($selection->result);
+                $dimensions = data_get($selection->result, 'segmentation.dimensions');
+            }
+        }
+        if ($points === null) {
+            $points = $this->photoPromptPoints($result);
+        }
+        $assetUrl = fn ($id) => $id && $visualization->assets->contains('id', (int) $id) ? $this->photoAssetUrl($subjectType, $subjectId, (int) $id) : null;
+
+        return [
+            'id' => 'asset-'.$simulation->id,
+            'status' => 'completed',
+            'preview_id' => $simulation->kind === 'photo_preview' ? $simulation->id : null,
+            'source_asset_id' => $sourceId,
+            'source_url' => $assetUrl($sourceId),
+            'result_url' => $assetUrl($simulation->id),
+            'comparison_url' => $assetUrl(data_get($result, 'assets.comparison_id')),
+            'mask_url' => $assetUrl(data_get($result, 'assets.mask_id')),
+            'base_mask_url' => $assetUrl(data_get($result, 'editor_input.base_mask_asset_id')),
+            'base_mask_asset_id' => data_get($result, 'editor_input.base_mask_asset_id'),
+            'mask_mode' => data_get($result, 'editor_input.mask_mode', 'sam'),
+            'mask_strokes' => data_get($result, 'editor_input.mask_strokes', []),
+            'finish' => data_get($result, 'editor_input.finish', data_get($result, 'composition.finish', 'matte')),
+            'metadata_available' => $metadataAvailable,
+            'color' => data_get($result, 'composition.color', '#d8c6ae'),
+            'opacity' => data_get($result, 'composition.opacity', 0.72),
+            'material' => data_get($result, 'composition.material', 'paint'),
+            'points' => $points,
+            'dimensions' => $dimensions,
+            'created_at' => optional($simulation->created_at)->toISOString(),
+            'label' => ($simulation->kind === 'photo_preview' ? 'Prévia ' : 'Simulação ').$simulation->id,
+        ];
+    }
+
+    private function photoPromptPoints(array $result): array
+    {
+        $points = data_get($result, 'editor_input.points');
+        if (is_array($points)) {
+            return $points;
+        }
+        $labels = data_get($result, 'segmentation.prompt_labels', []);
+
+        return collect(data_get($result, 'segmentation.prompt_points', []))->map(fn ($point, $index) => ['x' => (float) ($point[0] ?? 0), 'y' => (float) ($point[1] ?? 0), 'label' => (int) ($labels[$index] ?? 1)])->all();
+    }
+
+    public function confirmPhotoPreview(User $user, string $subjectType, int $subjectId, int $previewId): array
+    {
+        $this->entitlement->assert($user, 'renovation_simulation');
+        $visualization = $this->show($user, $subjectType, $subjectId);
+
+        return DB::transaction(function () use ($visualization, $subjectType, $subjectId, $previewId): array {
+            $asset = $visualization->assets()->whereKey($previewId)->lockForUpdate()->firstOrFail();
+            abort_unless(in_array($asset->kind, ['photo_preview', 'photo_simulation'], true), 409, 'Esta prévia não pode ser confirmada.');
+            $job = $visualization->processingJobs()->whereIn('kind', ['photo_preview', 'photo_simulation'])->where('status', 'completed')
+                ->where('result->assets->simulation_id', $previewId)->lockForUpdate()->firstOrFail();
+            abort_unless(in_array((int) substr((string) $asset->room_key, 7), $job->input_asset_ids ?? [], true), 409);
+            $asset->update(['kind' => 'photo_simulation']);
+            $job->update(['kind' => 'photo_simulation']);
+
+            return $this->photoSimulationPayload($visualization->fresh('assets'), $asset, $job->result, $subjectType, $subjectId);
+        });
+    }
+
+    public function discardPhotoPreview(User $user, string $subjectType, int $subjectId, int $previewId): void
+    {
+        $this->entitlement->assert($user, 'renovation_simulation');
+        $visualization = $this->show($user, $subjectType, $subjectId);
+        DB::transaction(function () use ($visualization, $previewId): void {
+            $asset = $visualization->assets()->whereKey($previewId)->lockForUpdate()->firstOrFail();
+            abort_unless(in_array($asset->kind, ['photo_preview', 'photo_discarded'], true), 409, 'Uma versão salva não pode ser descartada como prévia.');
+            $job = $visualization->processingJobs()->where('kind', 'photo_preview')->where('result->assets->simulation_id', $previewId)->lockForUpdate()->firstOrFail();
+            $asset->update(['kind' => 'photo_discarded']);
+            $job->update(['status' => 'cancelled']);
+        });
+    }
+
+    private function validateMaskBytes(string $bytes): void
+    {
+        $size = @getimagesizefromstring($bytes);
+        abort_unless($size && ($size[2] ?? null) === IMAGETYPE_PNG && strlen($bytes) >= 26
+            && ord($bytes[25]) === 0 && $size[0] > 0 && $size[1] > 0 && $size[0] <= 20000 && $size[1] <= 20000, 422, 'A máscara base deve ser PNG em escala de cinza válido.');
+    }
+
+    private function startPhotoProcessingJob(PropertyVisualization $visualization, User $user, string $kind, array $assetIds): PropertyProcessingJob
+    {
+        return DB::transaction(function () use ($visualization, $user, $kind, $assetIds): PropertyProcessingJob {
+            PropertyVisualization::query()->whereKey($visualization->id)->lockForUpdate()->firstOrFail();
+            abort_if($visualization->processingJobs()->whereIn('kind', ['photo_selection', 'photo_preview', 'photo_simulation'])->where('status', 'processing')
+                ->where('started_at', '>=', now()->subSeconds((int) config('ai.worker.processing_timeout', 1800) + 60))->exists(), 409, 'Aguarde o processamento fotográfico em andamento.');
+
+            return $this->startProcessingJob($visualization, $user, $kind, $assetIds);
+        });
     }
 
     private function startProcessingJob(PropertyVisualization $visualization, User $user, string $kind, array $assetIds): PropertyProcessingJob

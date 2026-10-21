@@ -45,3 +45,7 @@ Relatórios pequenos versionados: `sam-grouping-report.json`, `sam-runtime-repor
 ## Limites
 
 A correção resolve o contrato dos prompts. Não resolve classificação arquitetônica, reflexos, bordas finas ou ausência de detecção. O usuário ainda não pode retocar o raster SAM antes da composição; a máscara manual começa vazia. Próxima prioridade: prévia editável da seleção automática e avaliação em mais fotos autorizadas. Comparação funcional Suvinil com 13 itens registrada em `COMMERCIAL_READINESS_MATRIX.md`, distinguindo HTML observado de runtime não verificado. Fase 8 permanece ativa; nenhuma reconstrução densa, nova métrica geométrica ou promoção de malha neste marco.
+
+## Marco 4 — máscara neural retocável
+
+A limitação de não retocar a base SAM foi resolvida no fluxo integrado: segmentação separada, preview sobre foto, pincel/borracha sem perder a base e confirmação antes da composição. Sem fechamento morfológico agressivo no novo caminho. SAM CUDA executado em sala de brincar, cozinha e quarto; baseline direto da Simulação 80 preservado. DETR não teve limiar global reduzido nem caixas confundidas com máscaras. Resultados, tempos, classes, licenças, QA e limites: [MILESTONE4_PHOTO_REFINEMENT.md](MILESTONE4_PHOTO_REFINEMENT.md). Ausência de ground truth impede alegar IoU/Dice.

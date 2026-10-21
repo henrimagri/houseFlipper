@@ -7,6 +7,7 @@ import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncIterator
+from PIL import Image
 
 from .runtime_diagnostics import enable_native_diagnostics, record_event, runtime_snapshot
 
@@ -143,8 +144,21 @@ async def vision_depth(file: UploadFile) -> dict:
 
 
 @app.post("/v1/vision/segment", dependencies=[Depends(authorize)])
-async def vision_segment(file: UploadFile) -> dict:
-    return await run_vision(file)
+async def vision_segment(file: UploadFile = File(...), points: str | None = Form(default=None)) -> dict:
+    try:
+        if not points or len(points) > 16_384:
+            raise ValueError("Selecione ao menos um ponto positivo.")
+        decoded_points = json.loads(points)
+    except (json.JSONDecodeError, ValueError) as exception:
+        raise HTTPException(status_code=422, detail=str(exception)) from None
+    data = await validate_image(file)
+    with tempfile.TemporaryDirectory(prefix="flipcontrol-segment-") as temporary:
+        source = Path(temporary) / "source"
+        source.write_bytes(data)
+        try:
+            return vision_pipeline.segment_image(source, decoded_points)
+        except (ValueError, OSError, Image.DecompressionBombError) as exception:
+            raise HTTPException(status_code=422, detail=str(exception)) from None
 
 
 @app.post("/v1/vision/simulate", dependencies=[Depends(authorize)])
@@ -156,25 +170,38 @@ async def vision_simulate(
     material: str = Form(default="paint"),
     mask_mode: str = Form(default="sam"),
     mask_strokes: str | None = Form(default=None),
+    base_mask: UploadFile | None = File(default=None),
+    finish: str = Form(default="matte"),
 ) -> dict:
     if not color.startswith("#") or len(color) != 7 or any(char not in "0123456789abcdefABCDEF" for char in color[1:]):
         raise HTTPException(status_code=422, detail="Cor hexadecimal inválida.")
     if material not in {"paint", "wood"} or not 0.1 <= opacity <= 1.0:
         raise HTTPException(status_code=422, detail="Parâmetros de simulação inválidos.")
-    if mask_mode not in {"sam", "manual"}:
+    if mask_mode not in {"sam", "manual", "refined"}:
         raise HTTPException(status_code=422, detail="Modo de máscara inválido.")
+    if finish not in {"matte", "satin", "semigloss"}:
+        raise HTTPException(status_code=422, detail="Acabamento inválido.")
+    if (mask_mode == "refined") != (base_mask is not None):
+        raise HTTPException(status_code=422, detail="Máscara base é obrigatória e exclusiva do modo refinado.")
     decoded_strokes = None
-    if mask_mode == "manual":
+    if mask_mode in {"manual", "refined"}:
         try:
+            if mask_mode == "refined" and mask_strokes is None:
+                mask_strokes = "[]"
             if not mask_strokes or len(mask_strokes) > 2_000_000:
                 raise ValueError("Máscara manual vazia ou muito grande.")
             decoded_strokes = json.loads(mask_strokes)
-            vision_pipeline.validate_manual_strokes(decoded_strokes)
+            vision_pipeline.validate_manual_strokes(decoded_strokes, allow_empty=mask_mode == "refined")
         except (json.JSONDecodeError, ValueError) as exception:
             raise HTTPException(status_code=422, detail=str(exception)) from None
     elif mask_strokes is not None:
         raise HTTPException(status_code=422, detail="Traços manuais exigem o modo manual.")
     data = await validate_image(file)
+    base_data = None
+    if base_mask is not None:
+        if base_mask.content_type != "image/png":
+            raise HTTPException(status_code=422, detail="Máscara base deve ser PNG.")
+        base_data = await validate_image(base_mask)
     decoded_points = None
     if points:
         try:
@@ -187,10 +214,15 @@ async def vision_simulate(
     with tempfile.TemporaryDirectory(prefix="flipcontrol-simulation-") as temporary:
         source = Path(temporary) / f"source{suffix}"
         source.write_bytes(data)
+        base_path = None
+        if base_data is not None:
+            base_path = Path(temporary) / "base-mask.png"
+            base_path.write_bytes(base_data)
         try:
             return vision_pipeline.simulate(source, color, decoded_points, opacity, material,
-                                            mask_mode=mask_mode, mask_strokes=decoded_strokes)
-        except (ValueError, OSError) as exception:
+                                            mask_mode=mask_mode, mask_strokes=decoded_strokes,
+                                            base_mask_path=base_path, finish=finish)
+        except (ValueError, OSError, Image.DecompressionBombError) as exception:
             raise HTTPException(status_code=422, detail=str(exception)) from exception
 
 
@@ -297,7 +329,7 @@ def artifact(job_id: str, name: str, x_worker_scope: str | None = Header(default
     # Legacy synchronous vision jobs retain their internal-token contract.
     # Reconstruction ownership cannot disappear while result.json is written.
     legacy_vision = (
-        job_result.get("kind") in {"vision", "photo_simulation"}
+        job_result.get("kind") in {"vision", "photo_simulation", "vision_segmentation"}
         and not (target.parent / "job-status.json").exists()
         and not job_result.get("scope_hash")
     )

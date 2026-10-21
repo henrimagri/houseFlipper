@@ -27,9 +27,10 @@ export function appendStrokePoint(stroke, point) {
 }
 
 // Radius is relative to the smaller side, identical to the worker contract.
-export function drawMask(context, width, height, strokes) {
+export function drawMask(context, width, height, strokes, base = null) {
   context.clearRect(0, 0, width, height);
   context.save();
+  if (base) context.drawImage(base, 0, 0, width, height);
   for (const stroke of strokes) {
     if (!stroke.points.length) continue;
     const radius = Math.max(0.5, stroke.radius * Math.min(width, height));
@@ -59,3 +60,23 @@ export function hasMaskPixels(pixels) {
 }
 
 export function validPhotoColor(color) { return /^#[0-9a-f]{6}$/i.test(color); }
+
+// Private SAM PNG is grayscale, not an alpha mask: opaque black must be excluded.
+export function grayscaleMaskToOverlay(pixels) {
+  const result = new Uint8ClampedArray(pixels.length);
+  for (let i = 0; i < pixels.length; i += 4) {
+    result[i] = 34; result[i + 1] = 211; result[i + 2] = 238;
+    result[i + 3] = Math.round(((pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3) * pixels[i + 3] / 255);
+  }
+  return result;
+}
+
+export function createRequestGate() {
+  let active = null;
+  return {
+    start() { if (active) return null; active = new AbortController(); return active; },
+    current(request) { return active === request && !request.signal.aborted; },
+    end(request) { if (active === request) active = null; },
+    cancel() { active?.abort(); active = null; },
+  };
+}

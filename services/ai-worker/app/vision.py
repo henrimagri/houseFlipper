@@ -63,6 +63,8 @@ def _finish_measurement(started: float) -> tuple[float, float]:
 
 def load_image(path: Path) -> Image.Image:
     with Image.open(path) as opened:
+        if opened.width * opened.height > MAX_PIXELS:
+            raise ValueError("Imagem excede o limite de 16 megapixels.")
         opened.verify()
     with Image.open(path) as opened:
         image = ImageOps.exif_transpose(opened).convert("RGB")
@@ -186,7 +188,45 @@ class VisionPipeline:
         with self.operation_lock:
             return self._segment_locked(image, output_dir, points)
 
-    def _segment_locked(self, image: Image.Image, output_dir: Path, points: list[Any] | None = None) -> dict[str, Any]:
+    @staticmethod
+    def validate_sam_points(points: Any, size: tuple[int, int]) -> list[dict[str, float | int]]:
+        if not isinstance(points, list) or not 1 <= len(points) <= 16:
+            raise ValueError("Selecione entre 1 e 16 pontos, incluindo uma região positiva.")
+        valid = []
+        for point in points:
+            if isinstance(point, dict):
+                x, y, label = point.get("x"), point.get("y"), point.get("label", 1)
+            elif isinstance(point, list) and len(point) in (2, 3):
+                x, y, label = point[0], point[1], point[2] if len(point) == 3 else 1
+            else:
+                raise ValueError("Ponto de segmentação inválido.")
+            if (not isinstance(x, (int, float)) or isinstance(x, bool)
+                    or not isinstance(y, (int, float)) or isinstance(y, bool)
+                    or not 0 <= x <= size[0] - 1 or not 0 <= y <= size[1] - 1
+                    or not math.isfinite(x) or not math.isfinite(y)
+                    or isinstance(label, bool) or not isinstance(label, int) or label not in (0, 1)):
+                raise ValueError("Pontos devem estar dentro da foto orientada, com rótulo 0 ou 1.")
+            valid.append({"x": float(x), "y": float(y), "label": label})
+        if not any(point["label"] == 1 for point in valid):
+            raise ValueError("A segmentação exige ao menos um ponto positivo.")
+        return valid
+
+    def segment_image(self, input_path: Path, points: Any) -> dict[str, Any]:
+        image = load_image(input_path)
+        valid_points = self.validate_sam_points(points, image.size)
+        with self.operation_lock, native_stage("segment_photo", source=input_path.name):
+            job_id = str(uuid.uuid4())
+            output_dir = _artifact_root() / job_id
+            output_dir.mkdir(parents=True, exist_ok=False)
+            segmentation = self._segment_locked(image, output_dir, valid_points, preserve_details=True)
+        segmentation.update({"provenance": "sam2_prompted_mask", "model_used": True})
+        result = {"job_id": job_id, "status": "completed", "kind": "vision_segmentation",
+                  "segmentation": segmentation,
+                  "limitations": "Máscara SAM guiada por pontos; revise os limites antes de aplicar pintura."}
+        (output_dir / "result.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+        return result
+
+    def _segment_locked(self, image: Image.Image, output_dir: Path, points: list[Any] | None = None, *, preserve_details: bool = False) -> dict[str, Any]:
         processor, model = self._load_sam()
         if not points:
             points = [{"x": image.width * 0.5, "y": image.height * 0.6, "label": 1}]
@@ -219,7 +259,7 @@ class VisionPipeline:
         if masks.ndim != 4 or tuple(masks.shape[:2]) != (1, 1):
             raise ValueError("SAM 2 deve retornar uma máscara para o único objeto solicitado.")
         combined = masks[0, 0].numpy().astype(np.uint8) * 255
-        combined = self.refine_surface_mask(combined, safe_points, point_labels)
+        combined = self.refine_surface_mask(combined, safe_points, point_labels, preserve_details=preserve_details)
         mask_path = output_dir / "mask.png"
         Image.fromarray(combined, mode="L").save(mask_path)
         overlay = image.copy().convert("RGBA")
@@ -243,11 +283,12 @@ class VisionPipeline:
             "mask_count": int(masks.shape[0]),
             "coverage_ratio": round(coverage, 6),
             "dimensions": {"width": image.width, "height": image.height},
-            "edge_refinement": "connected_positive_regions+morphological_close+antialiased_composition",
+            "edge_refinement": ("connected_positive_regions_preserving_holes_and_thin_edges" if preserve_details
+                                else "connected_positive_regions+morphological_close+antialiased_composition"),
         }
 
     @staticmethod
-    def refine_surface_mask(mask: np.ndarray, points: list[list[float]], labels: list[int]) -> np.ndarray:
+    def refine_surface_mask(mask: np.ndarray, points: list[list[float]], labels: list[int], *, preserve_details: bool = False) -> np.ndarray:
         """Keep positive connected regions and remove isolated SAM leakage."""
         binary = (mask > 127).astype(np.uint8)
         _count, components = cv2.connectedComponents(binary)
@@ -263,8 +304,9 @@ class VisionPipeline:
                 selected.add(component)
         if selected:
             binary = np.isin(components, list(selected)).astype(np.uint8)
-        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, np.ones((5, 5), dtype=np.uint8))
-        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, np.ones((3, 3), dtype=np.uint8))
+        if not preserve_details:
+            binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, np.ones((5, 5), dtype=np.uint8))
+            binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, np.ones((3, 3), dtype=np.uint8))
         return binary * 255
 
     @staticmethod
@@ -330,8 +372,8 @@ class VisionPipeline:
         }
 
     @staticmethod
-    def validate_manual_strokes(strokes: Any) -> None:
-        if not isinstance(strokes, list) or not 1 <= len(strokes) <= 64:
+    def validate_manual_strokes(strokes: Any, *, allow_empty: bool = False) -> None:
+        if not isinstance(strokes, list) or not (0 if allow_empty else 1) <= len(strokes) <= 64:
             raise ValueError("A máscara manual exige entre 1 e 64 traços.")
 
         def bounded_number(value: Any, minimum: float, maximum: float) -> bool:
@@ -356,11 +398,13 @@ class VisionPipeline:
             raise ValueError("A máscara excede o limite de 16384 pontos.")
 
     @staticmethod
-    def rasterize_manual_mask(size: tuple[int, int], strokes: Any) -> Image.Image:
+    def rasterize_manual_mask(size: tuple[int, int], strokes: Any, *, base_mask: Image.Image | None = None) -> Image.Image:
         """Rasterize only user-painted pixels; no segmentation or surface inference."""
-        VisionPipeline.validate_manual_strokes(strokes)
+        VisionPipeline.validate_manual_strokes(strokes, allow_empty=base_mask is not None)
         width, height = size
-        mask = Image.new("L", size, 0)
+        if base_mask is not None and (base_mask.size != size or base_mask.mode != "L"):
+            raise ValueError("A máscara base deve manter as dimensões exatas da foto.")
+        mask = base_mask.copy() if base_mask is not None else Image.new("L", size, 0)
         draw = ImageDraw.Draw(mask)
         for stroke in strokes:
             fill = 255 if stroke["mode"] == "paint" else 0
@@ -373,6 +417,23 @@ class VisionPipeline:
                 draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=fill)
         if mask.getbbox() is None:
             raise ValueError("A máscara está vazia ou foi totalmente apagada. Pinte uma região antes de aplicar.")
+        return mask
+
+    @staticmethod
+    def load_base_mask(path: Path, size: tuple[int, int]) -> Image.Image:
+        if not 0 < path.stat().st_size <= 10 * 1024 * 1024:
+            raise ValueError("Máscara base vazia ou acima de 10 MB.")
+        with Image.open(path) as opened:
+            if (opened.format != "PNG" or opened.mode not in ("L", "1")
+                    or opened.size != size or opened.width * opened.height > MAX_PIXELS):
+                raise ValueError("A máscara deve ser PNG em escala de cinza, sem animação/rotação, nas dimensões exatas da foto orientada.")
+            opened.verify()
+        with Image.open(path) as opened:
+            if getattr(opened, "n_frames", 1) != 1 or opened.getexif().get(274, 1) != 1:
+                raise ValueError("Máscaras PNG animadas ou com orientação EXIF não são permitidas.")
+            mask = opened.convert("L")
+        if mask.getbbox() is None:
+            raise ValueError("A máscara base está vazia.")
         return mask
 
     @staticmethod
@@ -402,13 +463,40 @@ class VisionPipeline:
         material: str = "paint",
         *,
         refine_mask: bool = True,
+        finish: str = "matte",
+        normalize_surface: bool = False,
     ) -> Image.Image:
         """Recolors a segmented surface while preserving source luminance and texture."""
+        if finish not in {"matte", "satin", "semigloss"}:
+            raise ValueError("Acabamento inválido.")
+        if mask.size != image.size:
+            raise ValueError("A máscara deve ter as dimensões exatas da fotografia.")
         source = np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
+        original_mask = np.asarray(mask.convert("L"), dtype=np.float32) / 255.0
         target = np.asarray(ImageColor.getrgb(color), dtype=np.float32) / 255.0
         luminance = source[..., 0] * 0.2126 + source[..., 1] * 0.7152 + source[..., 2] * 0.0722
-        target_luminance = max(float(target[0] * 0.2126 + target[1] * 0.7152 + target[2] * 0.0722), 0.08)
-        relight = np.clip(target.reshape(1, 1, 3) * (luminance[..., None] / target_luminance), 0.0, 1.0)
+        if normalize_surface:
+            selected_luminance = luminance[original_mask > 0.02]
+            if not selected_luminance.size:
+                raise ValueError("A máscara não contém uma superfície selecionada.")
+            # A robust local brightness reference, not recovered physical reflectance.
+            # Exterior windows/floors must not change the chosen wall's reference.
+            median = float(np.median(selected_luminance))
+            illumination = np.clip(luminance / max(median, 0.02), 0, 2.0)
+            relight = np.clip(target.reshape(1, 1, 3) * illumination[..., None], 0.0, 1.0)
+            upper = float(np.percentile(selected_luminance, 95))
+            observed_highlights = np.clip((luminance - median) / max(upper - median, 0.1), 0, 1)
+            strength = {"matte": 0.0, "satin": 0.06, "semigloss": 0.12}[finish]
+            highlights = (observed_highlights ** 2 * strength)[..., None]
+        else:
+            # Preserve the legacy direct SAM baseline for controlled comparison.
+            target_luminance = max(float(target[0] * 0.2126 + target[1] * 0.7152 + target[2] * 0.0722), 0.08)
+            relight = np.clip(target.reshape(1, 1, 3) * (luminance[..., None] / target_luminance), 0.0, 1.0)
+            strength = {"matte": 0.0, "satin": 0.12, "semigloss": 0.24}[finish]
+            highlights = (np.clip((luminance - 0.35) / 0.65, 0, 1) ** 2 * strength)[..., None]
+        # Bounded desaturation only where brightness exists in the source photo.
+        # No new light position, reflection geometry or physical gloss is inferred.
+        relight = relight * (1 - highlights) + luminance[..., None] * highlights
 
         if material == "wood":
             rows, columns = np.indices(luminance.shape)
@@ -418,7 +506,6 @@ class VisionPipeline:
 
         refined = (mask.convert("L").filter(ImageFilter.MedianFilter(size=5)).filter(ImageFilter.GaussianBlur(radius=2.2))
                    if refine_mask else mask.convert("L").filter(ImageFilter.GaussianBlur(radius=0.6)))
-        original_mask = np.asarray(mask.convert("L"), dtype=np.float32) / 255.0
         feathered = np.asarray(refined, dtype=np.float32) / 255.0
         alpha = (feathered * (original_mask > 0.02) * max(0.0, min(float(opacity), 1.0)))[..., None]
         composed = source * (1.0 - alpha) + relight * alpha
@@ -437,25 +524,37 @@ class VisionPipeline:
         *,
         mask_mode: str = "sam",
         mask_strokes: list[dict[str, Any]] | None = None,
+        base_mask_path: Path | None = None,
+        finish: str = "matte",
     ) -> dict[str, Any]:
-        if mask_mode not in {"sam", "manual"}:
+        if mask_mode not in {"sam", "manual", "refined"}:
             raise ValueError("Modo de máscara inválido.")
         if mask_mode == "sam" and mask_strokes is not None:
             raise ValueError("Traços manuais exigem o modo manual.")
-        if mask_mode == "manual" and points:
+        if mask_mode in {"manual", "refined"} and points:
             raise ValueError("Pontos SAM não podem ser combinados com uma máscara manual.")
+        if (mask_mode == "refined") != (base_mask_path is not None):
+            raise ValueError("Máscara base é obrigatória e exclusiva do modo refinado.")
+        if finish not in {"matte", "satin", "semigloss"}:
+            raise ValueError("Acabamento inválido.")
         with self.operation_lock, native_stage("simulate_photo", source=input_path.name):
             image = load_image(input_path)
             manual_mask = self.rasterize_manual_mask(image.size, mask_strokes) if mask_mode == "manual" else None
+            if mask_mode == "refined":
+                base = self.load_base_mask(base_mask_path, image.size)
+                manual_mask = self.rasterize_manual_mask(image.size, [] if mask_strokes is None else mask_strokes, base_mask=base)
             job_id = str(uuid.uuid4())
             output_dir = _artifact_root() / job_id
             output_dir.mkdir(parents=True, exist_ok=False)
-            original_path = output_dir / ("original.png" if mask_mode == "manual" else "original.jpg")
+            original_path = output_dir / ("original.png" if mask_mode != "sam" else "original.jpg")
             if manual_mask is not None:
                 image.save(original_path)
                 detection = {"model_used": False, "model": None, "objects": [], "status": "not_requested"}
                 automatic_exclusions = []
                 segmentation = self._save_manual_mask(image, manual_mask, output_dir)
+                if mask_mode == "refined":
+                    segmentation.update({"provenance": "provided_mask_with_manual_refinement",
+                                         "limitations": "Máscara base fornecida pelo backend com ajustes manuais; sem nova inferência neural."})
             else:
                 image.save(original_path, quality=94)
                 detection = self._detect_locked(image)
@@ -463,7 +562,8 @@ class VisionPipeline:
                 refined_points = list(points or []) + automatic_exclusions
                 segmentation = self._segment_locked(image, output_dir, refined_points)
         mask = Image.open(output_dir / segmentation["artifact"]).convert("L")
-        edited = self.compose_paint(image, mask, color, opacity, material, refine_mask=mask_mode != "manual")
+        edited = self.compose_paint(image, mask, color, opacity, material, refine_mask=mask_mode == "sam",
+                                    finish=finish, normalize_surface=mask_mode != "sam")
         simulation_path = output_dir / "simulation.png"
         edited.save(simulation_path, optimize=True)
         comparison = Image.new("RGB", (image.width * 2, image.height), "white")
@@ -485,6 +585,10 @@ class VisionPipeline:
                 "opacity": round(max(0.0, min(float(opacity), 1.0)), 3),
                 "material": material,
                 "mask_mode": mask_mode,
+                "finish": finish,
+                "color_method": ("selected_surface_median_illumination" if mask_mode != "sam" else "legacy_target_luminance_ratio"),
+                "finish_method": "observed_luminance_highlight_approximation",
+                "physical_finish_simulation": False,
                 "method": "luminance_preserving_masked_recolor",
                 "preserves_geometry": True,
                 "automatic_exclusions": automatic_exclusions,

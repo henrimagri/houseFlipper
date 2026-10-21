@@ -527,3 +527,11 @@ Corrigido o agrupamento dos pontos de inclusão/exclusão como um único objeto 
 Foto MIT real playroom_small 40_DSC0001.jpg: comparação CPU concluída e overlays inspecionados; parede selecionada e melhor preservação qualitativa de tomadas/controles, sem ground truth para medir IoU. Fluxo real Laravel → worker CUDA → histórico → navegador também executado: Simulação 80, SAM uma máscara/6,6318% de cobertura; DETR executou mas não detectou objetos acima de 0,72. Verificação independente: 51.880 pixels alterados, zero fora da máscara. Captura real e relatórios em evidence/master-editor/photo/sam-*. Detalhes, tempos, recursos, avisos e limitações em MASTER_SAM_VALIDATION.md.
 
 Fase 8 preservada, sem novas métricas de reconstrução nem promoção. Refinamento manual da máscara SAM e qualidade comercial continuam parciais; comparação funcional solicitada com Suvinil adicionada à COMMERCIAL_READINESS_MATRIX.md. Não houve novo download de modelos, instalação pesada ou alteração da infraestrutura.
+
+## 21/10/2026 — ASTRA Marco 4: retoque da máscara SAM e prévia confirmável
+
+Implementado e testado: SAM-only gera base privada preservada; pincel/borracha retocam essa base, com zoom/pan, overlay, undo/redo/restauração. Prévia não entra no histórico antes da confirmação; alteração invalida prévia; reabertura recupera foto/base/traços/prompts/dimensões/cor/acabamento. Proteções por foto/tenant e bloqueio concorrente no Laravel. Composição corrigida usa luminância da superfície para evitar clareamento artificial.
+
+QA real em quarto e cozinha licenciados, versões 87 e 97 salvas/reabertas. Três fotos, nove composições: zero pixels externos alterados; avaliação visual qualitativa aponta máscaras parciais e bordas que exigem retoque. DETR avaliado em três limiares sem alterar produção. SAM executou CUDA (cabeçalho inicialmente CPU corrigido), composição/DETR CPU. Python 146/146; Laravel 95/95, 517 assertions; frontend 26/26, TypeScript/Vite aprovados.
+
+Relatório completo, comandos, recursos, licenças e screenshots: [MILESTONE4_PHOTO_REFINEMENT.md](MILESTONE4_PHOTO_REFINEMENT.md). Interromper acompanhamento não cancela inferência nativa; ambientes adicionais e aprovação comercial seguem parciais. Fase 8 preservada. Próxima prioridade: aberturas/PBR/catálogo no paramétrico.

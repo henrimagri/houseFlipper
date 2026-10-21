@@ -1,0 +1,657 @@
+{
+  "model": "facebook/detr-resnet-50",
+  "device": "cpu",
+  "threads": 4,
+  "thresholds": [
+    0.3,
+    0.5,
+    0.72
+  ],
+  "production_threshold_changed": false,
+  "ground_truth_available": false,
+  "classes": {
+    "0": "N/A",
+    "1": "person",
+    "10": "traffic light",
+    "11": "fire hydrant",
+    "12": "street sign",
+    "13": "stop sign",
+    "14": "parking meter",
+    "15": "bench",
+    "16": "bird",
+    "17": "cat",
+    "18": "dog",
+    "19": "horse",
+    "2": "bicycle",
+    "20": "sheep",
+    "21": "cow",
+    "22": "elephant",
+    "23": "bear",
+    "24": "zebra",
+    "25": "giraffe",
+    "26": "hat",
+    "27": "backpack",
+    "28": "umbrella",
+    "29": "shoe",
+    "3": "car",
+    "30": "eye glasses",
+    "31": "handbag",
+    "32": "tie",
+    "33": "suitcase",
+    "34": "frisbee",
+    "35": "skis",
+    "36": "snowboard",
+    "37": "sports ball",
+    "38": "kite",
+    "39": "baseball bat",
+    "4": "motorcycle",
+    "40": "baseball glove",
+    "41": "skateboard",
+    "42": "surfboard",
+    "43": "tennis racket",
+    "44": "bottle",
+    "45": "plate",
+    "46": "wine glass",
+    "47": "cup",
+    "48": "fork",
+    "49": "knife",
+    "5": "airplane",
+    "50": "spoon",
+    "51": "bowl",
+    "52": "banana",
+    "53": "apple",
+    "54": "sandwich",
+    "55": "orange",
+    "56": "broccoli",
+    "57": "carrot",
+    "58": "hot dog",
+    "59": "pizza",
+    "6": "bus",
+    "60": "donut",
+    "61": "cake",
+    "62": "chair",
+    "63": "couch",
+    "64": "potted plant",
+    "65": "bed",
+    "66": "mirror",
+    "67": "dining table",
+    "68": "window",
+    "69": "desk",
+    "7": "train",
+    "70": "toilet",
+    "71": "door",
+    "72": "tv",
+    "73": "laptop",
+    "74": "mouse",
+    "75": "remote",
+    "76": "keyboard",
+    "77": "cell phone",
+    "78": "microwave",
+    "79": "oven",
+    "8": "truck",
+    "80": "toaster",
+    "81": "sink",
+    "82": "refrigerator",
+    "83": "blender",
+    "84": "book",
+    "85": "clock",
+    "86": "vase",
+    "87": "scissors",
+    "88": "teddy bear",
+    "89": "hair drier",
+    "9": "boat",
+    "90": "toothbrush"
+  },
+  "images": [
+    {
+      "name": "40_DSC0001.jpg",
+      "sha256": "6ca67b203d84ef3b0fcd7817221f57e83e1df21107db13a3ba295971e40b690e",
+      "image_size": [
+        1082,
+        723
+      ],
+      "tensor_shape": [
+        1,
+        3,
+        800,
+        1197
+      ],
+      "inference_seconds": 1.9528,
+      "detections": [],
+      "counts": {
+        "0.3": 0,
+        "0.5": 0,
+        "0.72": 0
+      }
+    },
+    {
+      "name": "kitchen.jpg",
+      "sha256": "d693df7e80730e000b58c8f2eedc6b34adfe579218cb97ee183b2cee329ef61a",
+      "image_size": [
+        1280,
+        853
+      ],
+      "tensor_shape": [
+        1,
+        3,
+        800,
+        1200
+      ],
+      "inference_seconds": 1.7534,
+      "detections": [
+        {
+          "label": "oven",
+          "confidence": 0.775308,
+          "box_xyxy": [
+            631.71,
+            579.47,
+            689.75,
+            595.39
+          ]
+        },
+        {
+          "label": "chair",
+          "confidence": 0.996215,
+          "box_xyxy": [
+            393.37,
+            727.76,
+            532.46,
+            851.73
+          ]
+        },
+        {
+          "label": "vase",
+          "confidence": 0.964399,
+          "box_xyxy": [
+            595.74,
+            591.83,
+            635.97,
+            634.79
+          ]
+        },
+        {
+          "label": "book",
+          "confidence": 0.807459,
+          "box_xyxy": [
+            477.98,
+            600.42,
+            557.31,
+            634.25
+          ]
+        },
+        {
+          "label": "dining table",
+          "confidence": 0.877577,
+          "box_xyxy": [
+            1098.56,
+            661.01,
+            1278.83,
+            847.92
+          ]
+        },
+        {
+          "label": "chair",
+          "confidence": 0.984721,
+          "box_xyxy": [
+            567.24,
+            730.24,
+            691.7,
+            851.77
+          ]
+        },
+        {
+          "label": "refrigerator",
+          "confidence": 0.39859,
+          "box_xyxy": [
+            301.68,
+            389.13,
+            330.02,
+            735.49
+          ]
+        },
+        {
+          "label": "cup",
+          "confidence": 0.477784,
+          "box_xyxy": [
+            999.47,
+            591.8,
+            1028.51,
+            613.72
+          ]
+        },
+        {
+          "label": "chair",
+          "confidence": 0.988748,
+          "box_xyxy": [
+            1051.06,
+            640.27,
+            1216.61,
+            851.16
+          ]
+        },
+        {
+          "label": "chair",
+          "confidence": 0.342771,
+          "box_xyxy": [
+            1216.1,
+            681.0,
+            1279.86,
+            733.86
+          ]
+        },
+        {
+          "label": "chair",
+          "confidence": 0.976809,
+          "box_xyxy": [
+            1192.82,
+            690.05,
+            1279.88,
+            851.15
+          ]
+        },
+        {
+          "label": "cup",
+          "confidence": 0.466001,
+          "box_xyxy": [
+            868.72,
+            509.49,
+            888.27,
+            531.07
+          ]
+        },
+        {
+          "label": "dining table",
+          "confidence": 0.666974,
+          "box_xyxy": [
+            1103.16,
+            659.78,
+            1259.24,
+            705.3
+          ]
+        },
+        {
+          "label": "bottle",
+          "confidence": 0.54246,
+          "box_xyxy": [
+            596.08,
+            667.4,
+            627.69,
+            716.11
+          ]
+        },
+        {
+          "label": "cup",
+          "confidence": 0.395893,
+          "box_xyxy": [
+            1030.57,
+            595.44,
+            1057.37,
+            616.91
+          ]
+        },
+        {
+          "label": "dining table",
+          "confidence": 0.349063,
+          "box_xyxy": [
+            1107.83,
+            664.58,
+            1279.64,
+            771.08
+          ]
+        },
+        {
+          "label": "chair",
+          "confidence": 0.734739,
+          "box_xyxy": [
+            1076.84,
+            631.55,
+            1150.12,
+            689.34
+          ]
+        },
+        {
+          "label": "book",
+          "confidence": 0.908514,
+          "box_xyxy": [
+            493.87,
+            563.15,
+            547.81,
+            624.6
+          ]
+        },
+        {
+          "label": "cup",
+          "confidence": 0.560457,
+          "box_xyxy": [
+            884.25,
+            507.9,
+            904.59,
+            529.01
+          ]
+        },
+        {
+          "label": "cup",
+          "confidence": 0.557476,
+          "box_xyxy": [
+            1027.38,
+            587.04,
+            1052.14,
+            613.63
+          ]
+        },
+        {
+          "label": "refrigerator",
+          "confidence": 0.423763,
+          "box_xyxy": [
+            197.24,
+            397.51,
+            267.64,
+            766.82
+          ]
+        },
+        {
+          "label": "dining table",
+          "confidence": 0.742822,
+          "box_xyxy": [
+            425.45,
+            596.08,
+            790.23,
+            668.22
+          ]
+        },
+        {
+          "label": "cup",
+          "confidence": 0.602346,
+          "box_xyxy": [
+            895.17,
+            508.1,
+            915.05,
+            528.86
+          ]
+        },
+        {
+          "label": "clock",
+          "confidence": 0.796665,
+          "box_xyxy": [
+            884.07,
+            442.08,
+            919.56,
+            485.51
+          ]
+        },
+        {
+          "label": "bottle",
+          "confidence": 0.736928,
+          "box_xyxy": [
+            548.2,
+            553.33,
+            589.49,
+            631.79
+          ]
+        },
+        {
+          "label": "book",
+          "confidence": 0.313245,
+          "box_xyxy": [
+            474.94,
+            617.27,
+            552.69,
+            632.56
+          ]
+        },
+        {
+          "label": "potted plant",
+          "confidence": 0.945677,
+          "box_xyxy": [
+            589.54,
+            561.68,
+            641.0,
+            626.5
+          ]
+        },
+        {
+          "label": "bowl",
+          "confidence": 0.7831,
+          "box_xyxy": [
+            860.87,
+            420.85,
+            918.17,
+            436.57
+          ]
+        },
+        {
+          "label": "book",
+          "confidence": 0.56927,
+          "box_xyxy": [
+            470.75,
+            623.11,
+            555.67,
+            641.3
+          ]
+        },
+        {
+          "label": "refrigerator",
+          "confidence": 0.329311,
+          "box_xyxy": [
+            200.1,
+            388.86,
+            287.54,
+            788.86
+          ]
+        },
+        {
+          "label": "cup",
+          "confidence": 0.491362,
+          "box_xyxy": [
+            1179.76,
+            659.63,
+            1207.21,
+            678.24
+          ]
+        },
+        {
+          "label": "cup",
+          "confidence": 0.577801,
+          "box_xyxy": [
+            1163.59,
+            649.74,
+            1185.1,
+            678.12
+          ]
+        },
+        {
+          "label": "dining table",
+          "confidence": 0.421392,
+          "box_xyxy": [
+            352.73,
+            603.49,
+            840.64,
+            724.84
+          ]
+        },
+        {
+          "label": "dining table",
+          "confidence": 0.961239,
+          "box_xyxy": [
+            343.25,
+            664.15,
+            874.78,
+            746.18
+          ]
+        },
+        {
+          "label": "cup",
+          "confidence": 0.674282,
+          "box_xyxy": [
+            880.97,
+            508.68,
+            901.38,
+            529.24
+          ]
+        },
+        {
+          "label": "chair",
+          "confidence": 0.996491,
+          "box_xyxy": [
+            721.06,
+            727.29,
+            869.7,
+            851.59
+          ]
+        },
+        {
+          "label": "sink",
+          "confidence": 0.9703,
+          "box_xyxy": [
+            929.04,
+            594.88,
+            1013.07,
+            606.98
+          ]
+        },
+        {
+          "label": "sink",
+          "confidence": 0.345821,
+          "box_xyxy": [
+            375.76,
+            594.09,
+            475.47,
+            605.82
+          ]
+        },
+        {
+          "label": "sink",
+          "confidence": 0.332479,
+          "box_xyxy": [
+            418.53,
+            593.71,
+            488.59,
+            604.17
+          ]
+        },
+        {
+          "label": "chair",
+          "confidence": 0.659527,
+          "box_xyxy": [
+            1191.61,
+            683.97,
+            1279.88,
+            787.02
+          ]
+        },
+        {
+          "label": "dining table",
+          "confidence": 0.907282,
+          "box_xyxy": [
+            351.56,
+            673.5,
+            877.25,
+            844.99
+          ]
+        },
+        {
+          "label": "cup",
+          "confidence": 0.542118,
+          "box_xyxy": [
+            367.32,
+            564.67,
+            381.58,
+            587.74
+          ]
+        }
+      ],
+      "counts": {
+        "0.3": 42,
+        "0.5": 29,
+        "0.72": 19
+      }
+    },
+    {
+      "name": "bedroom.jpg",
+      "sha256": "cfe3c1073b5e852fe1f85a2bccb64e90431b0caa43a7e09e047bab4b122b974d",
+      "image_size": [
+        1280,
+        854
+      ],
+      "tensor_shape": [
+        1,
+        3,
+        800,
+        1199
+      ],
+      "inference_seconds": 1.6607,
+      "detections": [
+        {
+          "label": "potted plant",
+          "confidence": 0.806376,
+          "box_xyxy": [
+            910.58,
+            589.22,
+            1248.98,
+            847.94
+          ]
+        },
+        {
+          "label": "bowl",
+          "confidence": 0.427917,
+          "box_xyxy": [
+            1065.76,
+            416.15,
+            1115.34,
+            458.53
+          ]
+        },
+        {
+          "label": "chair",
+          "confidence": 0.998142,
+          "box_xyxy": [
+            248.95,
+            244.68,
+            395.91,
+            453.88
+          ]
+        },
+        {
+          "label": "bed",
+          "confidence": 0.963885,
+          "box_xyxy": [
+            1.9,
+            313.18,
+            1032.84,
+            842.04
+          ]
+        },
+        {
+          "label": "bed",
+          "confidence": 0.883828,
+          "box_xyxy": [
+            -0.01,
+            172.87,
+            1055.66,
+            844.25
+          ]
+        },
+        {
+          "label": "bowl",
+          "confidence": 0.372138,
+          "box_xyxy": [
+            457.14,
+            352.11,
+            490.0,
+            378.74
+          ]
+        }
+      ],
+      "counts": {
+        "0.3": 6,
+        "0.5": 4,
+        "0.72": 4
+      }
+    }
+  ],
+  "limitations": [
+    "Confidence is model score, not measured precision.",
+    "No semantic class for walls, curtains, doors or windows in this COCO detector.",
+    "RAM not sampled; no CUDA allocations in this CPU experiment."
+  ]
+}

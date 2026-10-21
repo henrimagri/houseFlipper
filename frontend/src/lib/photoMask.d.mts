@@ -6,6 +6,8 @@ export type MaskAction = { type: 'reset' | 'undo' | 'redo' } | { type: 'restore'
 export function imagePoint(clientX: number, clientY: number, rect: { left: number; top: number; width: number; height: number }): { x: number; y: number } | null;
 export function maskHistory(state: MaskHistory, action: MaskAction): MaskHistory;
 export function appendStrokePoint(stroke: PhotoMaskStroke, point: { x: number; y: number }): PhotoMaskStroke;
-export function drawMask(context: CanvasRenderingContext2D, width: number, height: number, strokes: PhotoMaskStroke[]): void;
+export function drawMask(context: CanvasRenderingContext2D, width: number, height: number, strokes: PhotoMaskStroke[], base?: CanvasImageSource | null): void;
 export function hasMaskPixels(pixels: Uint8ClampedArray): boolean;
 export function validPhotoColor(color: string): boolean;
+export function grayscaleMaskToOverlay(pixels: Uint8ClampedArray): Uint8ClampedArray;
+export function createRequestGate(): { start(): AbortController | null; current(request: AbortController): boolean; end(request: AbortController): void; cancel(): void };

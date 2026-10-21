@@ -137,3 +137,16 @@ Referências públicas consultadas: [criar ambiente](https://www.simulador3d.com
 | Histórico/undo/redo | Não verificado | Cena persistida e histórico de traços; resultados por job | Implementado e testado; histórico da cena limitado a 12 passos |
 | Assistente IA | Não verificado | Operações estruturadas e autorização Laravel | Parcial; não é agente geral com streaming completo |
 | Reconstrução multivista | Não verificado | Fusão parcial ativa e pipeline denso preparado | Parcial/bloqueado para execução densa local; Fase 8 preservada |
+
+## Marco 4 — atualização com evidência real
+
+| Requisito | Estado | Evidência/pendência |
+|---|---|---|
+| SAM com retoque raster na mesma base | Implementado e testado | Quarto: pontos, pincel, borracha, zoom, pan, undo/redo/restaurar; base imutável |
+| Prévia, confirmação, persistência por fotografia | Implementado e testado | Simulações 87/97, reabertura; autorização, checksum e testes entre tenants |
+| Pintura e acabamentos | Parcial | Luminância corrigida, nove composições sem alterar exterior; acabamentos aproximados, máscaras ainda exigem revisão |
+| Avaliação variada/DETR | Parcial | Três fotos licenciadas, três limiares; sem GT nem precisão inventada; outros cinco tipos de ambiente pendentes |
+| Cancelamento fotográfico | Parcial | Interrompe acompanhamento/descarta prévia, não interrompe inferência nativa |
+| Editor 3D: aberturas, PBR, catálogo | Próxima prioridade P1 | Incremento separado após validação da pintura |
+
+Detalhes e capturas: [MILESTONE4_PHOTO_REFINEMENT.md](MILESTONE4_PHOTO_REFINEMENT.md). Não substitui pendências das outras linhas nem atesta qualidade comercial geral.
