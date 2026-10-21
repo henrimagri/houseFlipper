@@ -487,3 +487,17 @@ D melhorou a Fase 11 em 1,22 ponto de precisão e 1,01 ponto de completude, mas 
 Validação: worker Python **61/61**; Laravel **68/68, 292 assertions**; frontend **12/12**; TypeScript e build Vite aprovados. O build manteve apenas o aviso conhecido de chunks grandes. O frontend local respondeu HTTP 200. O controlador oficial do navegador recusou adquirir a aba localhost por sua política de URL; nenhum contorno foi usado e não há aprovação visual nova do canvas. Artefatos versionados: `evidence/phase12-stereo-coverage-summary.json` e `evidence/phase12-stereo-coverage-funnel.png`. Artefatos geométricos grandes permanecem ignorados em `storage/app/ai-real-results`.
 
 **Decisão:** novas rodadas de relaxamento do StereoSGBM não apresentam custo-benefício suficiente para qualidade comercial. A próxima prioridade técnica deve ser MVS/densificação COLMAP em Linux/CUDA autorizado ou uma abordagem híbrida paramétrica editável, usando a geometria estéreo somente onde verificada. A Fase 8 permanece ativa.
+
+## Fase 13 — worker denso preparado e simulador comercial
+
+O baseline foi preservado: Fase 8 ativa com 50,73% de precisão, 55,81% de completude e 57,51% de fototexturização; Fase 12 TSDF com 57,85%/52,33% e zero não manifold; fusão calibrada com 49,29%/57,10% e topologia inferior. Nenhum candidato mudou o asset primário.
+
+O host possui GTX 1660 Ti de 6 GB e COLMAP 4.2.1 `bd1fcf6`, mas o executável informa `without GPU support`; Docker não está instalado. A ajuda real confirmou os comandos e opções usados. Não houve PatchMatch CUDA nem atlas real. A reconstrução densa permanece pendente de worker Linux/CUDA autorizado.
+
+O pipeline agora sonda o binário, executa `mesh_texturer` depois do meshing e rejeita candidato sem atlas verificável. O worker ganhou UUID idempotente, escopo HMAC opaco por tenant/visualização, consulta/cancelamento/download vinculados ao escopo, estado atômico, reconciliação após reinício, concorrência unitária e retenção configurável. Laravel continua controlando autorização, cota, armazenamento privado e promoção.
+
+O produto agora separa A) reconstrução observada, B) ambiente editável aproximado e C) simulação de reforma. Um fluxo de seis etapas cobre imóvel, fotos, modalidade, processamento, editor e apresentação. A cena paramétrica conserva medidas do usuário, PBR, ACES, sombras, catálogo licenciado, transformações, versões e desfazer/refazer.
+
+Comandos estruturados foram ampliados para estilo escandinavo, proposta preliminar, texto de apresentação e estimativa conceitual por área. Notas ficam no grafo com `source=structured_ai_action`; nenhuma operação executa JavaScript. DETR, SAM 2 e Depth Anything V2 não foram retreinados. As lacunas mensuráveis continuam classes arquitetônicas, materiais e correspondência densa; nenhum fine-tuning visual foi iniciado sem dataset autorizado, licença e benchmark.
+
+Validação: Python completo **64/64**; Laravel **70/70, 303 assertions**; frontend **12/12**, TypeScript e build Vite. Não há nova aprovação de canvas: o navegador oficial recusou adquirir a aba local pela política de URL, e nenhum contorno foi usado. Detalhes: `docs/ai/GPU_DENSE_WORKER.md`.

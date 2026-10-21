@@ -180,7 +180,7 @@ class PropertyVisualizationController extends Controller
     {
         $data = $request->validate([
             'actions' => ['required', 'array', 'min:1', 'max:20'],
-            'actions.*.op' => ['required', 'string', 'in:paint_kind,paint_surface,set_reconstruction_material,undo_reconstruction,redo_reconstruction,add_object,remove_object,set_object_color,transform,hide,duplicate,set_active_room,upsert_object,set_lighting,set_room_dimensions'],
+            'actions.*.op' => ['required', 'string', 'in:paint_kind,paint_surface,set_reconstruction_material,undo_reconstruction,redo_reconstruction,add_object,remove_object,set_object_color,transform,hide,duplicate,set_active_room,upsert_object,set_lighting,set_room_dimensions,set_project_brief'],
             'actions.*.hidden' => ['nullable', 'boolean'],
             'actions.*.object' => ['nullable', 'array'],
             'actions.*.id' => ['nullable', 'string', 'max:80'],
@@ -197,6 +197,8 @@ class PropertyVisualizationController extends Controller
             'actions.*.dimensions.width' => ['nullable', 'numeric', 'between:1.8,20'],
             'actions.*.dimensions.depth' => ['nullable', 'numeric', 'between:1.8,20'],
             'actions.*.dimensions.height' => ['nullable', 'numeric', 'between:2,8'],
+            'actions.*.category' => ['nullable', 'string', 'in:cost_estimate,presentation,renovation_proposal'],
+            'actions.*.brief' => ['nullable', 'string', 'max:1000'],
         ]);
 
         return response()->json(['data' => $this->visualizations->applyActions($request->user(), $this->subjectType($subjectType), $id, $data['actions'])]);

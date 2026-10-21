@@ -98,6 +98,30 @@ class SceneCommandInterpreterTest extends TestCase
         $this->assertSame(['width' => 6.4, 'depth' => 4.8, 'height' => 2.9, 'source' => 'user'], $updated['room_dimensions']['living']);
     }
 
+    public function test_cost_estimate_uses_room_area_and_is_persisted_as_structured_note(): void
+    {
+        $graph = $this->graph();
+        $graph['room_dimensions']['living'] = ['width' => 6, 'depth' => 4, 'height' => 2.8, 'source' => 'user'];
+        $command = app(SceneCommandInterpreter::class)->interpret('Faça uma estimativa de custo', $graph);
+
+        $this->assertTrue($command['ok']);
+        $this->assertSame('set_project_brief', $command['actions'][0]['op']);
+        $this->assertStringContainsString('24,00 m²', $command['message']);
+        $updated = app(SceneGraphFactory::class)->apply($graph, $command['actions']);
+        $this->assertSame('cost_estimate', $updated['project_notes'][0]['category']);
+        $this->assertSame('structured_ai_action', $updated['project_notes'][0]['source']);
+    }
+
+    public function test_scandinavian_style_is_a_bounded_persistable_action_set(): void
+    {
+        $command = app(SceneCommandInterpreter::class)->interpret('Aplique um estilo escandinavo', $this->graph());
+
+        $this->assertTrue($command['ok']);
+        $this->assertSame(['paint_kind', 'paint_kind', 'set_lighting'], array_column($command['actions'], 'op'));
+        $updated = app(SceneGraphFactory::class)->apply($this->graph(), $command['actions']);
+        $this->assertSame('soft', $updated['lighting']['preset']);
+    }
+
     public function test_reconstruction_material_changes_only_selected_region_and_can_be_undone(): void
     {
         $graph = $this->graph();

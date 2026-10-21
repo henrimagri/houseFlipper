@@ -46,9 +46,9 @@ class AiWorkerClient
             ])->throw()->json();
     }
 
-    public function reconstruct(array $files, string $method = 'auto'): array
+    public function reconstruct(array $files, string $method, string $scope, string $idempotencyKey): array
     {
-        $request = $this->http()->timeout((int) config('ai.worker.processing_timeout', 1800));
+        $request = $this->http($scope)->timeout((int) config('ai.worker.processing_timeout', 1800));
         foreach ($files as $file) {
             $request = $request->attach('files', $file['contents'], $file['name']);
         }
@@ -56,44 +56,51 @@ class AiWorkerClient
         return $request->post($this->endpoint('/v1/3d/reconstruct'), [
             'overlap_acknowledged' => 'true',
             'method' => $method,
+            'job_scope' => $scope,
+            'idempotency_key' => $idempotencyKey,
         ])->throw()->json();
     }
 
-    public function artifact(string $jobId, string $name): string
+    public function artifact(string $jobId, string $name, ?string $scope = null): string
     {
         if (! preg_match('/^[0-9a-f-]{36}$/i', $jobId) || ! preg_match('/^[a-z0-9.-]{1,80}$/i', $name)) {
             throw new RuntimeException('Identificador de artefato inválido.');
         }
 
-        return $this->http()->get($this->endpoint('/v1/jobs/'.$jobId.'/artifacts/'.$name))->throw()->body();
+        return $this->http($scope)->get($this->endpoint('/v1/jobs/'.$jobId.'/artifacts/'.$name))->throw()->body();
     }
 
-    public function job(string $jobId): array
+    public function job(string $jobId, string $scope): array
     {
         if (! preg_match('/^[0-9a-f-]{36}$/i', $jobId)) {
             throw new RuntimeException('Identificador de job inválido.');
         }
 
-        return $this->http()->get($this->endpoint('/v1/jobs/'.$jobId))->throw()->json();
+        return $this->http($scope)->get($this->endpoint('/v1/jobs/'.$jobId))->throw()->json();
     }
 
-    public function cancelJob(string $jobId): array
+    public function cancelJob(string $jobId, string $scope): array
     {
         if (! preg_match('/^[0-9a-f-]{36}$/i', $jobId)) {
             throw new RuntimeException('Identificador de job inválido.');
         }
 
-        return $this->http()->delete($this->endpoint('/v1/jobs/'.$jobId))->throw()->json();
+        return $this->http($scope)->delete($this->endpoint('/v1/jobs/'.$jobId))->throw()->json();
     }
 
-    private function http(): PendingRequest
+    private function http(?string $scope = null): PendingRequest
     {
         $token = (string) config('ai.worker.token');
         if ($token === '') {
             throw new RuntimeException('Credencial do worker de IA não configurada.');
         }
 
-        return Http::acceptJson()->withHeaders(['X-Worker-Token' => $token])
+        $headers = ['X-Worker-Token' => $token];
+        if ($scope !== null) {
+            $headers['X-Worker-Scope'] = $scope;
+        }
+
+        return Http::acceptJson()->withHeaders($headers)
             ->timeout((int) config('ai.worker.timeout', 30))
             ->withOptions(['allow_redirects' => false]);
     }

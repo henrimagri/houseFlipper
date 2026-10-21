@@ -89,6 +89,9 @@ class PropertyVisualizationNeuralTest extends TestCase
         $jobId = '11111111-1111-4111-8111-111111111111';
         Http::fake(function ($request) use ($jobId) {
             if (str_ends_with($request->url(), '/v1/3d/reconstruct')) {
+                $this->assertTrue($request->hasHeader('X-Worker-Scope'));
+                $this->assertStringContainsString('name="job_scope"', $request->body());
+                $this->assertStringContainsString('name="idempotency_key"', $request->body());
                 return Http::response([
                     'job_id' => $jobId,
                     'status' => 'completed',

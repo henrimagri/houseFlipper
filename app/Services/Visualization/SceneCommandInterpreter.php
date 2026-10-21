@@ -18,6 +18,26 @@ class SceneCommandInterpreter
         }
 
         $room = $this->currentRoom($graph);
+        if (Str::contains($normalized, ['estimativa de custo', 'estimar custo', 'quanto custa', 'orcamento', 'orçamento'])) {
+            $dimensions = $graph['room_dimensions'][$room] ?? ['width' => 5.2, 'depth' => 4.2, 'source' => 'estimated'];
+            $area = round((float) ($dimensions['width'] ?? 5.2) * (float) ($dimensions['depth'] ?? 4.2), 2);
+            $minimum = (int) round($area * 450);
+            $maximum = (int) round($area * 950);
+            $source = ($dimensions['source'] ?? 'estimated') === 'user' ? 'medidas informadas' : 'medidas aproximadas';
+            $brief = sprintf('Estimativa conceitual para %s m² (%s): R$ %s a R$ %s. Validar materiais, mão de obra e condições locais antes de contratar.', number_format($area, 2, ',', '.'), $source, number_format($minimum, 0, ',', '.'), number_format($maximum, 0, ',', '.'));
+
+            return $this->ok([['op' => 'set_project_brief', 'category' => 'cost_estimate', 'brief' => $brief]], $brief);
+        }
+        if (Str::contains($normalized, ['texto de apresentacao', 'texto de apresentação', 'apresentar o projeto'])) {
+            $brief = 'Proposta visual de reforma com materiais, mobiliário e iluminação configurados nesta versão. As imagens são simulações e os custos dependem de validação técnica e comercial.';
+
+            return $this->ok([['op' => 'set_project_brief', 'category' => 'presentation', 'brief' => $brief]], 'Texto de apresentação criado e salvo com o projeto.');
+        }
+        if (Str::contains($normalized, ['proposta de reforma', 'crie uma proposta', 'criar uma proposta'])) {
+            $brief = 'Proposta preliminar: revisar medidas, definir acabamentos, validar mobiliário e confirmar orçamento antes da execução. A cena atual permanece uma simulação editável.';
+
+            return $this->ok([['op' => 'set_project_brief', 'category' => 'renovation_proposal', 'brief' => $brief]], 'Proposta preliminar salva no projeto sem tratar a simulação como obra executiva.');
+        }
         if (Str::contains($normalized, ['desfaca a ultima', 'desfaça a última', 'desfazer a ultima', 'desfazer a última'])) {
             return $this->ok([['op' => 'undo_reconstruction']], 'Última alteração da reconstrução desfeita.');
         }
@@ -148,6 +168,13 @@ class SceneCommandInterpreter
                 ['op' => 'paint_kind', 'kind' => 'wall', 'color' => '#ece8e1'],
                 ['op' => 'paint_kind', 'kind' => 'floor', 'color' => '#d7d2c8', 'material' => 'porcelain'],
             ], 'Preset minimalista aplicado só na simulação.');
+        }
+        if (Str::contains($normalized, ['escandinavo', 'escandinava'])) {
+            return $this->ok([
+                ['op' => 'paint_kind', 'kind' => 'wall', 'color' => '#f2efe8'],
+                ['op' => 'paint_kind', 'kind' => 'floor', 'color' => '#c7a77a', 'material' => 'wood'],
+                ['op' => 'set_lighting', 'preset' => 'soft'],
+            ], 'Estilo escandinavo aplicado à simulação com paleta clara, madeira e luz suave.');
         }
         if (Str::contains($normalized, ['luxo', 'luxuosa', 'luxuoso', 'alto padrao', 'alto padrão'])) {
             return $this->ok([

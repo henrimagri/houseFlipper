@@ -331,10 +331,17 @@ class PropertyVisualizationService
 
             return ['name' => $asset->original_name, 'contents' => $disk->get($asset->path)];
         })->all();
+        $runningForTenant = PropertyProcessingJob::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('kind', 'photogrammetry')
+            ->whereIn('status', ['queued', 'processing'])
+            ->count();
+        abort_if($runningForTenant >= (int) config('visualizations.max_concurrent_reconstructions_per_tenant', 1), 429, 'Já existe uma reconstrução em andamento nesta conta.');
         $job = $this->startProcessingJob($visualization, $user, 'photogrammetry', $assets->pluck('id')->all());
 
         try {
-            $result = $this->worker->reconstruct($files, $method);
+            $scope = $this->workerScope($visualization);
+            $result = $this->worker->reconstruct($files, $method, $scope, $this->workerIdempotencyKey($job));
             if (($result['status'] ?? null) === 'completed') {
                 $job->fill(['worker_job_id' => $result['job_id']])->save();
                 $this->completeReconstructionJob($visualization, $job, $result);
@@ -364,7 +371,7 @@ class PropertyVisualizationService
         }
         abort_unless($job->worker_job_id, 409, 'O worker ainda não aceitou este processamento.');
 
-        $result = $this->worker->job($job->worker_job_id);
+        $result = $this->worker->job($job->worker_job_id, $this->workerScope($visualization));
         $status = (string) ($result['status'] ?? 'processing');
         if ($status === 'failed') {
             $job->fill([
@@ -395,7 +402,7 @@ class PropertyVisualizationService
             ->firstOrFail();
         abort_unless($job->worker_job_id, 409, 'O worker ainda não aceitou este processamento.');
         if (! in_array($job->status, ['completed', 'failed', 'cancelled'], true)) {
-            $result = $this->worker->cancelJob($job->worker_job_id);
+            $result = $this->worker->cancelJob($job->worker_job_id, $this->workerScope($visualization));
             $job->fill(['status' => 'processing', 'result' => $result])->save();
         }
 
@@ -519,7 +526,7 @@ class PropertyVisualizationService
         if (! $name) {
             return null;
         }
-        $bytes = $this->worker->artifact($jobId, $name);
+        $bytes = $this->worker->artifact($jobId, $name, $this->workerScope($visualization));
         $maxBytes = (int) config('visualizations.max_processing_storage_mb', 512) * 1024 * 1024;
         $used = (int) $visualization->assets()->sum('size_bytes');
         abort_if($used + strlen($bytes) > $maxBytes, 422, 'O limite de armazenamento de processamento deste imóvel foi atingido.');
@@ -537,6 +544,21 @@ class PropertyVisualizationService
             'checksum' => hash('sha256', $bytes),
             'is_primary' => false,
         ]);
+    }
+
+    private function workerScope(PropertyVisualization $visualization): string
+    {
+        $token = (string) config('ai.worker.token');
+        abort_if($token === '', 503, 'Credencial do worker de IA não configurada.');
+
+        return hash_hmac('sha256', $visualization->tenant_id.':'.$visualization->id, $token);
+    }
+
+    private function workerIdempotencyKey(PropertyProcessingJob $job): string
+    {
+        $hex = hash('sha256', $job->tenant_id.':'.$job->id.':photogrammetry');
+
+        return substr($hex, 0, 8).'-'.substr($hex, 8, 4).'-4'.substr($hex, 13, 3).'-a'.substr($hex, 17, 3).'-'.substr($hex, 20, 12);
     }
 
     public function rebuild(User $user, string $subjectType, int $subjectId): array

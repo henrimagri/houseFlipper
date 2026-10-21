@@ -265,6 +265,11 @@ def test_dense_pipeline_runs_reproducible_colmap_sequence_and_gates_export(monke
             trimesh.points.PointCloud(trimesh.creation.icosphere(subdivisions=2).vertices).export(output / "dense.ply")
         elif command[1] == "poisson_mesher":
             trimesh.creation.icosphere(subdivisions=2).export(output / "dense-mesh.ply")
+        elif command[1] == "mesh_texturer":
+            textured = output / "dense-textured"
+            textured.mkdir()
+            trimesh.creation.icosphere(subdivisions=2).export(textured / "mesh.ply")
+            (textured / "texture.png").write_bytes(b"texture")
         return 1.0
 
     monkeypatch.setattr(reconstruction, "_run", fake_run)
@@ -294,6 +299,7 @@ def test_dense_pipeline_runs_reproducible_colmap_sequence_and_gates_export(monke
         "patch_match_stereo",
         "stereo_fusion",
         "poisson_mesher",
+        "mesh_texturer",
     ]
     assert "--max_image_size" in commands[0]
     assert commands[0][commands[0].index("--max_image_size") + 1] == "2048"
@@ -330,6 +336,11 @@ def test_dense_pipeline_never_exports_geometry_rejected_by_quality_gate(monkeypa
                 faces=[[0, 1, 2]],
                 process=False,
             ).export(output / "dense-mesh.ply")
+        elif command[1] == "mesh_texturer":
+            textured = output / "dense-textured"
+            textured.mkdir()
+            trimesh.Trimesh(vertices=[[0, 0, 0], [1, 0, 0], [0, 1, 0]], faces=[[0, 1, 2]], process=False).export(textured / "mesh.ply")
+            (textured / "texture.png").write_bytes(b"texture")
         return 1.0
 
     monkeypatch.setattr(reconstruction, "_run", fake_run)
@@ -358,3 +369,25 @@ def test_dense_pipeline_never_exports_geometry_rejected_by_quality_gate(monkeypa
     assert result["geometry_quality"]["final_model_eligible"] is False
     assert result["artifacts"]["glb"] is None
     assert not (output / "dense-model.glb").exists()
+
+
+def test_colmap_runtime_probe_reports_real_commands_and_rejects_cpu_build(monkeypatch, tmp_path) -> None:
+    executable = tmp_path / "colmap"
+    executable.write_bytes(b"stub")
+
+    class Completed:
+        returncode = 0
+        stdout = "COLMAP 4.2.1 without GPU support\nAvailable commands: image_undistorter patch_match_stereo stereo_fusion poisson_mesher delaunay_mesher mesh_texturer"
+        stderr = ""
+
+    monkeypatch.setattr(reconstruction.subprocess, "run", lambda *args, **kwargs: Completed())
+    probe = reconstruction.inspect_colmap_runtime(executable)
+    capability = reconstruction.dense_reconstruction_capability(
+        environment={"COLMAP_DENSE_ENABLED": "true", "COLMAP_GPU_BUILD": "true"},
+        system_name="Linux", executable=executable, gpu_device_visible=True, runtime_probe=probe,
+    )
+
+    assert probe["missing_commands"] == []
+    assert probe["gpu_support"] is False
+    assert capability["enabled"] is False
+    assert any("não possui suporte CUDA/GPU" in reason for reason in capability["reasons"])

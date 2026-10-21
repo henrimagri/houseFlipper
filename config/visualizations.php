@@ -9,4 +9,5 @@ return [
     'image_extensions' => ['jpg', 'jpeg', 'png', 'webp'],
     'max_capture_images' => (int) env('VISUALIZATION_MAX_CAPTURE_IMAGES', 120),
     'max_processing_storage_mb' => (int) env('VISUALIZATION_MAX_PROCESSING_STORAGE_MB', 512),
+    'max_concurrent_reconstructions_per_tenant' => (int) env('VISUALIZATION_MAX_CONCURRENT_RECONSTRUCTIONS_PER_TENANT', 1),
 ];

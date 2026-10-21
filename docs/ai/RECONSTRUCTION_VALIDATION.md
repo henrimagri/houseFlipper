@@ -95,3 +95,11 @@ O melhor TSDF novo atingiu 57,85% de precisão e 52,33% de completude a 10 cm, 4
 O plane-sweep CPU de três ou mais vistas funcionou em teste sintético, mas no conjunto real obteve erro mediano independente de 16,17% e somente 33,33% das âncoras dentro de 10%. Não foi integrado à reconstrução. O resultado sustenta encerrar otimizações baseadas apenas em SGBM/limiares e preparar MVS denso autorizado ou o produto híbrido paramétrico com regiões geométricas verificadas.
 
 Candidatos `viewer_eligible` podem ser abertos por diagnóstico sem alterar o modelo primário. O backend exige tenant, produto, propriedade do imóvel e asset pertencente à mesma visualização; `final_model_eligible=false` continua impedindo promoção. QA de canvas novo não foi realizado porque a ferramenta oficial recusou acesso à aba localhost. Fase 8 e a cobertura fototexturizada de 57,51% permanecem ativas.
+
+## Gate denso e operacional da Fase 13
+
+O capability gate inspeciona a lista real de comandos e a declaração de suporte GPU do executável. A sequência densa exige `mesh_texturer`; geometria aprovada sem atlas fotográfico verificável perde `viewer_eligible` e não gera GLB.
+
+Cada reconstrução usa UUID idempotente e escopo HMAC por visualização. O hash acompanha progresso e resultado final, sem retornar na API. Consulta, cancelamento e artefatos recusam outro escopo. Reinícios encerram jobs órfãos com `WorkerRestarted`, e a retenção remove apenas jobs terminais expirados.
+
+Neste host a sonda retornou COLMAP 4.2.1 `without GPU support`; o gate denso permaneceu fechado. Não há nova comparação geométrica ou visual. Fase 8 permanece ativa e `final_model_eligible=false` continua obrigatório até execução Linux/CUDA, benchmark independente e inspeção visual.

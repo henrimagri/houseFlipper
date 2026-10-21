@@ -323,3 +323,11 @@ D levou 48,73 s, 1,762 GB de RSS amostrado e 195,22 MB de pico CUDA PyTorch. F l
 A aplicação ganhou visualização diagnóstica autenticada para candidatos elegíveis não promovidos. O asset precisa pertencer à visualização autorizada, ser `reconstruction_preview`, não ser primário e possuir job correspondente com `viewer_eligible=true`. A URL não altera `is_primary`; a interface exibe aviso de candidato experimental e oferece retorno ao modelo ativo. Testes Laravel cobrem o modelo padrão, candidato e rejeição do id primário como diagnóstico.
 
 O frontend respondeu HTTP 200, mas o controlador oficial recusou a aba localhost. Não há captura nova nem afirmação de fidelidade visual. As capturas reais da Fase 8 continuam sendo a última evidência visual aprovada. Resumo e hashes: `evidence/phase12-stereo-coverage-summary.json`; funil: `evidence/phase12-stereo-coverage-funnel.png`.
+
+## Fase 13 — preparação densa sem execução CUDA
+
+O dataset autorizado `playroom_small` e seus resultados históricos não foram reprocessados com a malha oficial como entrada. A Fase 8 continua ativa e os candidatos da Fase 12 continuam rejeitados.
+
+O pipeline denso foi completado até o contrato de texturização: undistortion, PatchMatch geométrico, Stereo Fusion, meshing, `mesh_texturer`, descoberta do atlas, conversão GLB e gate. Testes simulados verificam ordem, argumentos, cancelamento e rejeição. A sonda local confirmou COLMAP 4.2.1 sem GPU. Docker/Linux/CUDA não estavam disponíveis e não foram instalados; portanto não existem nova nuvem densa, malha, atlas, métricas, tempo ou VRAM reais nesta fase.
+
+O próximo ensaio autorizado deve usar a imagem Linux fixada por digest, registrar hashes e recursos e comparar a malha própria com a referência somente após a geração. Sem esse ensaio e sem inspeção do canvas, reconstrução densa e fototexturização comercial permanecem pendentes.

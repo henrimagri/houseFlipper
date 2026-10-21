@@ -15,10 +15,14 @@ enable_native_diagnostics()
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
-from .async_reconstruction import cancel_job, read_job, submit_reconstruction
+from .async_reconstruction import (
+    cancel_job, cleanup_expired_jobs, public_job, read_job, recover_interrupted_jobs,
+    scope_matches, submit_reconstruction,
+)
 from .reconstruction import (
     colmap_executable,
     dense_reconstruction_capability,
+    inspect_colmap_runtime,
     reconstruct as reconstruct_photogrammetry,
 )
 from .vision import vision_pipeline
@@ -26,6 +30,10 @@ from .vision import vision_pipeline
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    artifact_root = Path(os.environ.get("AI_WORKER_ARTIFACT_ROOT", Path(__file__).resolve().parents[1] / "artifacts"))
+    recovered = recover_interrupted_jobs(artifact_root)
+    removed = cleanup_expired_jobs(artifact_root)
+    record_event("reconstruction_jobs_reconciled", recovered=recovered, removed=removed)
     record_event("fastapi_started")
     try:
         yield
@@ -73,6 +81,7 @@ def health() -> dict:
 def models() -> dict:
     adapter = Path(__file__).resolve().parents[1] / "models" / "real-estate-lora"
     colmap = colmap_executable()
+    runtime_probe = inspect_colmap_runtime(colmap) if colmap is not None else None
     return {
         "torch": torch_status(),
         "lora_adapter": {"available": (adapter / "adapter_model.safetensors").is_file(), "path": str(adapter)},
@@ -80,7 +89,7 @@ def models() -> dict:
         "reconstruction": {
             "colmap": colmap is not None,
             "version": "4.2.1",
-            "dense": dense_reconstruction_capability(executable=colmap),
+            "dense": dense_reconstruction_capability(executable=colmap, runtime_probe=runtime_probe),
         },
     }
 
@@ -174,6 +183,8 @@ async def reconstruct(
     files: list[UploadFile] = File(...),
     overlap_acknowledged: bool = Form(default=False),
     method: str = Form(default="auto"),
+    idempotency_key: str = Form(default=""),
+    job_scope: str = Form(default=""),
 ) -> dict:
     if len(files) < 8 or not overlap_acknowledged:
         raise HTTPException(status_code=422, detail="Reconstrução fiel exige ao menos 8 fotos sobrepostas do mesmo ambiente.")
@@ -184,18 +195,39 @@ async def reconstruct(
     if colmap_executable() is None:
         raise HTTPException(status_code=503, detail="COLMAP não está instalado neste worker.")
     artifact_root = Path(os.environ.get("AI_WORKER_ARTIFACT_ROOT", Path(__file__).resolve().parents[1] / "artifacts"))
-    job_id = str(uuid.uuid4())
+    try:
+        job_id = str(uuid.UUID(idempotency_key))
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Chave idempotente inválida.") from None
+    if not 32 <= len(job_scope) <= 128 or not all(character in "0123456789abcdef" for character in job_scope.lower()):
+        raise HTTPException(status_code=422, detail="Escopo interno inválido.")
     staging = artifact_root / ".staging" / job_id
+    existing = read_job(artifact_root, job_id)
+    if existing is not None:
+        if not scope_matches(existing, job_scope):
+            raise HTTPException(status_code=404, detail="Job não encontrado.")
+        return public_job(existing)
     staging.mkdir(parents=True, exist_ok=False)
     inputs = []
+    total_bytes = 0
+    try:
+        configured_upload_mb = int(os.environ.get("AI_WORKER_MAX_UPLOAD_MB", "512"))
+    except ValueError:
+        configured_upload_mb = 512
+    max_upload_bytes = max(80, min(configured_upload_mb, 1200)) * 1024 * 1024
     try:
         for index, file in enumerate(files):
             data = await validate_image(file)
+            total_bytes += len(data)
+            if total_bytes > max_upload_bytes:
+                raise HTTPException(status_code=422, detail="O conjunto excede o limite total do worker.")
             suffix = Path(file.filename or "image.jpg").suffix.lower()
             target = staging / f"{index:04d}{suffix}"
             target.write_bytes(data)
             inputs.append(target)
-        return submit_reconstruction(inputs=inputs, artifact_root=artifact_root, job_id=job_id, method=method)
+        return submit_reconstruction(inputs=inputs, artifact_root=artifact_root, job_id=job_id, method=method, scope=job_scope)
+    except PermissionError:
+        raise HTTPException(status_code=404, detail="Job não encontrado.") from None
     except Exception:
         import shutil
 
@@ -204,7 +236,7 @@ async def reconstruct(
 
 
 @app.get("/v1/jobs/{job_id}", dependencies=[Depends(authorize)])
-def job(job_id: str) -> dict:
+def job(job_id: str, x_worker_scope: str | None = Header(default=None)) -> dict:
     try:
         safe_id = str(uuid.UUID(job_id))
     except ValueError:
@@ -213,24 +245,29 @@ def job(job_id: str) -> dict:
     result = read_job(artifact_root, safe_id)
     if result is None:
         raise HTTPException(status_code=404, detail="Job não encontrado.")
-    return result
+    if not x_worker_scope or not scope_matches(result, x_worker_scope):
+        raise HTTPException(status_code=404, detail="Job não encontrado.")
+    return public_job(result)
 
 
 @app.delete("/v1/jobs/{job_id}", dependencies=[Depends(authorize)])
-def cancel_reconstruction_job(job_id: str) -> dict:
+def cancel_reconstruction_job(job_id: str, x_worker_scope: str | None = Header(default=None)) -> dict:
     try:
         safe_id = str(uuid.UUID(job_id))
     except ValueError:
         raise HTTPException(status_code=404, detail="Job não encontrado.") from None
     artifact_root = Path(os.environ.get("AI_WORKER_ARTIFACT_ROOT", Path(__file__).resolve().parents[1] / "artifacts"))
-    result = cancel_job(artifact_root, safe_id)
+    try:
+        result = cancel_job(artifact_root, safe_id, x_worker_scope or "")
+    except PermissionError:
+        raise HTTPException(status_code=404, detail="Job não encontrado.") from None
     if result is None:
         raise HTTPException(status_code=404, detail="Job não encontrado.")
     return result
 
 
 @app.get("/v1/jobs/{job_id}/artifacts/{name}", dependencies=[Depends(authorize)])
-def artifact(job_id: str, name: str) -> FileResponse:
+def artifact(job_id: str, name: str, x_worker_scope: str | None = Header(default=None)) -> FileResponse:
     try:
         safe_id = str(uuid.UUID(job_id))
     except ValueError:
@@ -238,6 +275,9 @@ def artifact(job_id: str, name: str) -> FileResponse:
     if Path(name).name != name or name not in {"original.jpg", "depth.png", "mask.png", "segmentation-overlay.png", "simulation.png", "comparison.png", "result.json", "sparse.ply", "dense.ply", "mesh.ply", "dense-mesh.ply", "dense-model.glb", "model.glb"}:
         raise HTTPException(status_code=404, detail="Artefato não encontrado.")
     target = Path(os.environ.get("AI_WORKER_ARTIFACT_ROOT", Path(__file__).resolve().parents[1] / "artifacts")) / safe_id / name
+    job_result = read_job(target.parents[1], safe_id)
+    if job_result is not None and job_result.get("scope_hash") and (not x_worker_scope or not scope_matches(job_result, x_worker_scope)):
+        raise HTTPException(status_code=404, detail="Artefato não encontrado.")
     if not target.is_file():
         raise HTTPException(status_code=404, detail="Artefato não encontrado.")
     return FileResponse(target, filename=name)

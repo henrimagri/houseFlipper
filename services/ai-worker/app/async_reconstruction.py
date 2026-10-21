@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import hmac
+import os
 import shutil
 import threading
 import time
@@ -37,8 +40,25 @@ def read_job(artifact_root: Path, job_id: str) -> dict[str, Any] | None:
     return json.loads(target.read_text(encoding="utf-8"))
 
 
-def submit_reconstruction(*, inputs: list[Path], artifact_root: Path, job_id: str, method: str = "auto") -> dict[str, Any]:
+def scope_matches(job: dict[str, Any], scope: str) -> bool:
+    expected = str(job.get("scope_hash") or "")
+    return bool(expected) and hmac.compare_digest(hashlib.sha256(scope.encode("utf-8")).hexdigest(), expected)
+
+
+def public_job(job: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in job.items() if key != "scope_hash"}
+
+
+def submit_reconstruction(
+    *, inputs: list[Path], artifact_root: Path, job_id: str, method: str = "auto", scope: str,
+) -> dict[str, Any]:
     output = artifact_root / job_id
+    existing = read_job(artifact_root, job_id)
+    if existing is not None:
+        if not scope_matches(existing, scope):
+            raise PermissionError("O identificador idempotente pertence a outro escopo.")
+        shutil.rmtree(artifact_root / ".staging" / job_id, ignore_errors=True)
+        return public_job(existing)
     output.mkdir(parents=True, exist_ok=False)
     initial = {
         "job_id": job_id,
@@ -47,30 +67,35 @@ def submit_reconstruction(*, inputs: list[Path], artifact_root: Path, job_id: st
         "stage": "queued",
         "percent": 0,
         "requested_method": method,
+        "scope_hash": hashlib.sha256(scope.encode("utf-8")).hexdigest(),
         "updated_at": time.time(),
     }
     _write_json(job_status_path(artifact_root, job_id), initial)
     _executor.submit(_run, inputs, artifact_root, job_id, method)
     record_event("reconstruction_queued", job_id=job_id, input_count=len(inputs), method=method)
-    return initial
+    return public_job(initial)
 
 
-def cancel_job(artifact_root: Path, job_id: str) -> dict[str, Any] | None:
+def cancel_job(artifact_root: Path, job_id: str, scope: str) -> dict[str, Any] | None:
     current = read_job(artifact_root, job_id)
     if current is None:
         return None
+    if not scope_matches(current, scope):
+        raise PermissionError("O job não pertence ao escopo informado.")
     if current.get("status") in {"completed", "failed", "cancelled"}:
-        return current
+        return public_job(current)
     marker = artifact_root / job_id / "cancel.requested"
     marker.write_text(str(time.time()), encoding="ascii")
     current.update({"status": "cancelling", "stage": "cancelling", "updated_at": time.time()})
     _write_json(job_status_path(artifact_root, job_id), current)
-    return current
+    return public_job(current)
 
 
 def _run(inputs: list[Path], artifact_root: Path, job_id: str, method: str = "auto") -> None:
     status_path = job_status_path(artifact_root, job_id)
     cancel_marker = artifact_root / job_id / "cancel.requested"
+    persisted = read_job(artifact_root, job_id) or {}
+    scope_hash = persisted.get("scope_hash")
 
     def cancelled() -> bool:
         return cancel_marker.is_file()
@@ -83,6 +108,7 @@ def _run(inputs: list[Path], artifact_root: Path, job_id: str, method: str = "au
             "stage": stage,
             "percent": percent,
             "requested_method": method,
+            "scope_hash": scope_hash,
             "updated_at": time.time(),
         })
         record_event("reconstruction_job_progress", job_id=job_id, stage=stage, percent=percent)
@@ -90,6 +116,11 @@ def _run(inputs: list[Path], artifact_root: Path, job_id: str, method: str = "au
     try:
         with native_stage("photogrammetry_job", job_id=job_id, input_count=len(inputs)):
             reconstruct(inputs, artifact_root, job_id=job_id, method=method, cancel=cancelled, progress=progress)
+        completed_path = artifact_root / job_id / "result.json"
+        completed = json.loads(completed_path.read_text(encoding="utf-8"))
+        completed["scope_hash"] = scope_hash
+        completed["updated_at"] = time.time()
+        _write_json(completed_path, completed)
     except InterruptedError as exception:
         cancelled_result = {
             "job_id": job_id,
@@ -98,6 +129,7 @@ def _run(inputs: list[Path], artifact_root: Path, job_id: str, method: str = "au
             "stage": "cancelled",
             "percent": 100,
             "requested_method": method,
+            "scope_hash": scope_hash,
             "message": str(exception),
             "updated_at": time.time(),
         }
@@ -112,6 +144,7 @@ def _run(inputs: list[Path], artifact_root: Path, job_id: str, method: str = "au
             "percent": 100,
             "error": str(exception)[:2000],
             "error_type": type(exception).__name__,
+            "scope_hash": scope_hash,
             "updated_at": time.time(),
         }
         _write_json(artifact_root / job_id / "result.json", failed)
@@ -119,3 +152,48 @@ def _run(inputs: list[Path], artifact_root: Path, job_id: str, method: str = "au
     finally:
         staging = artifact_root / ".staging" / job_id
         shutil.rmtree(staging, ignore_errors=True)
+
+
+def recover_interrupted_jobs(artifact_root: Path) -> int:
+    """Persist an honest terminal state for work lost during a process restart."""
+    recovered = 0
+    if not artifact_root.is_dir():
+        return recovered
+    for status_path in artifact_root.glob("*/job-status.json"):
+        try:
+            job = json.loads(status_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if job.get("status") not in {"queued", "processing", "cancelling"}:
+            continue
+        job.update({
+            "status": "failed", "stage": "worker_restarted", "percent": 100,
+            "error": "O worker reiniciou durante o processamento. Reenvie o job com uma nova chave idempotente.",
+            "error_type": "WorkerRestarted", "updated_at": time.time(),
+        })
+        _write_json(status_path.parent / "result.json", job)
+        recovered += 1
+    return recovered
+
+
+def cleanup_expired_jobs(artifact_root: Path, *, now: float | None = None) -> int:
+    try:
+        configured_hours = int(os.environ.get("AI_WORKER_RETENTION_HOURS", "72"))
+    except ValueError:
+        configured_hours = 72
+    retention_hours = max(1, min(configured_hours, 24 * 30))
+    cutoff = (now or time.time()) - retention_hours * 3600
+    removed = 0
+    if not artifact_root.is_dir():
+        return removed
+    for directory in artifact_root.iterdir():
+        if not directory.is_dir() or directory.name == ".staging":
+            continue
+        job = read_job(artifact_root, directory.name)
+        if not job or job.get("status") not in {"completed", "failed", "cancelled"}:
+            continue
+        if float(job.get("updated_at") or directory.stat().st_mtime) >= cutoff:
+            continue
+        shutil.rmtree(directory, ignore_errors=True)
+        removed += 1
+    return removed

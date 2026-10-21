@@ -200,9 +200,12 @@ test('property visualization separates photo editing, scene creation, and valida
     read('src/lib/propertyVisualization.ts'),
   ]);
 
-  assert.match(screen, /Editar fotografia/);
-  assert.match(screen, /Criar ambiente 3D/);
-  assert.match(screen, /Reconstruir em 3D/);
+  assert.match(screen, /A · Reconstrução observada/);
+  assert.match(screen, /B · Ambiente aproximado/);
+  assert.match(screen, /C · Simulação de reforma/);
+  assert.match(screen, /Projeto visual do imóvel/);
+  assert.match(screen, /\['6', 'Apresentação'/);
+  assert.match(screen, /Regiões ausentes continuam identificadas como desconhecidas/);
   assert.match(screen, /correção estéreo local experimental/);
   assert.match(screen, /fusão híbrida de estéreo verificado/);
   assert.match(screen, /viewer_eligible === true/);

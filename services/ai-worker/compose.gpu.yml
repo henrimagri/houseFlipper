@@ -14,6 +14,8 @@ services:
     environment:
       AI_WORKER_TOKEN: "${AI_WORKER_TOKEN:?Defina um token interno forte}"
       AI_WORKER_ARTIFACT_ROOT: /worker/artifacts
+      AI_WORKER_RETENTION_HOURS: "${AI_WORKER_RETENTION_HOURS:-72}"
+      AI_WORKER_MAX_UPLOAD_MB: "${AI_WORKER_MAX_UPLOAD_MB:-512}"
       COLMAP_EXECUTABLE: "${COLMAP_EXECUTABLE:-/usr/local/bin/colmap}"
       COLMAP_DENSE_ENABLED: "true"
       COLMAP_GPU_BUILD: "true"

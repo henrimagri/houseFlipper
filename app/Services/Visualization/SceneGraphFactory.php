@@ -103,6 +103,7 @@ class SceneGraphFactory
             ],
             'photo_assets' => $photoAssets,
             'library' => ['sofa', 'bed', 'table', 'chair', 'sink', 'wardrobe', 'lamp', 'plant', 'window', 'door', 'partition'],
+            'project_notes' => [],
         ];
     }
 
@@ -253,6 +254,18 @@ class SceneGraphFactory
                     'height' => max(2, min(8, (float) ($dimensions['height'] ?? 2.65))),
                     'source' => 'user',
                 ];
+            } elseif ($op === 'set_project_brief') {
+                $category = (string) ($action['category'] ?? 'note');
+                $brief = trim((string) ($action['brief'] ?? ''));
+                if (! in_array($category, ['cost_estimate', 'presentation', 'renovation_proposal'], true) || $brief === '') {
+                    throw new InvalidArgumentException('Nota estruturada do projeto inválida.');
+                }
+                $graph['project_notes'][] = [
+                    'category' => $category,
+                    'brief' => mb_substr($brief, 0, 1000),
+                    'source' => 'structured_ai_action',
+                ];
+                $graph['project_notes'] = array_slice($graph['project_notes'], -20);
             }
         }
 

@@ -239,6 +239,7 @@ export default function PropertyViewer() {
   const capturePhotos = data?.gallery.filter(item => (item.kind === 'photo' || item.kind === 'panorama') && selectedPhotoIds.includes(item.id)) ?? [];
   const availablePhotos = data?.gallery.filter(item => item.kind === 'photo' || item.kind === 'panorama') ?? [];
   const reconstructionArtifacts = data?.gallery.filter(item => item.kind === 'point_cloud' || item.kind === 'reconstruction_mesh') ?? [];
+  const activeReconstructionJob = data?.processing_jobs?.find(item => item.kind === 'photogrammetry');
 
   function toggleCapturePhoto(assetId: number) {
     setCaptureConfirmed(false);
@@ -279,18 +280,33 @@ export default function PropertyViewer() {
     {error && <p role="alert" className="rounded-xl bg-red-50 dark:bg-red-950 p-3 text-sm text-red-800 dark:text-red-200">{error}</p>}
     {notice && <p className="rounded-xl bg-slate-100 dark:bg-slate-800 p-3 text-sm text-slate-700 dark:text-slate-200">{notice}</p>}
 
+    <CreationJourney
+      hasPhotos={availablePhotos.length > 0}
+      mode={mode}
+      processing={Boolean(activeReconstructionJob && !['completed', 'failed', 'cancelled'].includes(activeReconstructionJob.status))}
+      editorReady={Boolean(graph || modelEligible)}
+      presentationReady={Boolean((data.versions?.length ?? 0) > 0 || (data.photo_editing?.simulations?.length ?? 0) > 0)}
+    />
+
     <nav aria-label="Modos da visualização do imóvel" className="grid gap-3 md:grid-cols-3">
-      <ModeButton icon={Paintbrush} active={mode === 'photo_edit'} onClick={() => setMode('photo_edit')} title="Editar fotografia" text="Cor, orientações e comparação visual" />
-      <ModeButton icon={Cuboid} active={mode === 'scene_3d'} onClick={() => setMode('scene_3d')} title="Criar ambiente 3D" text="Cena editável baseada nas evidências" />
-      <ModeButton icon={ScanLine} active={mode === 'reconstruction_3d'} onClick={() => setMode('reconstruction_3d')} title="Reconstruir em 3D" text="Captura, processamento e validação" />
+      <ModeButton icon={ScanLine} active={mode === 'reconstruction_3d'} onClick={() => setMode('reconstruction_3d')} title="A · Reconstrução observada" text="Exibe somente geometria sustentada pelas fotos e aprovada pelo gate" />
+      <ModeButton icon={Cuboid} active={mode === 'scene_3d'} onClick={() => setMode('scene_3d')} title="B · Ambiente aproximado" text="Cômodo paramétrico editável com medidas informadas pelo usuário" />
+      <ModeButton icon={Paintbrush} active={mode === 'photo_edit'} onClick={() => setMode('photo_edit')} title="C · Simulação de reforma" text="Compara a fotografia original com materiais e pintura simulados" />
     </nav>
+
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 text-xs dark:border-slate-700 dark:bg-slate-900">
+      <span className="font-black text-slate-700 dark:text-slate-200">Comparar:</span>
+      <button type="button" onClick={() => setMode('photo_edit')} className="rounded-lg border border-slate-200 px-3 py-1.5 font-bold dark:border-slate-700">Foto original / reforma</button>
+      <button type="button" onClick={() => setMode('reconstruction_3d')} className="rounded-lg border border-slate-200 px-3 py-1.5 font-bold dark:border-slate-700">Geometria observada</button>
+      <button type="button" onClick={() => setMode('scene_3d')} className="rounded-lg border border-slate-200 px-3 py-1.5 font-bold dark:border-slate-700">Ambiente aproximado</button>
+    </div>
 
     <section className={`overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 dark:border-slate-700 ${fullscreen ? 'fixed inset-3 z-50 overflow-auto' : ''}`}>
       {mode === 'photo_edit' && <PropertyPhotoEditor photos={availablePhotos} simulations={data.photo_editing?.simulations ?? []} busy={busy} onAnalyze={analyzeNeural} onApply={applyPhotoSimulation} />}
 
       {mode === 'scene_3d' && <>
         <div className="flex flex-wrap items-center gap-3 border-b border-white/10 px-4 py-3 text-slate-200">
-          <div className="min-w-0 flex-1"><p className="font-black">Ambiente 3D editável</p><p className="text-xs text-slate-400">A cena preserva as limitações das fotos e dos dados do anúncio.</p></div>
+          <div className="min-w-0 flex-1"><p className="font-black">Ambiente editável aproximado</p><p className="text-xs text-slate-400">Geometria paramétrica completa para experimentar reformas. As medidas estimadas são identificadas e podem ser substituídas pelas medidas do usuário.</p></div>
           <button type="button" onClick={() => void rebuild()} disabled={busy || availablePhotos.length === 0} className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-slate-900 disabled:opacity-40">{busy ? 'Processando...' : graph ? 'Atualizar pelas fotos' : 'Criar pelas fotos'}</button>
         </div>
         {graph ? <PropertyPhotoSceneEditor
@@ -325,8 +341,8 @@ export default function PropertyViewer() {
 
       {mode === 'reconstruction_3d' && <div className="space-y-0 text-slate-100">
         <div className="border-b border-white/10 p-5">
-          <h2 className="flex items-center gap-2 text-lg font-black"><ScanLine className="h-5 w-5 text-cyan-400" /> Reconstrução fotogramétrica</h2>
-          <p className="mt-1 text-sm text-slate-400">Um arquivo só aparece no visualizador depois de passar pela validação de elegibilidade.</p>
+          <h2 className="flex items-center gap-2 text-lg font-black"><ScanLine className="h-5 w-5 text-cyan-400" /> Reconstrução observada</h2>
+          <p className="mt-1 text-sm text-slate-400">Mostra apenas superfícies medidas pelas fotografias e câmeras calibradas. Regiões ausentes continuam identificadas como desconhecidas.</p>
         </div>
         {data.model?.diagnostic_preview && <div className="border-b border-amber-300/20 bg-amber-400/10 px-5 py-3 text-sm text-amber-100">
           Candidato experimental aberto somente para diagnóstico. O modelo principal do imóvel continua preservado.
@@ -429,6 +445,28 @@ function statusLabel(status?: string | null): string {
 
 function ModeButton({ icon: Icon, active, onClick, title, text }: { icon: typeof Box; active: boolean; onClick: () => void; title: string; text: string }) {
   return <button type="button" aria-pressed={active} onClick={onClick} className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${active ? 'border-cyan-500 bg-cyan-50 ring-2 ring-cyan-500/15 dark:bg-cyan-950/30' : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900'}`}><span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${active ? 'bg-cyan-500 text-slate-950' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}><Icon className="h-5 w-5" /></span><span><span className="block font-black text-slate-900 dark:text-slate-100">{title}</span><span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{text}</span></span></button>;
+}
+
+function CreationJourney({ hasPhotos, mode, processing, editorReady, presentationReady }: {
+  hasPhotos: boolean;
+  mode: WorkspaceMode;
+  processing: boolean;
+  editorReady: boolean;
+  presentationReady: boolean;
+}) {
+  const steps = [
+    ['1', 'Imóvel', true],
+    ['2', 'Fotografias', hasPhotos],
+    ['3', 'Modalidade', Boolean(mode)],
+    ['4', processing ? 'Processando' : 'Processamento', processing || editorReady],
+    ['5', 'Editor', editorReady],
+    ['6', 'Apresentação', presentationReady],
+  ] as const;
+
+  return <section aria-label="Etapas de criação do projeto visual" className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+    <div className="flex items-start justify-between gap-4"><div><h2 className="font-black text-slate-900 dark:text-slate-100">Projeto visual do imóvel</h2><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Você pode usar a simulação aproximada enquanto a reconstrução observada estiver indisponível.</p></div><span className="rounded-full bg-cyan-100 px-3 py-1 text-[11px] font-black text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200">fluxo guiado</span></div>
+    <ol className="mt-4 grid gap-2 sm:grid-cols-3 xl:grid-cols-6">{steps.map(([number, label, complete]) => <li key={number} className={`rounded-xl border px-3 py-2 ${complete ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40' : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950'}`}><span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Etapa {number}</span><span className="mt-1 flex items-center gap-1.5 text-xs font-bold">{complete && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}{label}</span></li>)}</ol>
+  </section>;
 }
 
 function ModelDiagnosticPanel({ diagnostic, hasModel, artifacts }: { diagnostic: ModelViewerDiagnostic; hasModel: boolean; artifacts: VisualizationAsset[] }) {

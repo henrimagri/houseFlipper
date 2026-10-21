@@ -24,6 +24,31 @@ GEOMETRY_THRESHOLDS = {
     "max_degenerate_face_ratio": 0.02,
 }
 
+REQUIRED_DENSE_COMMANDS = {
+    "image_undistorter", "patch_match_stereo", "stereo_fusion",
+    "poisson_mesher", "delaunay_mesher", "mesh_texturer",
+}
+
+
+def inspect_colmap_runtime(executable: Path, *, timeout: int = 15) -> dict[str, Any]:
+    """Inspect the installed binary instead of trusting an image label."""
+    try:
+        completed = subprocess.run(
+            [str(executable), "help"], capture_output=True, text=True, timeout=timeout, check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exception:
+        return {"available": False, "error": type(exception).__name__, "commands": [], "gpu_support": False}
+    output = f"{completed.stdout}\n{completed.stderr}"
+    commands = sorted(command for command in REQUIRED_DENSE_COMMANDS if command in output)
+    lowered = output.lower()
+    return {
+        "available": completed.returncode == 0,
+        "version_line": next((line.strip() for line in output.splitlines() if line.strip().startswith("COLMAP ")), None),
+        "commands": commands,
+        "missing_commands": sorted(REQUIRED_DENSE_COMMANDS.difference(commands)),
+        "gpu_support": "without gpu support" not in lowered and ("cuda" in lowered or "gpu support" in lowered),
+    }
+
 
 def _environment_flag(environment: Mapping[str, str], name: str, default: bool = False) -> bool:
     value = environment.get(name)
@@ -38,6 +63,7 @@ def dense_reconstruction_capability(
     system_name: str | None = None,
     executable: Path | None = None,
     gpu_device_visible: bool | None = None,
+    runtime_probe: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     environment = environment if environment is not None else os.environ
     requested = _environment_flag(environment, "COLMAP_DENSE_ENABLED")
@@ -62,12 +88,17 @@ def dense_reconstruction_capability(
         reasons.append("Nenhum dispositivo NVIDIA foi disponibilizado ao processo do worker.")
     if requested and executable is None:
         reasons.append("O executável COLMAP não está disponível.")
+    if requested and runtime_probe is not None and runtime_probe.get("missing_commands"):
+        reasons.append("O COLMAP configurado não oferece todos os comandos densos exigidos.")
+    if requested and runtime_probe is not None and not runtime_probe.get("gpu_support"):
+        reasons.append("O próprio binário COLMAP informou que não possui suporte CUDA/GPU.")
     if requested and not valid_mesher:
         reasons.append("COLMAP_DENSE_MESHER deve ser poisson ou delaunay.")
 
     return {
         "requested": requested,
-        "enabled": requested and linux and gpu_build and bool(gpu_device_visible) and executable is not None and valid_mesher,
+        "enabled": requested and linux and gpu_build and bool(gpu_device_visible) and executable is not None and valid_mesher
+        and (runtime_probe is None or (bool(runtime_probe.get("gpu_support")) and not runtime_probe.get("missing_commands"))),
         "platform": "linux" if linux else (system_name or platform.system()).lower(),
         "gpu_build_confirmed": gpu_build,
         "gpu_device_visible": bool(gpu_device_visible),
@@ -75,6 +106,7 @@ def dense_reconstruction_capability(
         "max_image_size": max_image_size,
         "gpu_index": gpu_index,
         "reasons": reasons,
+        "runtime_probe": dict(runtime_probe) if runtime_probe is not None else None,
     }
 
 
@@ -326,6 +358,8 @@ def run_dense_reconstruction(
     sparse_model: Path,
     output: Path,
     capability: dict[str, Any],
+    cancel: Callable[[], bool] | None = None,
+    progress: Callable[[str, int], None] | None = None,
 ) -> dict[str, Any]:
     """Run COLMAP MVS only after an explicit, validated Linux GPU opt-in."""
     if not capability.get("enabled"):
@@ -348,6 +382,13 @@ def run_dense_reconstruction(
     dense_glb = output / "dense-model.glb"
     workspace.mkdir(exist_ok=False)
     timings = {}
+    def checkpoint(stage: str, percent: int) -> None:
+        if cancel and cancel():
+            raise InterruptedError("Reconstrução densa cancelada pelo usuário.")
+        if progress:
+            progress(stage, percent)
+
+    checkpoint("dense_undistorting", 66)
     timings["image_undistortion_ms"] = _run(
         [
             str(executable),
@@ -365,6 +406,7 @@ def run_dense_reconstruction(
         ],
         output / "image-undistorter.log",
     )
+    checkpoint("dense_matching", 72)
     timings["patch_match_stereo_ms"] = _run(
         [
             str(executable),
@@ -380,6 +422,7 @@ def run_dense_reconstruction(
         ],
         output / "patch-match-stereo.log",
     )
+    checkpoint("dense_fusing", 80)
     timings["stereo_fusion_ms"] = _run(
         [
             str(executable),
@@ -419,6 +462,7 @@ def run_dense_reconstruction(
             str(dense_mesh),
         ]
         method = "dense_delaunay_preview"
+    checkpoint("dense_meshing", 87)
     timings["dense_meshing_ms"] = _run(mesh_command, output / f"dense-{mesher}-mesher.log")
 
     if not dense_cloud.is_file() or dense_cloud.stat().st_size == 0:
@@ -426,21 +470,43 @@ def run_dense_reconstruction(
     if not dense_mesh.is_file() or dense_mesh.stat().st_size == 0:
         raise RuntimeError("COLMAP não gerou a malha densa.")
 
+    checkpoint("dense_texturing", 92)
+    textured_workspace = output / "dense-textured"
+    timings["mesh_texturing_ms"] = _run([
+        str(executable), "mesh_texturer", "--workspace_path", str(workspace),
+        "--input_path", str(dense_mesh), "--output_path", str(textured_workspace),
+        "--output_type", "BIN", "--MeshTextureMapping.apply_color_correction", "true",
+    ], output / "mesh-texturer.log")
+
     point_cloud = trimesh.load(dense_cloud, process=False)
     dense_points = len(getattr(point_cloud, "vertices", []))
     loaded_mesh = trimesh.load(dense_mesh, force="mesh", process=False)
     geometry_quality = evaluate_geometry(loaded_mesh, method=method, sparse_point_count=dense_points)
-    if geometry_quality["viewer_eligible"]:
-        loaded_mesh.export(dense_glb, file_type="glb")
+    textured_candidates = [*textured_workspace.rglob("*.obj"), *textured_workspace.rglob("*.ply")]
+    texture_files = [
+        path for path in textured_workspace.rglob("*")
+        if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}
+    ] if textured_workspace.is_dir() else []
+    textured_source = textured_candidates[0] if textured_candidates else None
+    if geometry_quality["viewer_eligible"] and textured_source is not None and texture_files:
+        textured_scene = trimesh.load(textured_source, force="scene", process=False)
+        textured_scene.export(dense_glb, file_type="glb")
+    elif geometry_quality["viewer_eligible"]:
+        geometry_quality["status"] = "rejected"
+        geometry_quality["viewer_eligible"] = False
+        geometry_quality["final_model_eligible"] = False
+        geometry_quality["reasons"].append("A malha não recebeu um atlas fotográfico verificável do COLMAP mesh_texturer.")
 
     return {
-        "status": "completed" if geometry_quality["viewer_eligible"] else "rejected",
+        "status": "completed" if geometry_quality["viewer_eligible"] and dense_glb.is_file() else "rejected",
         "capability": capability,
         "geometry_quality": geometry_quality,
         "artifacts": {
             "point_cloud": dense_cloud.name,
             "mesh": dense_mesh.name,
             "glb": dense_glb.name if dense_glb.is_file() else None,
+            "textured_workspace": textured_workspace.name if textured_workspace.is_dir() else None,
+            "texture_files": [str(path.relative_to(textured_workspace)) for path in texture_files],
         },
         "timings": timings,
     }
@@ -468,7 +534,8 @@ def reconstruct(
     executable = colmap_executable()
     if executable is None:
         raise RuntimeError("COLMAP não está instalado no worker.")
-    dense_capability = dense_reconstruction_capability(executable=executable)
+    runtime_probe = inspect_colmap_runtime(executable)
+    dense_capability = dense_reconstruction_capability(executable=executable, runtime_probe=runtime_probe)
     quality = preflight(image_paths)
     if not quality.get("accepted"):
         raise ValueError(str(quality.get("reason")))
@@ -536,6 +603,8 @@ def reconstruct(
                 sparse_model=model,
                 output=output,
                 capability=dense_capability,
+                cancel=cancel,
+                progress=progress,
             )
         else:
             dense_reconstruction = {
