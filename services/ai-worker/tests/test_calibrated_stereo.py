@@ -73,6 +73,14 @@ def _write_shifted_pair(root: Path, disparity: int, *, flat: bool = False, brigh
     Image.fromarray(right).save(root / "right.png")
 
 
+def _write_vertically_shifted_pair(root: Path, disparity: int) -> None:
+    left = _texture(320, 240)
+    right = np.zeros_like(left)
+    right[:-disparity, :] = left[disparity:, :]
+    Image.fromarray(left).save(root / "left.png")
+    Image.fromarray(right).save(root / "right.png")
+
+
 def _pair(left: View, right: View, camera: Camera, disparity: float = 18.0) -> StereoPair:
     return StereoPair(
         left.name, right.name, len(left.observations), 1.0,
@@ -119,6 +127,53 @@ def test_rectified_stereo_recovers_known_front_plane_depth(tmp_path: Path) -> No
     assert np.median(result.depth[valid]) == pytest.approx(expected_depth, rel=0.08)
     assert result.report["rectification"]["median_orthogonal_error_px"] < 0.1
     assert result.report["depth"]["convention"] == "z_along_original_left_camera_axis"
+    funnel = result.report["acceptance_funnel"]
+    assert funnel["valid_rectified_pixels"] <= funnel["geometric_overlap_pixels"]
+    assert funnel["valid_original_grid_pixels"] > 0
+    assert result.report["disparity"]["estimated_range"]["source"] == "shared_sfm_percentiles"
+
+
+def test_vertical_stereo_returns_to_original_grid_with_valid_roi(tmp_path: Path) -> None:
+    disparity, expected_depth = 12, 2.0
+    left, right, camera = _parallel_views(disparity, expected_depth)
+    right.translation = np.asarray([0.0, -disparity * expected_depth / camera.focal, 0.0])
+    right.observations = [(x, y - disparity, point_id) for x, y, point_id in left.observations]
+    _write_vertically_shifted_pair(tmp_path, disparity)
+    result = compute_stereo_pair(
+        _pair(left, right, camera, disparity), left, right, camera, camera, tmp_path,
+        StereoConfig(width=320, number_of_disparities=64, minimum_confidence=0.20),
+    )
+    valid = np.isfinite(result.depth)
+    assert result.depth.shape == (240, 320)
+    assert valid.mean() > 0.08
+    assert np.median(result.depth[valid]) == pytest.approx(expected_depth, rel=0.10)
+    assert result.report["rectification"]["epipolar_axis"] == "vertical_disparity"
+
+
+def test_coverage_selection_reports_baseline_diversity_and_incremental_gain(tmp_path: Path) -> None:
+    left, right, camera = _parallel_views()
+    views = [left, right]
+    for index in range(2, 6):
+        observations = [
+            (x + index, y, point_id + index * 10_000)
+            for x, y, point_id in left.observations[index * 8:(index + 2) * 18]
+        ]
+        views.append(View(f"view-{index}.png", 1, np.eye(3), np.asarray([-0.08 * index, 0.0, 0.0]), observations))
+    for view in views:
+        Image.fromarray(_texture(320, 240)).save(tmp_path / view.name)
+    selected, report = select_stereo_pairs(
+        views, {1: camera}, tmp_path,
+        StereoConfig(
+            minimum_shared_points=4, minimum_angle_degrees=0.0,
+            maximum_pairs=6, maximum_pairs_per_view=4, selection_strategy="coverage",
+        ),
+    )
+    assert selected
+    assert report["strategy"] == "coverage"
+    assert set(report["strategy_comparison"]) == {"score", "diversity", "coverage"}
+    assert report["strategy_comparison"]["coverage"]["coverage_tokens"] >= report["strategy_comparison"]["score"]["coverage_tokens"]
+    gains = report["strategy_comparison"]["coverage"]["incremental_coverage"]
+    assert all(item["new_coverage_tokens"] > 0 for item in gains)
 
 
 def test_low_texture_pair_is_not_reported_as_dense_measurement(tmp_path: Path) -> None:

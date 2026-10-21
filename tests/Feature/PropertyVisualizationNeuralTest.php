@@ -118,9 +118,29 @@ class PropertyVisualizationNeuralTest extends TestCase
             'original_name' => 'reconstruction-preview.glb',
             'is_primary' => false,
         ]);
+        $candidate = $visualization->assets()->where('original_name', 'reconstruction-preview.glb')->firstOrFail();
         $job = $visualization->processingJobs()->latest('id')->firstOrFail();
         $this->assertFalse($job->result['promotion']['promoted']);
         $this->assertTrue($job->result['promotion']['previous_primary_preserved']);
+        $this->assertSame($candidate->id, $job->result['promotion']['candidate_asset_id']);
+
+        $this->withHeader('X-Product-Context', 'house_flipper')
+            ->getJson('/api/visualizations/propriedades/'.$property->id)
+            ->assertOk()
+            ->assertJsonPath('data.model.id', $primary->id)
+            ->assertJsonPath('data.model.diagnostic_preview', false)
+            ->assertJsonPath('data.diagnostic_models.0.id', $candidate->id);
+
+        $this->withHeader('X-Product-Context', 'house_flipper')
+            ->getJson('/api/visualizations/propriedades/'.$property->id.'?diagnostic_asset_id='.$candidate->id)
+            ->assertOk()
+            ->assertJsonPath('data.model.id', $candidate->id)
+            ->assertJsonPath('data.model.diagnostic_preview', true)
+            ->assertJsonPath('data.model.viewer_eligible', true);
+
+        $this->withHeader('X-Product-Context', 'house_flipper')
+            ->getJson('/api/visualizations/propriedades/'.$property->id.'?diagnostic_asset_id='.$primary->id)
+            ->assertNotFound();
     }
 
     public function test_neural_artifacts_are_private_and_associated_with_the_owned_property(): void

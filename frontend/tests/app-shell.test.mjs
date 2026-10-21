@@ -206,6 +206,9 @@ test('property visualization separates photo editing, scene creation, and valida
   assert.match(screen, /correção estéreo local experimental/);
   assert.match(screen, /fusão híbrida de estéreo verificado/);
   assert.match(screen, /viewer_eligible === true/);
+  assert.match(screen, /diagnostic_asset_id/);
+  assert.match(screen, /Candidato experimental aberto somente para diagnóstico/);
+  assert.match(screen, /Voltar ao modelo ativo/);
   assert.match(screen, /Modelo ainda não elegível para o viewer/);
   assert.match(screen, /artefatos ajudam no diagnóstico, mas não são apresentados como modelo final/i);
   assert.match(editor, /Comparação antes e depois/);
@@ -236,4 +239,5 @@ test('property visualization separates photo editing, scene creation, and valida
   assert.match(viewer, /Math\.tan\(fovRadians \/ 2\)\) \* 1\.25/);
   assert.match(contracts, /export type PhotoEditRequest/);
   assert.match(contracts, /viewer_eligible\?: boolean/);
+  assert.match(contracts, /diagnostic_models\?: Array/);
 });

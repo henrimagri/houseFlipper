@@ -543,8 +543,16 @@ def reconstruct_calibrated_depth(
             maximum_angle_degrees=max(2.0, min(float(os.environ.get("AI_STEREO_MAX_ANGLE", "32")), 90.0)),
             maximum_pairs=max(1, min(int(os.environ.get("AI_STEREO_MAX_PAIRS", "12")), 64)),
             maximum_pairs_per_view=max(1, min(int(os.environ.get("AI_STEREO_PAIRS_PER_VIEW", "2")), 6)),
+            selection_strategy=os.environ.get("AI_STEREO_SELECTION", "score").strip().lower(),
+            coverage_grid_size=max(3, min(int(os.environ.get("AI_STEREO_COVERAGE_GRID", "6")), 16)),
+            incremental_gain_floor=max(0.0, min(float(os.environ.get("AI_STEREO_GAIN_FLOOR", "0.0025")), 0.10)),
             number_of_disparities=max(16, min(int(os.environ.get("AI_STEREO_DISPARITIES", "128")), 512)),
+            adaptive_disparity=os.environ.get("AI_STEREO_ADAPTIVE_DISPARITY", "true").strip().lower() in {"1", "true", "yes", "on"},
+            block_size=max(3, min(int(os.environ.get("AI_STEREO_BLOCK_SIZE", "5")), 15)) | 1,
+            lr_tolerance=max(0.25, min(float(os.environ.get("AI_STEREO_LR_TOLERANCE", "1.5")), 4.0)),
+            maximum_photometric_error=max(0.05, min(float(os.environ.get("AI_STEREO_PHOTOMETRIC_ERROR", "0.35")), 0.8)),
             minimum_confidence=max(0.15, min(float(os.environ.get("AI_STEREO_MIN_CONFIDENCE", "0.32")), 0.95)),
+            spatial_voxel_size=max(0.02, min(float(os.environ.get("AI_STEREO_COVERAGE_VOXEL", "0.10")), 0.50)),
         )
         target_shapes = {item["view"].name: item["metric"].shape for item in training_views}
         stereo_depth, stereo_confidence, stereo_report, stereo_results = build_stereo_evidence(

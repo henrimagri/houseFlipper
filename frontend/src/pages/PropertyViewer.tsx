@@ -46,7 +46,10 @@ export default function PropertyViewer() {
     setLoading(true);
     setError('');
     try {
-      const response = await api.get(`/visualizations/${subjectType}/${id}`);
+      const diagnosticAssetId = new URLSearchParams(location.search).get('diagnostic_asset_id');
+      const response = await api.get(`/visualizations/${subjectType}/${id}`, {
+        params: diagnosticAssetId ? { diagnostic_asset_id: diagnosticAssetId } : undefined,
+      });
       const payload = response.data.data as VisualizationPayload;
       setData(payload);
       setMode(nextMode ?? (payload.gallery.some(item => item.kind === 'photo' || item.kind === 'panorama') ? 'photo_edit' : payload.scene_graph ? 'scene_3d' : 'reconstruction_3d'));
@@ -58,7 +61,7 @@ export default function PropertyViewer() {
     }
   }
 
-  useEffect(() => { void load(); }, [subjectType, id]);
+  useEffect(() => { void load(); }, [subjectType, id, location.search]);
 
   async function upload(event: FormEvent<HTMLInputElement>, kind: 'glb' | 'photo') {
     const files = Array.from(event.currentTarget.files ?? []);
@@ -325,6 +328,14 @@ export default function PropertyViewer() {
           <h2 className="flex items-center gap-2 text-lg font-black"><ScanLine className="h-5 w-5 text-cyan-400" /> Reconstrução fotogramétrica</h2>
           <p className="mt-1 text-sm text-slate-400">Um arquivo só aparece no visualizador depois de passar pela validação de elegibilidade.</p>
         </div>
+        {data.model?.diagnostic_preview && <div className="border-b border-amber-300/20 bg-amber-400/10 px-5 py-3 text-sm text-amber-100">
+          Candidato experimental aberto somente para diagnóstico. O modelo principal do imóvel continua preservado.
+          <button type="button" onClick={() => navigate(location.pathname)} className="ml-3 font-bold underline">Voltar ao modelo ativo</button>
+        </div>}
+        {!data.model?.diagnostic_preview && (data.diagnostic_models?.length ?? 0) > 0 && <div className="flex flex-wrap items-center gap-2 border-b border-white/10 px-5 py-3 text-xs text-slate-300">
+          <span>Candidatos disponíveis para inspeção:</span>
+          {data.diagnostic_models?.map(candidate => <button key={candidate.id} type="button" onClick={() => navigate(`${location.pathname}?diagnostic_asset_id=${candidate.id}`)} className="rounded-lg border border-amber-300/30 px-2.5 py-1.5 font-bold text-amber-200">Inspecionar {candidate.name}</button>)}
+        </div>}
         {modelUrl && modelEligible ? <GlbViewer
           src={modelUrl}
           eligible={modelEligible}

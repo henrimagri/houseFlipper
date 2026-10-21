@@ -54,16 +54,30 @@ class PropertyVisualizationService
         return $visualization->load('assets');
     }
 
-    public function payload(PropertyVisualization $visualization, User $user, string $subjectType, int $subjectId): array
+    public function payload(PropertyVisualization $visualization, User $user, string $subjectType, int $subjectId, ?int $diagnosticAssetId = null): array
     {
         $subject = $this->subject($user, $subjectType, $subjectId);
         $photos = $this->photos->existing($subjectType, $subjectId);
-        $candidateModel = $visualization->assets->whereIn('kind', ['glb', 'gltf'])->sortByDesc('is_primary')->first();
-        $photogrammetryJob = $visualization->processingJobs()->where('kind', 'photogrammetry')->latest('id')->first();
+        $models = $visualization->assets->whereIn('kind', ['glb', 'gltf']);
+        $primaryModel = $models->firstWhere('is_primary', true);
+        $diagnosticModel = $diagnosticAssetId
+            ? $models->first(fn (PropertyVisualizationAsset $asset): bool => $asset->id === $diagnosticAssetId
+                && ! $asset->is_primary && $asset->room_key === 'reconstruction_preview')
+            : null;
+        abort_if($diagnosticAssetId && ! $diagnosticModel, 404, 'Candidato de diagnóstico não encontrado neste imóvel.');
+        $candidateModel = $diagnosticModel ?: ($primaryModel ?: $models->first());
+        $photogrammetryJobs = $visualization->processingJobs()->where('kind', 'photogrammetry')->latest('id')->get();
+        $photogrammetryJob = $diagnosticModel
+            ? $photogrammetryJobs->first(fn (PropertyProcessingJob $job): bool => (int) data_get($job->result, 'promotion.candidate_asset_id') === $diagnosticModel->id)
+            : $photogrammetryJobs->first();
         $geometryQuality = data_get($photogrammetryJob?->result, 'geometry_quality');
+        $modelJob = $candidateModel
+            ? $photogrammetryJobs->first(fn (PropertyProcessingJob $job): bool => (int) data_get($job->result, 'promotion.candidate_asset_id') === $candidateModel->id)
+            : null;
+        $modelGeometryQuality = data_get($modelJob?->result, 'geometry_quality');
         $isSparseCandidate = $candidateModel?->room_key === 'reconstruction_preview';
         $reconstructionViewerEligible = $isSparseCandidate
-            ? data_get($geometryQuality, 'viewer_eligible') === true
+            ? ($candidateModel?->is_primary || data_get($geometryQuality, 'viewer_eligible') === true)
             : null;
         $model = $isSparseCandidate && ! $reconstructionViewerEligible ? null : $candidateModel;
         $images = $visualization->assets->whereIn('kind', [
@@ -146,6 +160,15 @@ class PropertyVisualizationService
             'faithful' => ! $illustrative,
             'illustrative' => $illustrative,
             'reconstruction_quality' => $geometryQuality,
+            'diagnostic_models' => $models->filter(fn (PropertyVisualizationAsset $asset): bool => ! $asset->is_primary
+                && $asset->room_key === 'reconstruction_preview'
+                && $photogrammetryJobs->contains(fn (PropertyProcessingJob $job): bool => (int) data_get($job->result, 'promotion.candidate_asset_id') === $asset->id
+                    && data_get($job->result, 'geometry_quality.viewer_eligible') === true))
+                ->map(fn (PropertyVisualizationAsset $asset): array => [
+                    'id' => $asset->id,
+                    'name' => $asset->original_name,
+                    'active' => $diagnosticModel?->id === $asset->id,
+                ])->values()->all(),
             'model' => $model ? [
                 'id' => $model->id,
                 'kind' => $model->kind,
@@ -153,9 +176,12 @@ class PropertyVisualizationService
                 'url' => '/api/visualizations/'.$subjectType.'/'.$subjectId.'/assets/'.$model->id.'/file',
                 'fidelity' => $isReconstructionPreview ? 'sparse_preview' : 'uploaded_model',
                 'viewer_eligible' => $isReconstructionPreview ? $reconstructionViewerEligible : true,
+                'diagnostic_preview' => (bool) $diagnosticModel,
                 'viewer_diagnostic' => $isReconstructionPreview ? [
-                    'code' => data_get($geometryQuality, 'status', 'eligibility_not_confirmed'),
-                    'message' => implode(' ', data_get($geometryQuality, 'reasons', [])),
+                    'code' => data_get($modelGeometryQuality, 'status', $candidateModel?->is_primary ? 'active_model_preserved' : 'eligibility_not_confirmed'),
+                    'message' => implode(' ', data_get($modelGeometryQuality, 'reasons', $candidateModel?->is_primary
+                        ? ['Modelo ativo preservado pelo gate de qualidade.']
+                        : [])),
                 ] : [
                     'code' => 'uploaded_model',
                     'message' => 'Modelo enviado pelo usuário; o visualizador ainda valida bounds e integridade em tempo de carregamento.',
@@ -415,6 +441,7 @@ class PropertyVisualizationService
         $storedResult = $result;
         $storedResult['promotion'] = [
             'promoted' => (bool) $promote,
+            'candidate_asset_id' => $model?->id,
             'previous_primary_preserved' => (bool) ($previousPrimary && ! $promote),
             'reason' => $promote
                 ? ($previousPrimary ? 'candidate_passed_final_gate' : 'first_viewer_eligible_preview')

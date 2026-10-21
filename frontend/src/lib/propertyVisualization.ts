@@ -104,7 +104,9 @@ export type VisualizationPayload = {
     fidelity?: string;
     viewer_eligible?: boolean;
     viewer_diagnostic?: ModelViewerDiagnostic | null;
+    diagnostic_preview?: boolean;
   } | null;
+  diagnostic_models?: Array<{ id: number; name: string; active: boolean }>;
   gallery: VisualizationAsset[];
   photo_editing?: { simulations: PhotoEditSimulation[] } | null;
   processing_jobs?: Array<{

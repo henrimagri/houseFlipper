@@ -24,7 +24,12 @@ class PropertyVisualizationController extends Controller
         $subjectType = $this->subjectType($subjectType);
         $visualization = $this->visualizations->show($request->user(), $subjectType, $id);
 
-        return response()->json(['data' => $this->visualizations->payload($visualization, $request->user(), $subjectType, $id)]);
+        $query = $request->validate(['diagnostic_asset_id' => ['nullable', 'integer', 'min:1']]);
+        $diagnosticAssetId = isset($query['diagnostic_asset_id']) ? (int) $query['diagnostic_asset_id'] : null;
+
+        return response()->json(['data' => $this->visualizations->payload(
+            $visualization, $request->user(), $subjectType, $id, $diagnosticAssetId,
+        )]);
     }
 
     public function storeAsset(Request $request, string $subjectType, int $id): JsonResponse

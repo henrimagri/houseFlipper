@@ -36,11 +36,17 @@ class StereoConfig:
     maximum_angle_degrees: float = 32.0
     maximum_pairs: int = 12
     maximum_pairs_per_view: int = 2
+    selection_strategy: str = "score"
+    coverage_grid_size: int = 6
+    incremental_gain_floor: float = 0.0025
     number_of_disparities: int = 128
+    adaptive_disparity: bool = True
     block_size: int = 5
     lr_tolerance: float = 1.5
+    maximum_photometric_error: float = 0.35
     maximum_depth: float = 12.0
     minimum_confidence: float = 0.52
+    spatial_voxel_size: float = 0.10
 
 
 @dataclass(frozen=True)
@@ -124,6 +130,7 @@ def select_stereo_pairs(
     qualities = {view.name: _image_quality(images / view.name, 320) for view in available}
     point_maps = {view.name: _point_map(view) for view in available}
     candidates: list[StereoPair] = []
+    coverage_tokens: dict[tuple[str, str], set[tuple[Any, ...]]] = {}
     rejected: dict[str, int] = {}
 
     def reject(reason: str) -> None:
@@ -179,27 +186,90 @@ def select_stereo_pairs(
                 luminance_difference=luma_difference,
                 score=score,
             ))
+            tokens: set[tuple[Any, ...]] = {("point", point_id) for point_id in left_points.keys() & right_points.keys()}
+            grid = max(2, config.coverage_grid_size)
+            for point_id in left_points.keys() & right_points.keys():
+                for view, points in ((left, left_points), (right, right_points)):
+                    camera = cameras[view.camera_id]
+                    x, y = points[point_id]
+                    tokens.add(("cell", view.name, min(grid - 1, int(x * grid / camera.width)), min(grid - 1, int(y * grid / camera.height))))
+            coverage_tokens[(left.name, right.name)] = tokens
 
-    selected: list[StereoPair] = []
-    usage: dict[str, int] = {}
-    for candidate in sorted(candidates, key=lambda item: (-item.score, item.left_name, item.right_name)):
-        if usage.get(candidate.left_name, 0) >= config.maximum_pairs_per_view:
-            continue
-        if usage.get(candidate.right_name, 0) >= config.maximum_pairs_per_view:
-            continue
-        selected.append(candidate)
-        usage[candidate.left_name] = usage.get(candidate.left_name, 0) + 1
-        usage[candidate.right_name] = usage.get(candidate.right_name, 0) + 1
-        if len(selected) >= config.maximum_pairs:
-            break
+    def choose(strategy: str, limit: int, per_view: int) -> tuple[list[StereoPair], list[dict[str, Any]]]:
+        selected_items: list[StereoPair] = []
+        increments: list[dict[str, Any]] = []
+        usage: dict[str, int] = {}
+        covered: set[tuple[Any, ...]] = set()
+        remaining = list(candidates)
+        universe = set().union(*(coverage_tokens.values())) if coverage_tokens else set()
+        while remaining and len(selected_items) < limit:
+            eligible = [item for item in remaining if usage.get(item.left_name, 0) < per_view and usage.get(item.right_name, 0) < per_view]
+            if not eligible:
+                break
+            def utility(item: StereoPair) -> tuple[float, float, str, str]:
+                tokens = coverage_tokens[(item.left_name, item.right_name)]
+                new = len(tokens - covered)
+                new_fraction = new / max(1, len(universe))
+                unused_views = int(usage.get(item.left_name, 0) == 0) + int(usage.get(item.right_name, 0) == 0)
+                if strategy == "score":
+                    value = item.score
+                elif strategy == "diversity":
+                    value = item.score + 0.18 * unused_views + 0.45 * new_fraction
+                else:
+                    value = 0.25 * item.score + 2.0 * new_fraction + 0.12 * unused_views
+                return value, item.score, item.left_name, item.right_name
+            candidate = max(eligible, key=utility)
+            tokens = coverage_tokens[(candidate.left_name, candidate.right_name)]
+            new_tokens = tokens - covered
+            gain_fraction = len(new_tokens) / max(1, len(universe))
+            if strategy == "coverage" and selected_items and gain_fraction < config.incremental_gain_floor:
+                break
+            selected_items.append(candidate)
+            covered.update(tokens)
+            usage[candidate.left_name] = usage.get(candidate.left_name, 0) + 1
+            usage[candidate.right_name] = usage.get(candidate.right_name, 0) + 1
+            remaining.remove(candidate)
+            increments.append({
+                "pair": [candidate.left_name, candidate.right_name],
+                "new_coverage_tokens": len(new_tokens),
+                "cumulative_coverage_tokens": len(covered),
+                "cumulative_fraction": len(covered) / max(1, len(universe)),
+            })
+        return selected_items, increments
+
+    baseline, baseline_increments = choose("score", min(12, config.maximum_pairs), min(2, config.maximum_pairs_per_view))
+    diverse, diverse_increments = choose("diversity", config.maximum_pairs, config.maximum_pairs_per_view)
+    coverage, coverage_increments = choose("coverage", config.maximum_pairs, config.maximum_pairs_per_view)
+    strategies = {
+        "score": (baseline, baseline_increments),
+        "diversity": (diverse, diverse_increments),
+        "coverage": (coverage, coverage_increments),
+    }
+    if config.selection_strategy not in strategies:
+        raise ValueError("selection_strategy deve ser score, diversity ou coverage.")
+    selected, selected_increments = strategies[config.selection_strategy]
+    comparisons = {
+        name: {
+            "selected_pairs": len(items),
+            "unique_views": len({value for item in items for value in (item.left_name, item.right_name)}),
+            "coverage_tokens": increments[-1]["cumulative_coverage_tokens"] if increments else 0,
+            "coverage_fraction": increments[-1]["cumulative_fraction"] if increments else 0.0,
+            "incremental_coverage": increments,
+            "pairs": [[item.left_name, item.right_name] for item in items],
+        }
+        for name, (items, increments) in strategies.items()
+    }
     return selected, {
-        "method": "sfm_overlap_baseline_angle_and_capture_quality",
+        "method": "sfm_overlap_baseline_capture_quality_and_incremental_coverage",
+        "strategy": config.selection_strategy,
         "available_views": len(available),
         "candidate_pairs": len(candidates),
         "selected_pairs": len(selected),
         "excluded_views": sorted(excluded_names),
         "rejected": rejected,
         "pairs": [pair.__dict__ for pair in selected],
+        "incremental_coverage": selected_increments,
+        "strategy_comparison": comparisons,
     }
 
 
@@ -252,6 +322,61 @@ def _rectified_sparse_error(
     }
 
 
+def _expected_disparity_range(
+    left: ViewLike,
+    right: ViewLike,
+    left_camera: CameraLike,
+    right_camera: CameraLike,
+    size: tuple[int, int],
+    rectification_left: np.ndarray,
+    rectification_right: np.ndarray,
+    projection_left: np.ndarray,
+    projection_right: np.ndarray,
+    *,
+    vertical: bool,
+    configured_maximum: int,
+) -> tuple[int, int, dict[str, Any]]:
+    """Estimate a bounded pair-specific disparity interval from SfM matches."""
+    left_points = _point_map(left)
+    right_points = _point_map(right)
+    shared = sorted(left_points.keys() & right_points.keys())
+    if not shared:
+        maximum = max(16, configured_maximum // 16 * 16)
+        return 0, maximum, {"source": "configured_fallback", "samples": 0}
+    width, height = size
+    points_left = np.asarray([left_points[point] for point in shared], dtype=np.float64)
+    points_right = np.asarray([right_points[point] for point in shared], dtype=np.float64)
+    points_left *= (width / left_camera.width, height / left_camera.height)
+    points_right *= (width / right_camera.width, height / right_camera.height)
+    rectified_left = cv2.undistortPoints(
+        points_left.reshape(-1, 1, 2), scaled_intrinsics(left_camera, width, height), None,
+        R=rectification_left, P=projection_left,
+    ).reshape(-1, 2)
+    rectified_right = cv2.undistortPoints(
+        points_right.reshape(-1, 1, 2), scaled_intrinsics(right_camera, width, height), None,
+        R=rectification_right, P=projection_right,
+    ).reshape(-1, 2)
+    axis = 1 if vertical else 0
+    samples = rectified_left[:, axis] - rectified_right[:, axis]
+    samples = samples[np.isfinite(samples) & (samples > 0.0)]
+    if len(samples) < 8:
+        maximum = max(16, configured_maximum // 16 * 16)
+        return 0, maximum, {"source": "configured_fallback", "samples": int(len(samples))}
+    p02, p50, p98 = np.percentile(samples, (2, 50, 98))
+    margin = max(4.0, 0.15 * (p98 - p02), 0.08 * p50)
+    minimum = max(0, int(math.floor(p02 - margin)))
+    required = max(16, int(math.ceil(p98 + margin - minimum)))
+    count = min(max(16, configured_maximum // 16 * 16), int(math.ceil(required / 16.0) * 16))
+    return minimum, count, {
+        "source": "shared_sfm_percentiles",
+        "samples": int(len(samples)),
+        "p02_px": float(p02),
+        "median_px": float(p50),
+        "p98_px": float(p98),
+        "margin_px": float(margin),
+    }
+
+
 def compute_stereo_pair(
     pair: StereoPair,
     left: ViewLike,
@@ -297,12 +422,29 @@ def compute_stereo_pair(
     rectified_right = cv2.remap(right_rgb, map_rx, map_ry, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
     gray_left = cv2.cvtColor(rectified_left, cv2.COLOR_RGB2GRAY)
     gray_right = cv2.cvtColor(rectified_right, cv2.COLOR_RGB2GRAY)
+    left_roi = np.zeros((height, width), dtype=bool)
+    x, y, roi_width, roi_height = roi_left
+    left_roi[y:y + roi_height, x:x + roi_width] = True
+    right_roi = np.zeros((height, width), dtype=bool)
+    x, y, roi_width, roi_height = roi_right
+    right_roi[y:y + roi_height, x:x + roi_width] = True
     if vertical_stereo:
         gray_left = cv2.rotate(gray_left, cv2.ROTATE_90_COUNTERCLOCKWISE)
         gray_right = cv2.rotate(gray_right, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        left_roi = cv2.rotate(left_roi.astype(np.uint8), cv2.ROTATE_90_COUNTERCLOCKWISE).astype(bool)
+        right_roi = cv2.rotate(right_roi.astype(np.uint8), cv2.ROTATE_90_COUNTERCLOCKWISE).astype(bool)
 
     work_height, work_width = gray_left.shape
-    disparities = max(16, min(config.number_of_disparities, (work_width // 3 // 16) * 16))
+    maximum_disparities = max(16, min(config.number_of_disparities, (work_width // 3 // 16) * 16))
+    if config.adaptive_disparity:
+        minimum_disparity, disparities, disparity_estimate = _expected_disparity_range(
+            left, right, left_camera, right_camera, size,
+            rectify_left, rectify_right, projection_left, projection_right,
+            vertical=vertical_stereo, configured_maximum=maximum_disparities,
+        )
+    else:
+        minimum_disparity, disparities = 0, maximum_disparities
+        disparity_estimate = {"source": "configured_fixed", "samples": 0}
     block_size = max(3, config.block_size | 1)
     common = dict(
         numDisparities=disparities, blockSize=block_size,
@@ -310,8 +452,8 @@ def compute_stereo_pair(
         disp12MaxDiff=1, uniquenessRatio=8, speckleWindowSize=80,
         speckleRange=2, preFilterCap=31, mode=cv2.STEREO_SGBM_MODE_SGBM_3WAY,
     )
-    left_matcher = cv2.StereoSGBM_create(minDisparity=0, **common)
-    right_matcher = cv2.StereoSGBM_create(minDisparity=-disparities, **common)
+    left_matcher = cv2.StereoSGBM_create(minDisparity=minimum_disparity, **common)
+    right_matcher = cv2.StereoSGBM_create(minDisparity=-(minimum_disparity + disparities), **common)
     disparity = left_matcher.compute(gray_left, gray_right).astype(np.float32) / 16.0
     disparity_right = right_matcher.compute(gray_right, gray_left).astype(np.float32) / 16.0
 
@@ -321,7 +463,16 @@ def compute_stereo_pair(
     sampled_right_disparity = np.full(disparity.shape, np.nan, dtype=np.float32)
     sampled_right_disparity[in_right] = disparity_right[yy[in_right], right_x[in_right]]
     lr_error = np.abs(disparity + sampled_right_disparity)
-    valid_disparity = np.isfinite(disparity) & (disparity > 0.5) & in_right
+    corresponding_right_roi = np.zeros(disparity.shape, dtype=bool)
+    corresponding_right_roi[in_right] = right_roi[yy[in_right], right_x[in_right]]
+    geometric_overlap = left_roi & corresponding_right_roi
+    within_range = (
+        np.isfinite(disparity)
+        & (disparity > max(0.5, minimum_disparity - 0.5))
+        & (disparity < minimum_disparity + disparities)
+    )
+    valid_disparity = within_range & in_right & geometric_overlap
+    disparity_range_eligible_count = int((within_range & in_right & geometric_overlap).sum())
     lr_valid = valid_disparity & np.isfinite(lr_error) & (lr_error <= config.lr_tolerance)
 
     warped_right = np.zeros_like(gray_left)
@@ -334,8 +485,9 @@ def compute_stereo_pair(
     lr_confidence = np.exp(-np.nan_to_num(lr_error, nan=99.0) / max(config.lr_tolerance, 1e-6))
     photo_confidence = np.exp(-photometric_error / 0.12)
     confidence = (lr_confidence * photo_confidence * (0.25 + 0.75 * texture_confidence)).astype(np.float32)
+    photometric_valid = photometric_error <= config.maximum_photometric_error
 
-    occlusion = valid_disparity & (~lr_valid | ~in_right)
+    occlusion = valid_disparity & ~lr_valid
     combined_error = np.where(
         valid_disparity,
         np.nan_to_num(lr_error, nan=config.lr_tolerance * 4) + photometric_error,
@@ -346,20 +498,18 @@ def compute_stereo_pair(
         confidence = cv2.rotate(confidence, cv2.ROTATE_90_CLOCKWISE)
         valid_disparity = cv2.rotate(valid_disparity.astype(np.uint8), cv2.ROTATE_90_CLOCKWISE).astype(bool)
         lr_valid = cv2.rotate(lr_valid.astype(np.uint8), cv2.ROTATE_90_CLOCKWISE).astype(bool)
+        photometric_valid = cv2.rotate(photometric_valid.astype(np.uint8), cv2.ROTATE_90_CLOCKWISE).astype(bool)
+        geometric_overlap = cv2.rotate(geometric_overlap.astype(np.uint8), cv2.ROTATE_90_CLOCKWISE).astype(bool)
+        left_roi = cv2.rotate(left_roi.astype(np.uint8), cv2.ROTATE_90_CLOCKWISE).astype(bool)
         occlusion = cv2.rotate(occlusion.astype(np.uint8), cv2.ROTATE_90_CLOCKWISE).astype(bool)
         combined_error = cv2.rotate(combined_error, cv2.ROTATE_90_CLOCKWISE)
     points_rectified = cv2.reprojectImageTo3D(disparity, q_matrix, handleMissingValues=False)
     points_original_left = np.einsum("ij,hwj->hwi", rectify_left.T, points_rectified)
     depth = points_original_left[..., 2].astype(np.float32)
     finite_depth = np.isfinite(depth) & (depth > 0.05) & (depth < config.maximum_depth)
-    valid = lr_valid & finite_depth & (confidence >= config.minimum_confidence)
-    valid_roi = np.zeros(disparity.shape, dtype=bool)
-    x, y, roi_width, roi_height = roi_left
-    valid_roi[y:y + roi_height, x:x + roi_width] = True
-    x, y, roi_width, roi_height = roi_right
-    right_roi = np.zeros(disparity.shape, dtype=bool)
-    right_roi[y:y + roi_height, x:x + roi_width] = True
-    valid &= valid_roi & right_roi
+    confidence_valid = confidence >= config.minimum_confidence
+    pre_depth_valid = lr_valid & photometric_valid & confidence_valid & geometric_overlap
+    valid = pre_depth_valid & finite_depth
     depth[~valid] = np.nan
     confidence[~valid] = 0.0
     epipolar = _rectified_sparse_error(
@@ -392,6 +542,23 @@ def compute_stereo_pair(
         where=mapped_weight > 1e-4,
     )
     original_confidence = np.clip(mapped_weight, 0.0, 1.0).astype(np.float32)
+    original_valid = np.isfinite(original_depth) & (original_confidence > 1e-4)
+    funnel = {
+        "total_pixels": int(disparity.size),
+        "rectified_left_roi_pixels": int(left_roi.sum()),
+        "geometric_overlap_pixels": int(geometric_overlap.sum()),
+        "disparity_range_eligible_pixels": disparity_range_eligible_count,
+        "valid_disparity_pixels": int(valid_disparity.sum()),
+        "left_right_consistent_pixels": int(lr_valid.sum()),
+        "rejected_as_occlusion_pixels": int(occlusion.sum()),
+        "rejected_photometric_pixels": int((lr_valid & ~photometric_valid).sum()),
+        "rejected_confidence_pixels": int((lr_valid & photometric_valid & ~confidence_valid).sum()),
+        "rejected_invalid_depth_pixels": int((lr_valid & photometric_valid & confidence_valid & ~finite_depth).sum()),
+        "valid_rectified_pixels": valid_count,
+        "valid_original_grid_pixels": int(original_valid.sum()),
+        "whole_image_coverage": valid_count / max(1, disparity.size),
+        "eligible_region_coverage": valid_count / max(1, int(geometric_overlap.sum())),
+    }
     report = {
         "left": left.name,
         "right": right.name,
@@ -402,6 +569,8 @@ def compute_stereo_pair(
         "rectification": epipolar,
         "disparity": {
             "number_of_disparities": disparities,
+            "minimum_disparity": minimum_disparity,
+            "estimated_range": disparity_estimate,
             "block_size": block_size,
             "positive_pixels": int(valid_disparity.sum()),
             "left_right_consistent_pixels": int(lr_valid.sum()),
@@ -421,6 +590,7 @@ def compute_stereo_pair(
             "mean_valid": float(np.mean(confidence[valid])) if valid_count else None,
         },
         "occluded_pixels": int(occlusion.sum()),
+        "acceptance_funnel": funnel,
     }
     return StereoResult(
         left.name, right.name, disparity, original_depth, original_confidence,
@@ -506,6 +676,28 @@ def resize_stereo_evidence(
     return depth.astype(np.float32), confidence
 
 
+def _observed_world_voxels(
+    result: StereoResult,
+    view: ViewLike,
+    camera: CameraLike,
+    voxel_size: float,
+) -> set[tuple[int, int, int]]:
+    """Return measured world-space cells; unknown pixels never create cells."""
+    valid_y, valid_x = np.nonzero(np.isfinite(result.depth) & (result.confidence > 0.0))
+    if not len(valid_x):
+        return set()
+    height, width = result.depth.shape
+    z = result.depth[valid_y, valid_x].astype(np.float64)
+    fx = camera.focal * width / camera.width
+    fy = camera.focal * height / camera.height
+    cx = camera.cx * width / camera.width
+    cy = camera.cy * height / camera.height
+    camera_points = np.stack(((valid_x - cx) * z / fx, (valid_y - cy) * z / fy, z), axis=1)
+    world_points = (view.rotation.T @ (camera_points - view.translation).T).T
+    quantized = np.floor(world_points / max(voxel_size, 1e-4)).astype(np.int64)
+    return {tuple(map(int, cell)) for cell in np.unique(quantized, axis=0)}
+
+
 def build_stereo_evidence(
     views: list[ViewLike],
     cameras: dict[int, CameraLike],
@@ -527,6 +719,9 @@ def build_stereo_evidence(
     accumulated_depth: dict[str, np.ndarray] = {}
     accumulated_weight: dict[str, np.ndarray] = {}
     observations: dict[str, np.ndarray] = {}
+    covered_voxels: set[tuple[int, int, int]] = set()
+    voxel_pairs: dict[tuple[int, int, int], set[str]] = {}
+    voxel_cameras: dict[tuple[int, int, int], set[str]] = {}
     for pair in selected:
         if cancel and cancel():
             raise InterruptedError("Reconstrução cancelada durante o estéreo calibrado.")
@@ -541,6 +736,26 @@ def build_stereo_evidence(
         if shape is None:
             continue
         depth, confidence = resize_stereo_evidence(result, shape)
+        accepted_for_fusion = confidence >= config.minimum_confidence
+        result.report["acceptance_funnel"]["pixels_effectively_used_for_correction_or_fusion"] = int(accepted_for_fusion.sum())
+        result.report["acceptance_funnel"]["original_grid_eligible_coverage"] = float(accepted_for_fusion.mean())
+        pair_voxels = _observed_world_voxels(
+            result, actual_left, cameras[actual_left.camera_id], config.spatial_voxel_size,
+        )
+        new_voxels = pair_voxels - covered_voxels
+        pair_id = f"{result.left_name}|{result.right_name}"
+        for voxel in pair_voxels:
+            voxel_pairs.setdefault(voxel, set()).add(pair_id)
+            voxel_cameras.setdefault(voxel, set()).update((result.left_name, result.right_name))
+        covered_voxels.update(pair_voxels)
+        result.report["spatial_coverage"] = {
+            "voxel_size_m": config.spatial_voxel_size,
+            "observed_voxels": len(pair_voxels),
+            "new_voxels": len(new_voxels),
+            "redundant_voxels": len(pair_voxels) - len(new_voxels),
+            "cumulative_voxels": len(covered_voxels),
+            "incremental_gain_fraction": len(new_voxels) / max(1, len(covered_voxels)),
+        }
         weighted = np.nan_to_num(depth, nan=0.0) * confidence
         if result.left_name not in accumulated_depth:
             accumulated_depth[result.left_name] = np.zeros(shape, dtype=np.float32)
@@ -606,12 +821,17 @@ def build_stereo_evidence(
             ])) if any(
                 report["sfm_validation"]["median_relative_error"] is not None for report in usable
             ) else None,
+            "observed_world_voxels": len(covered_voxels),
+            "voxels_with_two_independent_pairs": sum(len(pairs) >= 2 for pairs in voxel_pairs.values()),
+            "voxels_with_three_or_more_cameras": sum(len(names) >= 3 for names in voxel_cameras.values()),
+            "redundant_voxel_observations": sum(max(0, len(pairs) - 1) for pairs in voxel_pairs.values()),
         },
         "limits": {
             "width": config.width,
             "maximum_pairs": config.maximum_pairs,
             "maximum_pairs_per_view": config.maximum_pairs_per_view,
             "minimum_confidence": config.minimum_confidence,
+            "spatial_voxel_size_m": config.spatial_voxel_size,
         },
     }
     return depth_maps, confidence_maps, report, results

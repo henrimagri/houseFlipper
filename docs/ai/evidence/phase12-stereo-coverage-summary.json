@@ -1,0 +1,666 @@
+{
+  "phase": "12",
+  "date": "2026-10-21",
+  "dataset": "Meta Eyeful Tower playroom_small",
+  "license": "MIT",
+  "reference_mesh_used_during_generation": false,
+  "controlled_input": {
+    "selected_before_fit": 42,
+    "development_accepted": 33,
+    "parameter_holdout_prefix": "44_",
+    "final_holdout_prefix": "45_"
+  },
+  "historical_phase8": {
+    "accepted_views": 39,
+    "accuracy_10cm": 0.5073,
+    "completeness_10cm": 0.5581,
+    "significant_components": 14,
+    "boundary_edges": 12052,
+    "nonmanifold_edges": 2326,
+    "photo_textured_faces": 0.5751
+  },
+  "stereo_selection_benchmark": {
+    "method": "opencv_calibrated_stereo_phase12_coverage_benchmark",
+    "reference_mesh_read": false,
+    "input": {
+      "available_views": 126,
+      "selected_views": 42,
+      "development_views": 33,
+      "excluded_parameter_or_final_views": [
+        "44_DSC0001_36.jpg",
+        "44_DSC0043_39.jpg",
+        "44_DSC0085_42.jpg",
+        "45_DSC0001_45.jpg",
+        "45_DSC0043_48.jpg",
+        "45_DSC0085_51.jpg"
+      ]
+    },
+    "configurations": {
+      "A_score_12": {
+        "elapsed_seconds": 2.26,
+        "summary": {
+          "attempted_pairs": 12,
+          "usable_pairs": 12,
+          "views_with_evidence": 12,
+          "valid_pixels": 427572,
+          "sfm_validation_samples": 1819,
+          "median_pair_sfm_relative_error": 0.008483470845940894,
+          "observed_world_voxels": 14370,
+          "voxels_with_two_independent_pairs": 4075,
+          "voxels_with_three_or_more_cameras": 4075,
+          "redundant_voxel_observations": 6021
+        },
+        "acceptance_funnel": {
+          "total_pixels": 3269120,
+          "rectified_left_roi_pixels": 3269120,
+          "geometric_overlap_pixels": 3173824,
+          "disparity_range_eligible_pixels": 2271026,
+          "valid_disparity_pixels": 2271026,
+          "left_right_consistent_pixels": 1514868,
+          "rejected_as_occlusion_pixels": 756158,
+          "rejected_photometric_pixels": 0,
+          "rejected_confidence_pixels": 1087296,
+          "rejected_invalid_depth_pixels": 0,
+          "valid_rectified_pixels": 427572,
+          "valid_original_grid_pixels": 576019,
+          "pixels_effectively_used_for_correction_or_fusion": 293874,
+          "whole_image_coverage": 0.13079116092404072,
+          "eligible_region_coverage": 0.1347182452461132
+        },
+        "selection": {
+          "strategy": "score",
+          "candidate_pairs": 28,
+          "selected_pairs": 12,
+          "rejected": {
+            "insufficient_shared_sfm_points": 500
+          },
+          "pairs": [
+            [
+              "40_DSC0085_6.jpg",
+              "41_DSC0085_15.jpg"
+            ],
+            [
+              "40_DSC0001_0.jpg",
+              "41_DSC0001_9.jpg"
+            ],
+            [
+              "41_DSC0001_9.jpg",
+              "42_DSC0001_18.jpg"
+            ],
+            [
+              "41_DSC0085_15.jpg",
+              "42_DSC0085_24.jpg"
+            ],
+            [
+              "42_DSC0001_18.jpg",
+              "43_DSC0001_27.jpg"
+            ],
+            [
+              "40_DSC0043_3.jpg",
+              "41_DSC0043_12.jpg"
+            ],
+            [
+              "42_DSC0085_24.jpg",
+              "43_DSC0085_33.jpg"
+            ],
+            [
+              "41_DSC0043_12.jpg",
+              "42_DSC0043_21.jpg"
+            ],
+            [
+              "42_DSC0043_21.jpg",
+              "43_DSC0043_30.jpg"
+            ],
+            [
+              "46_DSC0001_54.jpg",
+              "47_DSC0001_63.jpg"
+            ],
+            [
+              "46_DSC0085_60.jpg",
+              "47_DSC0085_69.jpg"
+            ],
+            [
+              "48_DSC0085_78.jpg",
+              "49_DSC0085_87.jpg"
+            ]
+          ]
+        },
+        "spatial_checkpoints": [
+          {
+            "pair_number": 6,
+            "voxel_size_m": 0.1,
+            "observed_voxels": 1520,
+            "new_voxels": 1516,
+            "redundant_voxels": 4,
+            "cumulative_voxels": 6558,
+            "incremental_gain_fraction": 0.23116803903629154
+          },
+          {
+            "pair_number": 12,
+            "voxel_size_m": 0.1,
+            "observed_voxels": 1694,
+            "new_voxels": 707,
+            "redundant_voxels": 987,
+            "cumulative_voxels": 14370,
+            "incremental_gain_fraction": 0.049199721642310366
+          }
+        ]
+      },
+      "B_diversity": {
+        "elapsed_seconds": 3.832,
+        "summary": {
+          "attempted_pairs": 24,
+          "usable_pairs": 24,
+          "views_with_evidence": 19,
+          "valid_pixels": 653037,
+          "sfm_validation_samples": 2498,
+          "median_pair_sfm_relative_error": 0.009508159047288103,
+          "observed_world_voxels": 18410,
+          "voxels_with_two_independent_pairs": 6818,
+          "voxels_with_three_or_more_cameras": 6818,
+          "redundant_voxel_observations": 14080
+        },
+        "acceptance_funnel": {
+          "total_pixels": 6540800,
+          "rectified_left_roi_pixels": 6537816,
+          "geometric_overlap_pixels": 6317630,
+          "disparity_range_eligible_pixels": 4182207,
+          "valid_disparity_pixels": 4182207,
+          "left_right_consistent_pixels": 2627279,
+          "rejected_as_occlusion_pixels": 1554928,
+          "rejected_photometric_pixels": 0,
+          "rejected_confidence_pixels": 1974242,
+          "rejected_invalid_depth_pixels": 0,
+          "valid_rectified_pixels": 653037,
+          "valid_original_grid_pixels": 904509,
+          "pixels_effectively_used_for_correction_or_fusion": 443051,
+          "whole_image_coverage": 0.09984053938356165,
+          "eligible_region_coverage": 0.10336740201626243
+        },
+        "selection": {
+          "strategy": "diversity",
+          "candidate_pairs": 28,
+          "selected_pairs": 24,
+          "rejected": {
+            "insufficient_shared_sfm_points": 500
+          },
+          "pairs": [
+            [
+              "40_DSC0085_6.jpg",
+              "41_DSC0085_15.jpg"
+            ],
+            [
+              "40_DSC0001_0.jpg",
+              "41_DSC0001_9.jpg"
+            ],
+            [
+              "42_DSC0001_18.jpg",
+              "43_DSC0001_27.jpg"
+            ],
+            [
+              "40_DSC0043_3.jpg",
+              "41_DSC0043_12.jpg"
+            ],
+            [
+              "42_DSC0085_24.jpg",
+              "43_DSC0085_33.jpg"
+            ],
+            [
+              "42_DSC0043_21.jpg",
+              "43_DSC0043_30.jpg"
+            ],
+            [
+              "46_DSC0001_54.jpg",
+              "47_DSC0001_63.jpg"
+            ],
+            [
+              "46_DSC0085_60.jpg",
+              "47_DSC0085_69.jpg"
+            ],
+            [
+              "48_DSC0085_78.jpg",
+              "49_DSC0085_87.jpg"
+            ],
+            [
+              "50_DSC0085_96.jpg",
+              "51_DSC0085_105.jpg"
+            ],
+            [
+              "46_DSC0043_57.jpg",
+              "47_DSC0043_66.jpg"
+            ],
+            [
+              "51_DSC0043_102.jpg",
+              "52_DSC0043_111.jpg"
+            ],
+            [
+              "41_DSC0001_9.jpg",
+              "42_DSC0001_18.jpg"
+            ],
+            [
+              "48_DSC0001_72.jpg",
+              "49_DSC0001_81.jpg"
+            ],
+            [
+              "41_DSC0085_15.jpg",
+              "42_DSC0085_24.jpg"
+            ],
+            [
+              "41_DSC0043_12.jpg",
+              "42_DSC0043_21.jpg"
+            ],
+            [
+              "49_DSC0001_81.jpg",
+              "50_DSC0001_90.jpg"
+            ],
+            [
+              "41_DSC0085_15.jpg",
+              "43_DSC0085_33.jpg"
+            ],
+            [
+              "40_DSC0001_0.jpg",
+              "42_DSC0001_18.jpg"
+            ],
+            [
+              "40_DSC0085_6.jpg",
+              "42_DSC0085_24.jpg"
+            ],
+            [
+              "49_DSC0085_87.jpg",
+              "50_DSC0085_96.jpg"
+            ],
+            [
+              "48_DSC0085_78.jpg",
+              "50_DSC0085_96.jpg"
+            ],
+            [
+              "47_DSC0085_69.jpg",
+              "48_DSC0085_78.jpg"
+            ],
+            [
+              "48_DSC0001_72.jpg",
+              "50_DSC0001_90.jpg"
+            ]
+          ]
+        },
+        "spatial_checkpoints": [
+          {
+            "pair_number": 6,
+            "voxel_size_m": 0.1,
+            "observed_voxels": 3284,
+            "new_voxels": 2642,
+            "redundant_voxels": 642,
+            "cumulative_voxels": 7426,
+            "incremental_gain_fraction": 0.355776999730676
+          },
+          {
+            "pair_number": 12,
+            "voxel_size_m": 0.1,
+            "observed_voxels": 96,
+            "new_voxels": 59,
+            "redundant_voxels": 37,
+            "cumulative_voxels": 13589,
+            "incremental_gain_fraction": 0.004341747001251011
+          },
+          {
+            "pair_number": 18,
+            "voxel_size_m": 0.1,
+            "observed_voxels": 1208,
+            "new_voxels": 361,
+            "redundant_voxels": 847,
+            "cumulative_voxels": 17634,
+            "incremental_gain_fraction": 0.020471815810366337
+          },
+          {
+            "pair_number": 24,
+            "voxel_size_m": 0.1,
+            "observed_voxels": 317,
+            "new_voxels": 28,
+            "redundant_voxels": 289,
+            "cumulative_voxels": 18410,
+            "incremental_gain_fraction": 0.001520912547528517
+          }
+        ]
+      },
+      "C_incremental_coverage": {
+        "elapsed_seconds": 3.833,
+        "summary": {
+          "attempted_pairs": 24,
+          "usable_pairs": 24,
+          "views_with_evidence": 19,
+          "valid_pixels": 653037,
+          "sfm_validation_samples": 2498,
+          "median_pair_sfm_relative_error": 0.009508159047288103,
+          "observed_world_voxels": 18410,
+          "voxels_with_two_independent_pairs": 6818,
+          "voxels_with_three_or_more_cameras": 6818,
+          "redundant_voxel_observations": 14080
+        },
+        "acceptance_funnel": {
+          "total_pixels": 6540800,
+          "rectified_left_roi_pixels": 6537816,
+          "geometric_overlap_pixels": 6317630,
+          "disparity_range_eligible_pixels": 4182207,
+          "valid_disparity_pixels": 4182207,
+          "left_right_consistent_pixels": 2627279,
+          "rejected_as_occlusion_pixels": 1554928,
+          "rejected_photometric_pixels": 0,
+          "rejected_confidence_pixels": 1974242,
+          "rejected_invalid_depth_pixels": 0,
+          "valid_rectified_pixels": 653037,
+          "valid_original_grid_pixels": 904509,
+          "pixels_effectively_used_for_correction_or_fusion": 443051,
+          "whole_image_coverage": 0.09984053938356165,
+          "eligible_region_coverage": 0.10336740201626243
+        },
+        "selection": {
+          "strategy": "coverage",
+          "candidate_pairs": 28,
+          "selected_pairs": 24,
+          "rejected": {
+            "insufficient_shared_sfm_points": 500
+          },
+          "pairs": [
+            [
+              "40_DSC0085_6.jpg",
+              "41_DSC0085_15.jpg"
+            ],
+            [
+              "40_DSC0001_0.jpg",
+              "41_DSC0001_9.jpg"
+            ],
+            [
+              "42_DSC0001_18.jpg",
+              "43_DSC0001_27.jpg"
+            ],
+            [
+              "40_DSC0043_3.jpg",
+              "41_DSC0043_12.jpg"
+            ],
+            [
+              "42_DSC0085_24.jpg",
+              "43_DSC0085_33.jpg"
+            ],
+            [
+              "46_DSC0001_54.jpg",
+              "47_DSC0001_63.jpg"
+            ],
+            [
+              "42_DSC0043_21.jpg",
+              "43_DSC0043_30.jpg"
+            ],
+            [
+              "46_DSC0085_60.jpg",
+              "47_DSC0085_69.jpg"
+            ],
+            [
+              "48_DSC0085_78.jpg",
+              "49_DSC0085_87.jpg"
+            ],
+            [
+              "51_DSC0043_102.jpg",
+              "52_DSC0043_111.jpg"
+            ],
+            [
+              "50_DSC0085_96.jpg",
+              "51_DSC0085_105.jpg"
+            ],
+            [
+              "48_DSC0001_72.jpg",
+              "49_DSC0001_81.jpg"
+            ],
+            [
+              "46_DSC0043_57.jpg",
+              "47_DSC0043_66.jpg"
+            ],
+            [
+              "41_DSC0001_9.jpg",
+              "42_DSC0001_18.jpg"
+            ],
+            [
+              "41_DSC0085_15.jpg",
+              "42_DSC0085_24.jpg"
+            ],
+            [
+              "49_DSC0001_81.jpg",
+              "50_DSC0001_90.jpg"
+            ],
+            [
+              "41_DSC0043_12.jpg",
+              "42_DSC0043_21.jpg"
+            ],
+            [
+              "40_DSC0001_0.jpg",
+              "42_DSC0001_18.jpg"
+            ],
+            [
+              "48_DSC0085_78.jpg",
+              "50_DSC0085_96.jpg"
+            ],
+            [
+              "49_DSC0085_87.jpg",
+              "50_DSC0085_96.jpg"
+            ],
+            [
+              "41_DSC0085_15.jpg",
+              "43_DSC0085_33.jpg"
+            ],
+            [
+              "40_DSC0085_6.jpg",
+              "42_DSC0085_24.jpg"
+            ],
+            [
+              "47_DSC0085_69.jpg",
+              "48_DSC0085_78.jpg"
+            ],
+            [
+              "48_DSC0001_72.jpg",
+              "50_DSC0001_90.jpg"
+            ]
+          ]
+        },
+        "spatial_checkpoints": [
+          {
+            "pair_number": 6,
+            "voxel_size_m": 0.1,
+            "observed_voxels": 2709,
+            "new_voxels": 2409,
+            "redundant_voxels": 300,
+            "cumulative_voxels": 7193,
+            "incremental_gain_fraction": 0.3349089392464896
+          },
+          {
+            "pair_number": 12,
+            "voxel_size_m": 0.1,
+            "observed_voxels": 1341,
+            "new_voxels": 671,
+            "redundant_voxels": 670,
+            "cumulative_voxels": 12491,
+            "incremental_gain_fraction": 0.05371867744776239
+          },
+          {
+            "pair_number": 18,
+            "voxel_size_m": 0.1,
+            "observed_voxels": 112,
+            "new_voxels": 23,
+            "redundant_voxels": 89,
+            "cumulative_voxels": 17296,
+            "incremental_gain_fraction": 0.0013297872340425532
+          },
+          {
+            "pair_number": 24,
+            "voxel_size_m": 0.1,
+            "observed_voxels": 317,
+            "new_voxels": 28,
+            "redundant_voxels": 289,
+            "cumulative_voxels": 18410,
+            "incremental_gain_fraction": 0.001520912547528517
+          }
+        ]
+      }
+    }
+  },
+  "direct_multiview_plane_sweep": {
+    "method": "bounded_cpu_multiview_plane_sweep",
+    "reference": "42_DSC0001_18.jpg",
+    "support_views": [
+      "41_DSC0001_9.jpg",
+      "43_DSC0001_27.jpg",
+      "40_DSC0001_0.jpg"
+    ],
+    "independent_cameras": 4,
+    "processing_size": [
+      320,
+      213
+    ],
+    "depth_range_m": [
+      0.39647700487606363,
+      1.7659190429507774
+    ],
+    "requested_planes": 48,
+    "evaluated_planes": 48,
+    "valid_pixels": 4876,
+    "valid_fraction": 0.071537558685446,
+    "median_confidence": 0.17808625102043152,
+    "elapsed_seconds": 0.429,
+    "estimated_peak_cost_volume_bytes": 1022400,
+    "bounded": true,
+    "validation": {
+      "anchors_used_for_range": 191,
+      "reserved_anchor_samples": 39,
+      "median_relative_error": 0.16167948039370791,
+      "p90_relative_error": 0.43406611397456335,
+      "within_10_percent": 0.3333333333333333,
+      "reference_mesh_read": false
+    },
+    "selection_candidates": 28
+  },
+  "candidates": {
+    "D_tsdf_hybrid_24": {
+      "directory": "phase12-D-hybrid-24",
+      "method": "bounded_sparse_projective_tsdf",
+      "status": "rejected",
+      "final_model_eligible": false,
+      "vertices": 40331,
+      "faces": 77940,
+      "components_total": 48,
+      "components_significant": 4,
+      "boundary_edges": 2964,
+      "nonmanifold_edges": 0,
+      "degenerate_faces": 0,
+      "accuracy": {
+        "median": 0.08070578426122665,
+        "p90": 0.25713852047920227,
+        "within_5cm": 0.3216,
+        "within_10cm": 0.5785,
+        "within_20cm": 0.8237
+      },
+      "completeness": {
+        "median": 0.08309121429920197,
+        "p90": 1.0846259593963623,
+        "within_5cm": 0.3943,
+        "within_10cm": 0.5233,
+        "within_20cm": 0.6015
+      },
+      "elapsed_seconds": 48.73,
+      "resources": {
+        "sampled_peak_process_rss_bytes": 1762476032,
+        "cuda_peak_allocated_bytes": 195219968,
+        "tsdf_estimated_block_memory_bytes": 4454400,
+        "measurement_note": "RSS amostrado nas transiÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes de estÃƒÆ’Ã‚Â¡gio; CUDA usa o contador de pico do PyTorch."
+      }
+    },
+    "E_calibrated_original_33": {
+      "directory": "phase12-E-calibrated-33",
+      "method": "calibrated_multiview_depth_surface",
+      "status": "completed",
+      "final_model_eligible": false,
+      "vertices": 106630,
+      "faces": 205790,
+      "components_total": 22,
+      "components_significant": 22,
+      "boundary_edges": 20812,
+      "nonmanifold_edges": 3317,
+      "degenerate_faces": 0,
+      "accuracy": {
+        "median": 0.10631880909204483,
+        "p90": 0.28960707783699036,
+        "within_5cm": 0.2235,
+        "within_10cm": 0.4711,
+        "within_20cm": 0.7684
+      },
+      "completeness": {
+        "median": 0.07775276899337769,
+        "p90": 0.8844586610794067,
+        "within_5cm": 0.3291,
+        "within_10cm": 0.5641,
+        "within_20cm": 0.6585
+      },
+      "elapsed_seconds": 85.255,
+      "resources": {
+        "sampled_peak_process_rss_bytes": 1714839552,
+        "cuda_peak_allocated_bytes": 195219968,
+        "tsdf_estimated_block_memory_bytes": null,
+        "measurement_note": "RSS amostrado nas transiÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes de estÃƒÆ’Ã‚Â¡gio; CUDA usa o contador de pico do PyTorch."
+      }
+    },
+    "F_calibrated_hybrid_24": {
+      "directory": "phase12-F-calibrated-hybrid-24",
+      "method": "calibrated_multiview_depth_surface",
+      "status": "completed",
+      "final_model_eligible": false,
+      "vertices": 114680,
+      "faces": 209901,
+      "components_total": 26,
+      "components_significant": 26,
+      "boundary_edges": 25314,
+      "nonmanifold_edges": 1141,
+      "degenerate_faces": 0,
+      "accuracy": {
+        "median": 0.10163522511720657,
+        "p90": 0.2873035669326782,
+        "within_5cm": 0.2553,
+        "within_10cm": 0.4929,
+        "within_20cm": 0.7796
+      },
+      "completeness": {
+        "median": 0.07033760845661163,
+        "p90": 0.8927415013313293,
+        "within_5cm": 0.3726,
+        "within_10cm": 0.571,
+        "within_20cm": 0.6576
+      },
+      "elapsed_seconds": 88.663,
+      "resources": {
+        "sampled_peak_process_rss_bytes": 2045960192,
+        "cuda_peak_allocated_bytes": 195219968,
+        "tsdf_estimated_block_memory_bytes": null,
+        "measurement_note": "RSS amostrado nas transiÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes de estÃƒÆ’Ã‚Â¡gio; CUDA usa o contador de pico do PyTorch."
+      }
+    }
+  },
+  "decision": {
+    "promoted": false,
+    "active_model": "phase8",
+    "texturing_executed": false,
+    "reason": "F recuperou completude, mas perdeu precisÃƒÂ£o, conectividade e bordas abertas frente ÃƒÂ  Fase 8; D melhorou a Fase 11, porÃƒÂ©m permaneceu abaixo da completude da Fase 8. Plane sweep CPU direto teve erro independente alto.",
+    "next_architecture": "COLMAP dense/MVS em Linux CUDA autorizado, ou hÃƒÂ­brido paramÃƒÂ©trico editÃƒÂ¡vel com geometria verificada; nÃƒÂ£o continuar apenas relaxando SGBM."
+  },
+  "artifact_hashes": {
+    "phase12-stereo-coverage.json": "257fac06452e5502224201960677a5b47b2e050b924073ef80f1850422b70d89",
+    "phase12-plane-sweep.json": "121cd6133fcdb7cd299b97ce4a9e1758f9b4f663e8f80cef2be1c5a65b9db61f",
+    "phase12-D-hybrid-24\\result.json": "103bbb17b6b8549afa6f418862af92d5c9d17b51d269f9d28fac7430c02ab42a",
+    "phase12-D-hybrid-24\\reference-comparison.json": "44179d8f799bae6229f44da2246b16ed5279c73a937a1afb98da9a889c1bf667",
+    "phase12-F-calibrated-hybrid-24\\result.json": "1d62fb8f4d961579c3a72d080fcae8af108842f7b4ad2a1d6d24596577d62206",
+    "phase12-F-calibrated-hybrid-24\\reference-comparison.json": "8a030b93ba8417d415f33c1d698d5f822d76c1976dcf2d627f3da651d514d6b7"
+  },
+  "verification": {
+    "python_worker": "61 passed",
+    "laravel": "68 passed, 292 assertions",
+    "frontend": "12 passed",
+    "typescript": "passed",
+    "vite_build": "passed with existing chunk-size warning",
+    "browser_http": 200,
+    "canvas_visual_qa": "blocked by official browser URL policy; no workaround and no new visual approval"
+  }
+}

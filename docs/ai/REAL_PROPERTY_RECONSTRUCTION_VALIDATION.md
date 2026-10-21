@@ -291,3 +291,35 @@ Na estratégia C, 338.489 observações foram consistentes, 18.129 inconsistente
 O navegador local abriu o GLB ativo, renderizou canvas 497×619, permitiu selecionar uma parede candidata e alternar as vistas lateral e superior. O candidato C não foi aberto como modelo ativo porque falhou no gate de completude; portanto não há afirmação de QA visual dele. O único aviso do console foi a depreciação de `THREE.Clock`.
 
 Artefatos reproduzíveis locais: `phase11-A-original-v1`, `phase11-B-corrected-v1` e `phase11-C-hybrid-v1`. Cada diretório contém geometria, topologia, comparação posterior, hashes e, para B/C, `stereo-report.json`, `stereo-evidence.npz` e manifesto. Permanecem ignorados pelo Git por conterem dataset e artefatos volumosos. Evidência versionada: `evidence/phase11-stereo-summary.json` e `evidence/phase11-stereo-evidence.jpg`, com as duas fotografias autorizadas do primeiro par, disparidade, profundidade Z aceita e confiança.
+
+
+## Fase 12 — cobertura estéreo, comparação equivalente e limite prático
+
+A execução continuou com o dataset real e autorizado Meta Eyeful Tower `playroom_small`, sob licença MIT. A malha oficial ficou inacessível à seleção de pares, SGBM, correção monocular, plane-sweep e geração das malhas. `compare_reference_geometry.py` abriu a referência apenas depois de cada PLY e `result.json` estarem completos, sem ICP e com as mesmas 10.000 amostras determinísticas.
+
+### Diagnóstico do funil
+
+A baixa cobertura de 2,66–7,30% registrada na Fase 11 tinha duas causas misturadas: um erro conservador de ROI e filtros geométricos reais. A Fase 12 corrigiu a consulta da ROI direita na coordenada correspondida, preservou corretamente as máscaras em disparidade vertical e passou a estimar a faixa de disparidade por par a partir de pontos SfM. Com as mesmas 33 vistas, o baseline de 12 pares passou a 427.572 pixels retificados aceitos e 293.874 pixels usados após retorno ao grid original. Isso não é tratado como comparável diretamente aos 155.298 pixels históricos porque a implementação geométrica mudou.
+
+Nos 12 pares, 97,08% dos pixels ficaram dentro da sobreposição retificada; 71,56% dessa região produziram disparidade no intervalo; 66,70% das disparidades passaram pela consistência esquerda/direita; 28,22% dessas observações passaram pela confiança composta. Nenhum pixel de profundidade inválida foi promovido. O limiar fotométrico explícito não foi o principal descarte; iluminação, textura e erro esquerda/direita continuam incorporados na confiança composta.
+
+A seleção incremental mediu regiões com pontos SfM/células de imagem e, depois da correspondência, voxels mundiais de 10 cm. A ampliação de 12 para 24 pares elevou voxels únicos de 14.370 para 18.410 e voxels com dois pares independentes/três ou mais câmeras de 4.075 para 6.818. Os seis pares finais acrescentaram somente 1.114 voxels; o ganho marginal está saturando. Diversidade e cobertura escolheram o mesmo conjunto final de 24 entre 28 candidatos, em ordens diferentes; portanto, não foi atribuído ganho inexistente à ordem.
+
+### Plane-sweep direto
+
+O protótipo delimitado utiliza planos frontoparalelos, homografias derivadas das intrínsecas/extrínsecas COLMAP, custo fotométrico local, agregação mediana, mínimo de duas câmeras de suporte, confiança por margem e textura. Cenas sintéticas validaram plano conhecido e rejeição de superfície sem textura. No grupo real `42_DSC0001_18` com suportes `41_DSC0001_9`, `43_DSC0001_27` e `40_DSC0001_0`, 48 planos entre 0,396 e 1,766 m geraram 4.876 pixels válidos. A validação usou IDs SfM ímpares, separados dos IDs pares que apenas delimitaram a faixa. O erro mediano de 16,17% e P90 de 43,41% reprovaram a integração.
+
+### Reconstruções e gate
+
+| Modelo | Vistas | Precisão 5/10/20 cm | Completude 5/10/20 cm | Mediana precisão/completude | Topologia |
+|---|---:|---:|---:|---:|---|
+| Fase 8 histórica | 39 | — / 50,73 / — | 32,43 / 55,81 / 66,06% | 9,83 cm / — | 14 significativos; 12.052 bordas; 2.326 não manifold |
+| D TSDF híbrida | 33 | 32,16 / 57,85 / 82,37% | 39,43 / 52,33 / 60,15% | 8,07 / 8,31 cm | 48 total, 4 significativos; 2.964 / 0 |
+| E calibrada original | 33 | 22,35 / 47,11 / 76,84% | 32,91 / 56,41 / 65,85% | 10,63 / 7,78 cm | 22 / 22; 20.812 / 3.317 |
+| F calibrada híbrida | 33 | 25,53 / 49,29 / 77,96% | 37,26 / 57,10 / 65,76% | 10,16 / 7,03 cm | 26 / 26; 25.314 / 1.141 |
+
+D levou 48,73 s, 1,762 GB de RSS amostrado e 195,22 MB de pico CUDA PyTorch. F levou 88,663 s, 2,046 GB de RSS e o mesmo pico CUDA. F gerou GLB de 4.354.700 bytes apenas para diagnóstico, sem textura; D falhou no gate interno e não gerou GLB. F não foi promovido porque a melhora de completude veio com regressões materiais de precisão, conectividade e bordas. `final_model_eligible=false` foi preservado.
+
+A aplicação ganhou visualização diagnóstica autenticada para candidatos elegíveis não promovidos. O asset precisa pertencer à visualização autorizada, ser `reconstruction_preview`, não ser primário e possuir job correspondente com `viewer_eligible=true`. A URL não altera `is_primary`; a interface exibe aviso de candidato experimental e oferece retorno ao modelo ativo. Testes Laravel cobrem o modelo padrão, candidato e rejeição do id primário como diagnóstico.
+
+O frontend respondeu HTTP 200, mas o controlador oficial recusou a aba localhost. Não há captura nova nem afirmação de fidelidade visual. As capturas reais da Fase 8 continuam sendo a última evidência visual aprovada. Resumo e hashes: `evidence/phase12-stereo-coverage-summary.json`; funil: `evidence/phase12-stereo-coverage-funnel.png`.

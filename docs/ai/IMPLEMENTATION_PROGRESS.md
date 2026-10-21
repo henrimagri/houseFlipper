@@ -453,3 +453,37 @@ O gate Laravel agora importa um candidato auditável sem retirar `is_primary` do
 Verificações desta etapa: worker completo **57/57**; Laravel completo **68/68, 282 assertions**; frontend **12/12**; TypeScript e build Vite aprovados; permanece somente o aviso conhecido de chunks maiores que 500 kB. A comparação real A/B/C e o QA do canvas foram executados.
 
 Próxima prioridade: aumentar a cobertura estéreo confiável com mais pares geometricamente úteis e consistência explícita entre dois pares independentes por vista, sem relaxar o gate de outliers. O limite principal continua sendo cobertura: o SGBM mede apenas 2,66–7,30% por par neste conjunto.
+
+
+## 21/10/2026 — Fase 12: cobertura estéreo e decisão de arquitetura
+
+**Estado: implementado e testado; nenhum candidato promovido.** A geração permaneceu isolada da malha oficial. O conjunto controlado reutilizou as 33 vistas de desenvolvimento da Fase 11; `44_*` permaneceu reservado para parâmetros e `45_*` para avaliação final histórica.
+
+A máscara de ROI foi corrigida: a validade da ROI direita agora é consultada na coordenada realmente correspondida pela disparidade, inclusive após a rotação temporária de pares verticais. A faixa de disparidade passou a ser estimada por par com percentis das correspondências SfM. O relatório registra um funil de aceitação completo e separa cobertura da imagem inteira, região geometricamente elegível, grid original e pixels realmente entregues à correção/fusão.
+
+| Funil acumulado | 12 pares | 24 pares |
+|---|---:|---:|
+| Pixels processados | 3.269.120 | 6.540.800 |
+| Sobreposição geométrica | 3.173.824 | 6.317.630 |
+| Disparidade válida | 2.271.026 | 4.182.207 |
+| Consistência esquerda/direita | 1.514.868 | 2.627.279 |
+| Confiança final | 427.572 | 653.037 |
+| Usados na correção/fusão | 293.874 | 443.051 |
+| Cobertura da imagem / elegível | 13,08% / 13,47% | 9,98% / 10,34% |
+
+O maior descarte ocorre no teste de confiança composto depois da consistência esquerda/direita; relaxá-lo elevaria cobertura sem comprovar geometria. A seleção passou a comparar pontuação, diversidade e cobertura incremental. Em 33 vistas foram encontrados 28 pares candidatos. Os 12 pares observaram 14.370 voxels de 10 cm; 24 pares observaram 18.410 (+28,11%). Voxels sustentados por dois pares independentes e três ou mais câmeras passaram de 4.075 para 6.818 (+67,31%). O erro mediano estéreo/SfM permaneceu baixo: 0,848% com 12 pares e 0,951% com 24. O custo estéreo isolado passou de 2,26 s para 3,83 s. Nos últimos seis pares, o ganho caiu de 17.296 para 18.410 voxels; isso registra saturação mensurável.
+
+Foi implementado um protótipo CPU limitado de plane-sweep com agregação mediana de custos, 320×213, 48 planos e quatro câmeras independentes. O teste sintético recuperou um plano conhecido. No `playroom_small`, produziu 4.876 pixels válidos (7,15%) em 0,429 s, porém nas 39 âncoras SfM reservadas teve erro relativo mediano de 16,17%, P90 de 43,41% e apenas 33,33% dentro de 10%. Ele não foi integrado ao TSDF.
+
+| Candidato controlado, 33 vistas | Precisão 10 cm | Completude 10 cm | Componentes total/significativo | Bordas / não manifold | Decisão |
+|---|---:|---:|---:|---:|---|
+| Fase 11 C, TSDF híbrida 12 | 56,63% | 51,32% | 49 / 4 | 2.828 / 0 | histórico rejeitado |
+| D, TSDF híbrida 24 | 57,85% | 52,33% | 48 / 4 | 2.964 / 0 | rejeitado |
+| E, fusão calibrada original | 47,11% | 56,41% | 22 / 22 | 20.812 / 3.317 | controle, rejeitado |
+| F, fusão calibrada híbrida 24 | 49,29% | 57,10% | 26 / 26 | 25.314 / 1.141 | diagnóstico, rejeitado |
+
+D melhorou a Fase 11 em 1,22 ponto de precisão e 1,01 ponto de completude, mas permaneceu 3,48 pontos abaixo da completude da Fase 8. F recuperou 1,29 ponto de completude sobre a Fase 8, mas perdeu 1,44 ponto de precisão, dobrou bordas abertas e aumentou componentes significativos de 14 para 26. Nenhum resultado recebeu atlas ou substituiu a Fase 8. O backend agora permite abrir um candidato elegível e não promovido por `diagnostic_asset_id`, sempre dentro do mesmo imóvel/tenant, com aviso explícito e retorno ao modelo ativo; o id do candidato é persistido no resultado do job.
+
+Validação: worker Python **61/61**; Laravel **68/68, 292 assertions**; frontend **12/12**; TypeScript e build Vite aprovados. O build manteve apenas o aviso conhecido de chunks grandes. O frontend local respondeu HTTP 200. O controlador oficial do navegador recusou adquirir a aba localhost por sua política de URL; nenhum contorno foi usado e não há aprovação visual nova do canvas. Artefatos versionados: `evidence/phase12-stereo-coverage-summary.json` e `evidence/phase12-stereo-coverage-funnel.png`. Artefatos geométricos grandes permanecem ignorados em `storage/app/ai-real-results`.
+
+**Decisão:** novas rodadas de relaxamento do StereoSGBM não apresentam custo-benefício suficiente para qualidade comercial. A próxima prioridade técnica deve ser MVS/densificação COLMAP em Linux/CUDA autorizado ou uma abordagem híbrida paramétrica editável, usando a geometria estéreo somente onde verificada. A Fase 8 permanece ativa.

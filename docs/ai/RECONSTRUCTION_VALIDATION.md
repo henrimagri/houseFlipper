@@ -84,3 +84,14 @@ O canvas real abriu em `http://127.0.0.1:5173/app/house-flipper/imoveis/30/3d`, 
 ### Gate
 
 Fase 8 permanece ativa. A Fase 11 comprova que SGBM calibrado é operacional no dataset e melhora discretamente A, mas sua cobertura de 2,66–7,30% por par é insuficiente para recuperar a completude perdida. Nenhuma região desconhecida foi promovida como estéreo. `final_model_eligible=false` continua obrigatório até avaliação geométrica e visual superior.
+
+
+## Gate da Fase 12
+
+A Fase 12 corrige a ROI correspondida, usa intervalo de disparidade específico por par, registra funil completo, seleciona pares por cobertura incremental e mede voxels mundiais realmente novos. O conjunto ampliado de 24 pares elevou voxels únicos de 14.370 para 18.410 e suporte independente de 4.075 para 6.818, com erro mediano SfM de 0,951%.
+
+O melhor TSDF novo atingiu 57,85% de precisão e 52,33% de completude a 10 cm, 48 componentes totais/4 significativos, 2.964 bordas e zero não manifold. Ele melhora o TSDF da Fase 11, mas permanece abaixo dos 55,81% de completude da Fase 8. A fusão calibrada híbrida atingiu 49,29%/57,10%, porém apresentou 26 componentes significativos, 25.314 bordas e 1.141 arestas não manifold. Ambos foram rejeitados para promoção; nenhuma textura foi produzida.
+
+O plane-sweep CPU de três ou mais vistas funcionou em teste sintético, mas no conjunto real obteve erro mediano independente de 16,17% e somente 33,33% das âncoras dentro de 10%. Não foi integrado à reconstrução. O resultado sustenta encerrar otimizações baseadas apenas em SGBM/limiares e preparar MVS denso autorizado ou o produto híbrido paramétrico com regiões geométricas verificadas.
+
+Candidatos `viewer_eligible` podem ser abertos por diagnóstico sem alterar o modelo primário. O backend exige tenant, produto, propriedade do imóvel e asset pertencente à mesma visualização; `final_model_eligible=false` continua impedindo promoção. QA de canvas novo não foi realizado porque a ferramenta oficial recusou acesso à aba localhost. Fase 8 e a cobertura fototexturizada de 57,51% permanecem ativas.
