@@ -24,7 +24,13 @@ def read_obj_vertices(path: Path, maximum: int) -> np.ndarray:
     return array
 
 
-def nearest_distances(source: np.ndarray, target: np.ndarray, chunk: int = 32) -> np.ndarray:
+def deterministic_sample(values: np.ndarray, maximum: int) -> np.ndarray:
+    if len(values) <= maximum:
+        return values
+    return values[np.linspace(0, len(values) - 1, maximum, dtype=np.int64)]
+
+
+def nearest_distances(source: np.ndarray, target: np.ndarray, chunk: int = 128) -> np.ndarray:
     distances = np.empty(len(source), dtype=np.float32)
     for start in range(0, len(source), chunk):
         values = source[start:start + chunk, None, :] - target[None, :, :]
@@ -40,17 +46,22 @@ def main() -> None:
     args = parser.parse_args()
 
     generated_mesh = trimesh.load(args.generated, force="mesh", process=False)
-    generated = np.asarray(generated_mesh.vertices, dtype=np.float32)
-    reference = read_obj_vertices(args.reference, maximum=50_000)
+    generated_all = np.asarray(generated_mesh.vertices, dtype=np.float32)
+    generated = deterministic_sample(generated_all, 10_000)
+    reference = read_obj_vertices(args.reference, maximum=10_000)
     generated_to_reference = nearest_distances(generated, reference)
-    reference_subset = reference[np.linspace(0, len(reference) - 1, min(10_000, len(reference)), dtype=np.int64)]
+    reference_subset = deterministic_sample(reference, 10_000)
     reference_to_generated = nearest_distances(reference_subset, generated)
 
     result = {
         "comparison_only": True,
         "reference_used_during_generation": False,
         "coordinate_alignment": "dataset_colmap_world_coordinates_no_post_alignment",
-        "samples": {"generated": len(generated), "reference": len(reference_subset)},
+        "samples": {
+            "generated": len(generated),
+            "generated_total_vertices": len(generated_all),
+            "reference": len(reference_subset),
+        },
         "accuracy_generated_to_reference_m": {
             "median": float(np.median(generated_to_reference)),
             "p90": float(np.quantile(generated_to_reference, 0.90)),

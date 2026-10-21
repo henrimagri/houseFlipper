@@ -162,10 +162,12 @@ def evaluate_geometry(
     *,
     method: str = "sparse_delaunay_preview",
     sparse_point_count: int | None = None,
+    thresholds: Mapping[str, float | int] | None = None,
 ) -> dict[str, Any]:
     """Evaluate objective mesh properties without claiming visual fidelity."""
     import numpy as np
 
+    active_thresholds = {**GEOMETRY_THRESHOLDS, **(thresholds or {})}
     vertices = np.asarray(mesh.vertices)
     faces = np.asarray(mesh.faces)
     vertex_count = int(len(vertices))
@@ -236,19 +238,19 @@ def evaluate_geometry(
         rejection_reasons.append("A malha contém vértices inválidos ou não finitos.")
     if not valid_faces:
         rejection_reasons.append("A malha não contém índices triangulares válidos.")
-    if vertex_count < GEOMETRY_THRESHOLDS["min_vertices"]:
+    if vertex_count < active_thresholds["min_vertices"]:
         rejection_reasons.append("A malha possui poucos vértices para uma prévia geométrica útil.")
-    if face_count < GEOMETRY_THRESHOLDS["min_faces"]:
+    if face_count < active_thresholds["min_faces"]:
         rejection_reasons.append("A malha possui poucas faces para uma prévia geométrica útil.")
-    if source_points < GEOMETRY_THRESHOLDS["min_sparse_points"]:
+    if source_points < active_thresholds["min_sparse_points"]:
         rejection_reasons.append("A nuvem esparsa possui poucos pontos reconstruídos.")
-    if faces_per_vertex < GEOMETRY_THRESHOLDS["min_faces_per_vertex"]:
+    if faces_per_vertex < active_thresholds["min_faces_per_vertex"]:
         rejection_reasons.append("A densidade topológica de faces por vértice é insuficiente.")
-    if component_count > GEOMETRY_THRESHOLDS["max_connected_components"]:
+    if component_count > active_thresholds["max_connected_components"]:
         rejection_reasons.append("A malha está fragmentada em componentes demais.")
-    if largest_component_ratio < GEOMETRY_THRESHOLDS["min_largest_component_face_ratio"]:
+    if largest_component_ratio < active_thresholds["min_largest_component_face_ratio"]:
         rejection_reasons.append("O maior componente não concentra faces suficientes da malha.")
-    if degenerate_ratio > GEOMETRY_THRESHOLDS["max_degenerate_face_ratio"]:
+    if degenerate_ratio > active_thresholds["max_degenerate_face_ratio"]:
         rejection_reasons.append("A proporção de faces degeneradas excede o limite permitido.")
     if bounds_diagonal <= 1e-9:
         rejection_reasons.append("A malha não possui extensão espacial mensurável.")
@@ -269,7 +271,7 @@ def evaluate_geometry(
         "final_model_eligible": False,
         "reasons": reasons,
         "metrics": metrics,
-        "thresholds": GEOMETRY_THRESHOLDS.copy(),
+        "thresholds": active_thresholds,
     }
 
 

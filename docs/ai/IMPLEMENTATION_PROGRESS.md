@@ -287,3 +287,31 @@ Evidências executadas:
 Arquivos locais preservados e não versionados por `.git/info/exclude`: `NEXT_TASK.md`, `Novo(a) Documento de Texto.txt`, `bridge.ps1.backup` e `bridge.ps1.bak2`. Nenhum foi apagado.
 
 Limite real: não existe no repositório um canal oficial autenticado capaz de receber automaticamente uma conversa privada do ChatGPT. A entrada operacional permanece um arquivo local revisado e aprovado por uma pessoa. O retorno ocorre pelos commits enviados à branch que o monitor configurado consulta; cookies e tokens de sessão não são usados. O desenho de um receptor automático fica pendente até existir um canal oficial com credencial de serviço e permissão explícita.
+
+## 21/10/2026 — Fusão multivista e cancelamento da ponte automática
+
+As tentativas de integração automática ChatGPT ↔ Codex foram encerradas por decisão do proprietário. Os arquivos já existentes da ponte foram preservados sem novas alterações, tarefas remotas, leitura de sessões, verificações periódicas ou criação de conversas de coordenação. O desenvolvimento voltou ao pipeline de IA e 3D na branch `Correção-visua/proteção`.
+
+O diagnóstico da reconstrução independente encontrou a causa principal da cobertura de 12,68%: quando o Poisson não concluía no Windows, o pipeline gerava superfícies para todas as vistas, mas exportava somente o maior componente. A correção remapeia faces durante a fusão por voxel, alinha sinais opostos de normais, remove triângulos degenerados/duplicados e preserva os componentes significativos de todas as vistas. O Poisson fica desativado por padrão no Windows, onde o subprocesso não encerra de forma confiável, e continua opt-in por `AI_POISSON_ENABLED`.
+
+Execução real autorizada `playroom_small`, sem leitura da malha de referência durante a geração:
+
+| Métrica | Baseline | Fusão multivista |
+|---|---:|---:|
+| Vistas selecionadas/aceitas | 18/17 | 42/39 |
+| Vértices | 6.208 | 139.033 |
+| Faces | 12.096 | 267.722 |
+| Componentes | 1 (apenas o maior mantido) | 30 significativos |
+| Precisão mediana gerado → referência | 0,121785 m | 0,095919 m |
+| Gerado até 10 cm da referência | 40,29% | 51,67% |
+| Completude mediana referência → gerado | 1,166620 m | 0,081763 m |
+| Referência coberta até 10 cm | 12,71% | 55,41% |
+| GLB | 245.580 bytes | 5.438.200 bytes |
+
+As duas comparações usam agora amostragem determinística de até 10.000 vértices em cada direção, sem ICP e nas coordenadas COLMAP originais. O ganho de completude é de **42,70 pontos percentuais**, ou **4,36×**. O GLB novo possui SHA-256 `040fef6ef25c6bf8768e298c21b47bbe6c48abbafbc9fc355f342e3f74377056` e foi importado pelo fluxo autenticado do imóvel de QA.
+
+Validação no navegador: o upload, carregamento, persistência e controles de órbita foram exercitados no Three.js. As capturas `evidence/multiview-fusion/baseline-viewer.png`, `multiview-front.png` e `multiview-orbit.png` registram antes, depois e segunda posição de câmera. A avaliação visual confirma cobertura maior, mas também grandes aberturas e superfícies desconectadas; `final_model_eligible` permanece `false` e qualidade comercial não foi declarada. Um teste de marching cubes em CPU não concluiu em tempo operacional útil e foi interrompido sem integrar artefatos ou dependências. O worker FastAPI também migrou de `on_event` para `lifespan`, descarrega modelos no encerramento e eliminou os quatro avisos de depreciação nos testes da API.
+
+Verificações desta etapa: worker completo **30/30** antes da migração de ciclo de vida e API FastAPI **7/7** depois dela, sem avisos de `on_event`; Laravel de visualização neural **5/5, 36 assertions**; frontend **12/12**; TypeScript e build Vite aprovados. O build mantém o aviso conhecido de chunks maiores que 500 kB. O experimento, dataset, GLBs, pesos e resultados permanecem ignorados em `storage/app`; somente código, testes, documentação e capturas sem credenciais são preparados para commit.
+
+Pendências: fechar as lacunas por TSDF/Poisson em runtime Linux/CUDA autorizado, gerar atlas UV/textura coerente, reduzir componentes sem descartar cobertura e repetir a avaliação visual em várias câmeras antes de promover qualquer reconstrução como modelo final.

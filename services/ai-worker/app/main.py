@@ -4,7 +4,9 @@ import json
 import os
 import tempfile
 import uuid
+from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import AsyncIterator
 
 from .runtime_diagnostics import enable_native_diagnostics, record_event, runtime_snapshot
 
@@ -21,7 +23,24 @@ from .reconstruction import (
 )
 from .vision import vision_pipeline
 
-app = FastAPI(title="FlipControl AI Worker", version="0.1.0", docs_url=None, redoc_url=None)
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    record_event("fastapi_started")
+    try:
+        yield
+    finally:
+        vision_pipeline.unload_models()
+        record_event("fastapi_stopped")
+
+
+app = FastAPI(
+    title="FlipControl AI Worker",
+    version="0.1.0",
+    docs_url=None,
+    redoc_url=None,
+    lifespan=lifespan,
+)
 
 
 def authorize(x_worker_token: str | None = Header(default=None)) -> None:
@@ -48,16 +67,6 @@ def torch_status() -> dict:
 @app.get("/health", dependencies=[Depends(authorize)])
 def health() -> dict:
     return {"status": "ok", "torch": torch_status(), "runtime": runtime_snapshot()}
-
-
-@app.on_event("startup")
-def worker_started() -> None:
-    record_event("fastapi_started")
-
-
-@app.on_event("shutdown")
-def worker_stopped() -> None:
-    record_event("fastapi_stopped")
 
 
 @app.get("/v1/models", dependencies=[Depends(authorize)])

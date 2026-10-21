@@ -206,16 +206,69 @@ def _voxel_fuse(
     colors: np.ndarray,
     voxel_size: float,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    fused_points, fused_normals, fused_colors, _ = _voxel_fuse_with_mapping(
+        points, normals, colors, voxel_size,
+    )
+    return fused_points, fused_normals, fused_colors
+
+
+def _voxel_fuse_with_mapping(
+    points: np.ndarray,
+    normals: np.ndarray,
+    colors: np.ndarray,
+    voxel_size: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     keys = np.floor(points / voxel_size).astype(np.int64)
-    _, inverse = np.unique(keys, axis=0, return_inverse=True)
+    _, first_indices, inverse = np.unique(keys, axis=0, return_index=True, return_inverse=True)
     counts = np.bincount(inverse).astype(np.float64)
     fused_points = np.column_stack([np.bincount(inverse, weights=points[:, i]) / counts for i in range(3)])
-    fused_normals = np.column_stack([np.bincount(inverse, weights=normals[:, i]) / counts for i in range(3)])
+    reference_normals = normals[first_indices][inverse]
+    signs = np.where(np.einsum("ij,ij->i", normals, reference_normals) < 0, -1.0, 1.0)
+    aligned_normals = normals * signs[:, None]
+    fused_normals = np.column_stack([np.bincount(inverse, weights=aligned_normals[:, i]) / counts for i in range(3)])
     fused_colors = np.column_stack([np.bincount(inverse, weights=colors[:, i]) / counts for i in range(3)])
     normal_lengths = np.linalg.norm(fused_normals, axis=1)
     keep = normal_lengths > 1e-6
     fused_normals[keep] /= normal_lengths[keep, None]
-    return fused_points[keep].astype(np.float32), fused_normals[keep].astype(np.float32), np.clip(fused_colors[keep], 0, 255).astype(np.uint8)
+    compact_indices = np.full(len(keep), -1, dtype=np.int64)
+    compact_indices[keep] = np.arange(int(keep.sum()), dtype=np.int64)
+    vertex_mapping = compact_indices[inverse]
+    return (
+        fused_points[keep].astype(np.float32),
+        fused_normals[keep].astype(np.float32),
+        np.clip(fused_colors[keep], 0, 255).astype(np.uint8),
+        vertex_mapping,
+    )
+
+
+def _fuse_surface_mesh(
+    points: np.ndarray,
+    normals: np.ndarray,
+    colors: np.ndarray,
+    faces: np.ndarray,
+    voxel_size: float,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict[str, int]]:
+    fused_points, fused_normals, fused_colors, vertex_mapping = _voxel_fuse_with_mapping(
+        points, normals, colors, voxel_size,
+    )
+    remapped = vertex_mapping[faces]
+    valid = np.all(remapped >= 0, axis=1)
+    valid &= remapped[:, 0] != remapped[:, 1]
+    valid &= remapped[:, 1] != remapped[:, 2]
+    valid &= remapped[:, 0] != remapped[:, 2]
+    remapped = remapped[valid]
+    if len(remapped):
+        canonical = np.sort(remapped, axis=1)
+        _, unique_indices = np.unique(canonical, axis=0, return_index=True)
+        remapped = remapped[np.sort(unique_indices)]
+    metrics = {
+        "raw_faces": int(len(faces)),
+        "valid_faces": int(valid.sum()),
+        "fused_faces": int(len(remapped)),
+        "removed_degenerate_faces": int(len(faces) - valid.sum()),
+        "removed_duplicate_faces": int(valid.sum() - len(remapped)),
+    }
+    return fused_points, fused_normals, fused_colors, remapped, metrics
 
 
 def write_binary_ply(path: Path, points: np.ndarray, normals: np.ndarray, colors: np.ndarray) -> None:
@@ -309,7 +362,24 @@ def reconstruct_calibrated_depth(
     raw_points = np.concatenate(clouds)
     raw_normals = np.concatenate(normals)
     raw_colors = np.concatenate(colors)
-    fused_points, fused_normals, fused_colors = _voxel_fuse(raw_points, raw_normals, raw_colors, voxel_size)
+    raw_faces = np.concatenate(surface_faces)
+    fused_points, fused_normals, fused_colors, fused_faces, fusion_metrics = _fuse_surface_mesh(
+        raw_points, raw_normals, raw_colors, raw_faces, voxel_size,
+    )
+    fusion_metrics.update({
+        "raw_points": int(len(raw_points)),
+        "fused_points": int(len(fused_points)),
+        "voxel_size": float(voxel_size),
+    })
+    fusion_report_path = output / "fusion-report.json"
+    fusion_report_path.write_text(
+        json.dumps(fusion_metrics, ensure_ascii=False, indent=2), encoding="utf-8",
+    )
+    if len(fused_faces) < 100:
+        raise RuntimeError(
+            "A fusão multivista não preservou faces suficientes "
+            f"({len(fused_faces)} de {len(raw_faces)}); revise a escala do voxel."
+        )
     cloud_path = output / "depth-fused.ply"
     write_binary_ply(cloud_path, fused_points, fused_normals, fused_colors)
 
@@ -319,34 +389,40 @@ def reconstruct_calibrated_depth(
 
     meshing_method = "calibrated_monocular_depth_fusion_poisson"
     poisson_error = None
-    try:
-        completed = subprocess.run(
-            [
-                str(colmap_executable), "poisson_mesher",
-                "--input_path", str(cloud_path),
-                "--output_path", str(raw_mesh),
-                "--PoissonMeshing.depth", "8",
-                "--PoissonMeshing.num_threads", "4",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=max(15, min(int(os.environ.get("AI_POISSON_TIMEOUT", "180")), 600)),
-            check=False,
-        )
-        (output / "poisson-mesher.log").write_text(completed.stdout + "\n" + completed.stderr, encoding="utf-8", errors="replace")
-        if completed.returncode != 0 or not raw_mesh.is_file() or raw_mesh.stat().st_size == 0:
-            poisson_error = f"Poisson mesher falhou com código {completed.returncode}."
-    except subprocess.TimeoutExpired as exception:
-        poisson_error = f"Poisson mesher excedeu {exception.timeout} segundos."
+    poisson_enabled = os.environ.get(
+        "AI_POISSON_ENABLED", "false" if os.name == "nt" else "true",
+    ).strip().lower() in {"1", "true", "yes", "on"}
+    if poisson_enabled:
+        try:
+            completed = subprocess.run(
+                [
+                    str(colmap_executable), "poisson_mesher",
+                    "--input_path", str(cloud_path),
+                    "--output_path", str(raw_mesh),
+                    "--PoissonMeshing.depth", "8",
+                    "--PoissonMeshing.num_threads", "4",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=max(15, min(int(os.environ.get("AI_POISSON_TIMEOUT", "180")), 600)),
+                check=False,
+            )
+            (output / "poisson-mesher.log").write_text(completed.stdout + "\n" + completed.stderr, encoding="utf-8", errors="replace")
+            if completed.returncode != 0 or not raw_mesh.is_file() or raw_mesh.stat().st_size == 0:
+                poisson_error = f"Poisson mesher falhou com código {completed.returncode}."
+        except subprocess.TimeoutExpired as exception:
+            poisson_error = f"Poisson mesher excedeu {exception.timeout} segundos."
+    else:
+        poisson_error = "Poisson mesher desativado neste runtime; usando superfície multivista calibrada."
 
     if poisson_error:
-        meshing_method = "calibrated_depth_surface_fallback"
+        meshing_method = "calibrated_multiview_depth_surface"
         (output / "poisson-mesher-error.txt").write_text(poisson_error, encoding="utf-8")
         fallback = trimesh.Trimesh(
-            vertices=raw_points,
-            faces=np.concatenate(surface_faces),
-            vertex_normals=raw_normals,
-            vertex_colors=raw_colors,
+            vertices=fused_points,
+            faces=fused_faces,
+            vertex_normals=fused_normals,
+            vertex_colors=fused_colors,
             process=False,
         )
         fallback.export(raw_mesh)
@@ -357,22 +433,34 @@ def reconstruct_calibrated_depth(
     if not components:
         raise RuntimeError("A malha Poisson não possui componentes válidos.")
     minimum_faces = max(100, int(len(loaded.faces) * 0.002))
-    kept = ([max(components, key=lambda mesh: len(mesh.faces))] if poisson_error else
-            [mesh for mesh in components if len(mesh.faces) >= minimum_faces])
+    kept = [mesh for mesh in components if len(mesh.faces) >= minimum_faces]
+    if poisson_error:
+        kept = sorted(kept, key=lambda mesh: len(mesh.faces), reverse=True)[:64]
     clean = trimesh.util.concatenate(kept or [max(components, key=lambda mesh: len(mesh.faces))])
     clean.remove_unreferenced_vertices()
     clean.remove_infinite_values()
     clean_mesh = output / "depth-poisson-clean.ply"
     clean.export(clean_mesh)
 
-    quality = evaluate_geometry(clean, method=meshing_method, sparse_point_count=len(fused_points))
+    quality_thresholds = None
+    if poisson_error:
+        quality_thresholds = {
+            "max_connected_components": 64,
+            "min_largest_component_face_ratio": 0.02,
+        }
+    quality = evaluate_geometry(
+        clean,
+        method=meshing_method,
+        sparse_point_count=len(fused_points),
+        thresholds=quality_thresholds,
+    )
     report("exporting_glb", 92, viewer_eligible=quality["viewer_eligible"])
     glb = output / "depth-fusion.glb"
     if quality["viewer_eligible"]:
         clean.export(glb, file_type="glb")
 
     hashes = {}
-    for artifact in (cloud_path, raw_mesh, clean_mesh, glb):
+    for artifact in (cloud_path, raw_mesh, clean_mesh, glb, fusion_report_path):
         if artifact.is_file():
             hashes[artifact.name] = hashlib.sha256(artifact.read_bytes()).hexdigest()
     result = {
@@ -382,19 +470,22 @@ def reconstruct_calibrated_depth(
         "reference_mesh_read": False,
         "inputs": {"available_views": len(available), "selected_views": len(selected), "accepted_views": len(clouds)},
         "fit_reports": fit_reports,
+        "fusion_metrics": fusion_metrics,
+        "poisson_attempted": poisson_enabled,
         "geometry_quality": quality,
         "artifacts": {
             "dense_point_cloud": cloud_path.name,
             "raw_mesh": raw_mesh.name,
             "clean_mesh": clean_mesh.name,
             "glb": glb.name if glb.is_file() else None,
+            "fusion_report": fusion_report_path.name,
         },
         "hashes": hashes,
         "stages": stages,
         "elapsed_seconds": round(time.perf_counter() - started, 3),
         "limitations": [
             "A profundidade monocular foi alinhada por vista aos pontos SfM; não equivale a estéreo denso COLMAP.",
-            "Quando o Poisson excede o limite de execução, a malha usa apenas o maior componente da superfície de profundidade calibrada; a nuvem fundida continua multivista.",
+            "Quando o Poisson excede o limite de execução, a malha preserva os componentes significativos das superfícies calibradas e fundidas por voxel.",
             "Cores de vértice vêm das fotos, sem atlas UV; regiões sem observação não são preenchidas semanticamente.",
             "A malha requer comparação independente com a referência antes de qualquer aprovação comercial.",
         ],

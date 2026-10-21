@@ -36,3 +36,9 @@ O usuário envia entre 8 e 120 imagens privadas, confirma autorização/mesmo am
 ## Etapa densa
 
 O build instalado não tem GPU. Por isso `patch_match_stereo`, fusão densa, Poisson e textura final não foram declarados concluídos. O contrato e os artefatos esparsos continuam funcionais; produção densa deve usar o mesmo endpoint em worker Linux/CUDA com armazenamento privado equivalente.
+
+## Profundidade calibrada multivista
+
+Como alternativa de diagnóstico no Windows, `calibrated_depth_fusion.py` estima profundidade monocular, ajusta a escala de cada vista aos pontos SfM e preserva faces durante a fusão por voxel. Normais opostas no mesmo voxel são alinhadas antes da média; faces degeneradas e duplicadas são removidas. O método aumentou a completude até 10 cm de 12,71% para 55,41% no `playroom_small`, mas a malha continuou aberta e fragmentada no Three.js.
+
+`AI_POISSON_ENABLED` controla a tentativa de Poisson: padrão falso no Windows e verdadeiro em Linux. `AI_POISSON_TIMEOUT` limita a execução. A superfície calibrada é uma prévia técnica com cores por vértice, sem atlas UV, e não substitui estéreo denso ou texturização.

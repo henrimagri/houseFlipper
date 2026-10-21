@@ -117,3 +117,29 @@ O GLB independente foi salvo no imóvel local de QA, reaberto após recarregar a
 A captura `evidence/real-property-independent-depth-fusion-threejs.png` registra o resultado próprio, e não a malha oficial. São visíveis uma superfície de parede, uma abertura e variações de profundidade/cor; ao orbitar, a espessura parcial também fica evidente. A cena ainda não é um cômodo completo nem uma reconstrução comercial: faltam grande parte do ambiente, textura UV e superfícies de outras vistas.
 
 Testes finais desta execução: **4/4** testes focados do worker, **5/5** testes Laravel de visualização neural (36 assertions), **12/12** testes frontend, TypeScript e build Vite aprovados. O worker permaneceu saudável com PyTorch 2.8.0+cu126, CUDA 12.6 e GTX 1660 Ti.
+
+## Fusão multivista de 21/10/2026
+
+O fallback anterior foi corrigido para preservar faces de todas as vistas após a fusão por voxel. A malha oficial continuou ausente do processo de geração; ela foi aberta somente pelo comparador independente depois que o GLB e seu hash estavam gravados.
+
+| Item | Resultado |
+|---|---|
+| Vistas | 42 selecionadas; 39 aceitas |
+| Pontos | 141.376 brutos; 137.420 fundidos |
+| Faces | 269.216 brutas; 267.722 após fusão e limpeza |
+| Limpeza da fusão | 4 faces degeneradas e 305 duplicadas removidas |
+| Malha | 139.033 vértices; 30 componentes significativos; diagonal 6,068805 m |
+| Método | `calibrated_multiview_depth_surface` |
+| Tempo | 257,447 s |
+| Poisson | não tentado no Windows; fallback explícito e verificável |
+| GLB | 5.438.200 bytes; SHA-256 `040fef6ef25c6bf8768e298c21b47bbe6c48abbafbc9fc355f342e3f74377056` |
+
+Comparação determinística de até 10.000 vértices, sem ICP:
+
+- baseline: precisão mediana 0,121785 m, 40,29% até 10 cm; completude mediana 1,166620 m, 12,71% até 10 cm;
+- fusão multivista: precisão mediana 0,095919 m, 51,67% até 10 cm; completude mediana 0,081763 m, 55,41% até 10 cm;
+- melhoria: 42,70 pontos percentuais de completude até 10 cm, equivalente a 4,36 vezes o baseline.
+
+O arquivo foi enviado e reaberto na rota autenticada do imóvel de QA. As capturas em `evidence/multiview-fusion/` mostram o baseline, o novo enquadramento e uma segunda posição de câmera. A navegação funciona, mas o render ainda contém superfícies abertas e componentes visualmente separados. A maior cobertura não resolve texturização, watertightness nem continuidade de paredes; por isso o modelo permanece uma prévia técnica e `final_model_eligible=false`.
+
+Uma tentativa independente de marching cubes em CPU foi interrompida por não concluir em tempo operacional útil. Nenhum resultado desse experimento foi promovido. O próximo passo de qualidade exige TSDF/Poisson em Linux/CUDA autorizado ou outro método volumétrico que seja medido e visualmente validado. A suíte completa do worker aprovou 30 testes; após migrar o FastAPI para `lifespan`, os 7 testes da API passaram sem os avisos de depreciação anteriores.

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from app.calibrated_depth_fusion import Camera, View, _fit_metric_depth, _voxel_fuse, write_binary_ply
+from app.calibrated_depth_fusion import Camera, View, _fit_metric_depth, _fuse_surface_mesh, _voxel_fuse, write_binary_ply
 
 
 def test_metric_depth_fit_uses_sparse_geometry_without_reference_mesh() -> None:
@@ -45,3 +45,36 @@ def test_voxel_fusion_and_binary_ply_preserve_color_and_normals(tmp_path: Path) 
     assert np.allclose(np.linalg.norm(fused_normals, axis=1), 1)
     assert fused_colors.tolist()[0] == [110, 130, 150]
     assert target.read_bytes().startswith(b"ply\nformat binary_little_endian 1.0")
+
+
+def test_multiview_surface_fusion_keeps_faces_and_aligns_opposite_normals() -> None:
+    quad = np.asarray([[0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]], dtype=np.float32)
+    points = np.concatenate((quad, quad + 0.002))
+    normals = np.concatenate((
+        np.tile([0, 0, -1], (4, 1)),
+        np.tile([0, 0, 1], (4, 1)),
+    )).astype(np.float32)
+    colors = np.concatenate((
+        np.tile([100, 120, 140], (4, 1)),
+        np.tile([140, 160, 180], (4, 1)),
+    )).astype(np.uint8)
+    faces = np.asarray([
+        [0, 2, 1], [1, 2, 3],
+        [4, 6, 5], [5, 6, 7],
+    ], dtype=np.int64)
+
+    fused_points, fused_normals, fused_colors, fused_faces, metrics = _fuse_surface_mesh(
+        points, normals, colors, faces, voxel_size=0.01,
+    )
+
+    assert len(fused_points) == 4
+    assert len(fused_faces) == 2
+    assert np.allclose(np.linalg.norm(fused_normals, axis=1), 1)
+    assert fused_colors.tolist()[0] == [120, 140, 160]
+    assert metrics == {
+        "raw_faces": 4,
+        "valid_faces": 4,
+        "fused_faces": 2,
+        "removed_degenerate_faces": 0,
+        "removed_duplicate_faces": 2,
+    }

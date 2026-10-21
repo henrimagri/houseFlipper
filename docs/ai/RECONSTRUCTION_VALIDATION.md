@@ -15,3 +15,9 @@ O fluxo opt-in executa `image_undistorter`, `patch_match_stereo`, `stereo_fusion
 ## Critério para a próxima validação
 
 Uma captura autorizada real deve produzir e comparar nuvem esparsa, nuvem densa, malha, malha texturizada e GLB. Além do portão automático, a aprovação requer revisão visual, cobertura, buracos, artefatos, orientação, escala, materiais e render no navegador. Texturização e referência geométrica ainda não foram executadas; portanto, fotogrametria densa e malha texturizada permanecem pendentes.
+
+## Fallback multivista calibrado
+
+Quando o Poisson está indisponível, a fusão calibrada preserva as faces de todas as vistas aceitas, remapeia vértices pelo voxel, normaliza normais com sinal consistente e remove faces degeneradas ou duplicadas. Componentes pequenos são filtrados, mas o pipeline não reduz mais toda a reconstrução ao único maior componente. O relatório `fusion-report.json` registra contagens antes e depois da fusão e participa dos hashes de artefatos.
+
+Esse fallback possui limites próprios para exibição de prévia (`64` componentes no máximo e pelo menos `2%` das faces no maior componente). Esses limites não promovem a malha para uso final: `final_model_eligible` permanece falso, e a inspeção visual do teste real mostrou aberturas e fragmentação apesar da melhoria de completude de 12,71% para 55,41% até 10 cm.
