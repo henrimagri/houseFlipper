@@ -29,6 +29,7 @@ export const FURNITURE_CATALOG: FurnitureCatalogEntry[] = [
   { id: 'flipcontrol-wardrobe', kind: 'wardrobe', label: 'Armário', dimensionsM: [1.2, 2.15, 0.55], materials: ['madeira'], anchor: 'floor', license: 'Projeto original', attribution: 'FlipControl' },
   { id: 'flipcontrol-lamp', kind: 'lamp', label: 'Luminária de piso', dimensionsM: [0.45, 1.55, 0.45], materials: ['metal', 'tecido'], anchor: 'floor', license: 'Projeto original', attribution: 'FlipControl' },
   { id: 'flipcontrol-plant', kind: 'plant', label: 'Planta decorativa', dimensionsM: [0.65, 1.05, 0.65], materials: ['cerâmica', 'folhagem'], anchor: 'floor', license: 'Projeto original', attribution: 'FlipControl' },
+  { id: 'flipcontrol-sink', kind: 'sink', label: 'Bancada simplificada', dimensionsM: [0.7, 0.92, 0.45], materials: ['acabamento liso'], anchor: 'floor', license: 'Projeto original', attribution: 'FlipControl' },
   { id: 'flipcontrol-window', kind: 'window', label: 'Janela ampla', dimensionsM: [1.8, 1.25, 0.1], materials: ['vidro', 'alumínio'], anchor: 'wall', license: 'Projeto original', attribution: 'FlipControl' },
   { id: 'flipcontrol-door', kind: 'door', label: 'Porta', dimensionsM: [0.9, 2.1, 0.12], materials: ['madeira'], anchor: 'wall', license: 'Projeto original', attribution: 'FlipControl' },
 ];

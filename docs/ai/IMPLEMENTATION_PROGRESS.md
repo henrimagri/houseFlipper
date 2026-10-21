@@ -535,3 +535,13 @@ Implementado e testado: SAM-only gera base privada preservada; pincel/borracha r
 QA real em quarto e cozinha licenciados, versões 87 e 97 salvas/reabertas. Três fotos, nove composições: zero pixels externos alterados; avaliação visual qualitativa aponta máscaras parciais e bordas que exigem retoque. DETR avaliado em três limiares sem alterar produção. SAM executou CUDA (cabeçalho inicialmente CPU corrigido), composição/DETR CPU. Python 146/146; Laravel 95/95, 517 assertions; frontend 26/26, TypeScript/Vite aprovados.
 
 Relatório completo, comandos, recursos, licenças e screenshots: [MILESTONE4_PHOTO_REFINEMENT.md](MILESTONE4_PHOTO_REFINEMENT.md). Interromper acompanhamento não cancela inferência nativa; ambientes adicionais e aprovação comercial seguem parciais. Fase 8 preservada. Próxima prioridade: aberturas/PBR/catálogo no paramétrico.
+
+## 21/10/2026 — Marco 4, continuação P1: vãos, materiais e catálogo
+
+Pintura publicada em `cd2b17b`; continuação no mesmo branch. Implementados recortes reais de portas/janelas, seleção/medidas/validação, histórico/versões e persistência autorizada. Seis materiais procedurais com cor, relevo e rugosidade; catálogo com pesquisa, licença, origem e fallback explícito. Reutilizados os dois GLBs existentes, sem novos downloads.
+
+QA real criou janela e porta, rejeitou sobreposição/altura incompatível, editou largura com undo/redo, mudou piso, adicionou/moveu cadeira, salvou versão e reabriu/comparou após recarga. Vistas frontal/lateral/superior e desktop/estreito inspecionadas. Corrigidos três defeitos encontrados: móveis novos fora do piso por contagem global, campo de medida desatualizado após 422 e destaque residual por callback assíncrono com seleção antiga.
+
+Verificação integrada: Laravel **108/108, 712 assertions, 8.058 ms**; frontend **44/44**, TypeScript/Vite (build final 15,35 s) e Pint aprovados. Python **146/146** no incremento anterior desta sessão, sem mudanças Python posteriores. Capturas e limitações em [MILESTONE4_PARAMETRIC_EDITOR.md](MILESTONE4_PARAMETRIC_EDITOR.md). Nada promovido na reconstrução; Fase 8 preservada.
+
+Estado P1 parcial: aberturas apenas em modos internos; catálogo pequeno e geometria de alguns móveis simplificada; inserção limitada ao cômodo sem resolução de colisão; sem benchmark de GPU integrada ou aprovação fotorealista. Próxima prioridade é corpus fotográfico autorizado mais amplo, acabamento das seleções e colocação/catálogo do editor, mantendo cancelamento nativo e infraestrutura como pendências explícitas.

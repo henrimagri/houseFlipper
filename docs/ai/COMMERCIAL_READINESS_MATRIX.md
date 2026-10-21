@@ -147,6 +147,8 @@ Referências públicas consultadas: [criar ambiente](https://www.simulador3d.com
 | Pintura e acabamentos | Parcial | Luminância corrigida, nove composições sem alterar exterior; acabamentos aproximados, máscaras ainda exigem revisão |
 | Avaliação variada/DETR | Parcial | Três fotos licenciadas, três limiares; sem GT nem precisão inventada; outros cinco tipos de ambiente pendentes |
 | Cancelamento fotográfico | Parcial | Interrompe acompanhamento/descarta prévia, não interrompe inferência nativa |
-| Editor 3D: aberturas, PBR, catálogo | Próxima prioridade P1 | Incremento separado após validação da pintura |
+| Editor 3D: aberturas, PBR, catálogo | Parcial; incremento funcional implementado e testado | Vãos reais persistidos, seis materiais procedurais, catálogo pesquisável com dois GLBs existentes; QA com recarga/versões. Colisão, catálogo amplo, Planta/Exterior detalhados e benchmark pendentes |
 
 Detalhes e capturas: [MILESTONE4_PHOTO_REFINEMENT.md](MILESTONE4_PHOTO_REFINEMENT.md). Não substitui pendências das outras linhas nem atesta qualidade comercial geral.
+
+Incremento P1 executado após a pintura: [MILESTONE4_PARAMETRIC_EDITOR.md](MILESTONE4_PARAMETRIC_EDITOR.md). Corrigidos posicionamento inicial fora do piso, campo de dimensão que não revertia após 422 e destaque antigo reaplicado após carregar GLBs. Testes Laravel 108/108, frontend 44/44 e QA real. Vãos definidos pelo usuário não são medições extraídas das fotos. Padrões PBR são procedurais originais, não fototexturas. Fase 8 preservada.

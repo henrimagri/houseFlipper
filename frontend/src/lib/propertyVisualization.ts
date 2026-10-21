@@ -20,6 +20,18 @@ export type SceneSurface = {
   finish?: 'matte' | 'satin' | 'gloss';
 };
 
+export type SceneOpening = {
+  id: string;
+  room: string;
+  side: 'south' | 'north' | 'west' | 'east';
+  kind: 'door' | 'window';
+  width: number;
+  height: number;
+  offset: number;
+  sill: number;
+  origin: 'user';
+};
+
 export type SceneGraph = {
   version: number;
   fidelity: string;
@@ -28,6 +40,7 @@ export type SceneGraph = {
   rooms: Array<{ key: string; label: string; confidence?: number; unknowns?: string[] }>;
   surfaces: SceneSurface[];
   objects: SceneObject[];
+  openings?: SceneOpening[];
   lighting?: { preset: string; ambient_intensity: number; directional_intensity: number; color: string };
   room_dimensions?: Record<string, { width: number; depth: number; height: number; source: 'estimated' | 'user' }>;
   photo_planes: Array<{ id: string; room: string; asset_id: number; wall: string }>;

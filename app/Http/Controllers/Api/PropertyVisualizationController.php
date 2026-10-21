@@ -254,7 +254,12 @@ class PropertyVisualizationController extends Controller
     {
         $data = $request->validate([
             'actions' => ['required', 'array', 'min:1', 'max:20'],
-            'actions.*.op' => ['required', 'string', 'in:paint_kind,paint_surface,set_reconstruction_material,undo_reconstruction,redo_reconstruction,undo_scene,redo_scene,add_object,remove_object,set_object_color,transform,hide,duplicate,set_active_room,upsert_object,set_lighting,set_room_dimensions,set_project_brief'],
+            'actions.*.op' => ['required', 'string', 'in:paint_kind,paint_surface,set_reconstruction_material,undo_reconstruction,redo_reconstruction,undo_scene,redo_scene,add_object,remove_object,set_object_color,transform,hide,duplicate,set_active_room,upsert_object,set_lighting,set_room_dimensions,set_project_brief,add_opening,update_opening,remove_opening'],
+            'actions.*.side' => ['nullable', 'in:north,south,west,east'],
+            'actions.*.width' => ['nullable', 'numeric', 'between:0.3,20'],
+            'actions.*.height' => ['nullable', 'numeric', 'between:0.3,8'],
+            'actions.*.offset' => ['nullable', 'numeric', 'between:-20,20'],
+            'actions.*.sill' => ['nullable', 'numeric', 'between:0,8'],
             'actions.*.hidden' => ['nullable', 'boolean'],
             'actions.*.object' => ['nullable', 'array'],
             'actions.*.id' => ['nullable', 'string', 'max:80'],

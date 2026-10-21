@@ -2,6 +2,9 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Maximize2, RotateCcw, Save } from 'lucide-react';
 import { getAuthToken } from '@/lib/authToken';
 import { catalogEntry, FURNITURE_CATALOG } from '@/lib/furnitureCatalog';
+import FurnitureCatalogPanel from '@/components/FurnitureCatalogPanel';
+import { openingError, WALL_SIDES, wallGeometryData, wallTransform } from '@/lib/wallOpenings.mjs';
+import { createSurfaceMaterial } from '@/lib/surfaceMaterials.mjs';
 import {
   materialLabel,
   objectLabel,
@@ -9,6 +12,7 @@ import {
   type SceneGraph,
   type SceneObject,
   type SceneSurface,
+  type SceneOpening,
   type VisualizationPayload,
 } from '@/lib/propertyVisualization';
 
@@ -44,11 +48,17 @@ export default function PropertyPhotoSceneEditor({
   const cameraState = useRef<{ room: string; mode: string; position: number[]; target: number[]; up: number[] } | null>(null);
   const mutationPending = useRef(false);
   const [mode, setMode] = useState<EditorMode>('interior');
-  const [panel, setPanel] = useState<'ambientes' | 'objetos' | 'materiais' | 'cores' | 'iluminacao' | 'projetos' | null>('ambientes');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [panel, setPanel] = useState<'ambientes' | 'objetos' | 'aberturas' | 'materiais' | 'cores' | 'iluminacao' | 'projetos' | null>('ambientes');
+  const [selectedId, setSelectedState] = useState<string | null>(null);
+  const selectedIdRef = useRef<string | null>(null);
+  function setSelectedId(id: string | null) {
+    selectedIdRef.current = id;
+    setSelectedState(id);
+  }
   const [message, setMessage] = useState('');
   const [reply, setReply] = useState('');
   const [renderState, setRenderState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [catalogStatus, setCatalogStatus] = useState('');
   const undo = graph.editor_history ?? [];
   const redo = graph.editor_redo ?? [];
   const [saveState, setSaveState] = useState('Alterações salvas automaticamente');
@@ -60,6 +70,7 @@ export default function PropertyPhotoSceneEditor({
   const objects = graph.objects.filter(item => item.room === room);
   const selected = graph.objects.find(item => item.id === selectedId) ?? null;
   const selectedSurface = surfaces.find(item => item.id === selectedId) ?? null;
+  const selectedOpening = graph.openings?.find(item => item.room === room && item.id === selectedId) ?? null;
   const dimensions = graph.room_dimensions?.[room] ?? { width: 5.2, depth: 4.2, height: 2.65, source: 'estimated' as const };
 
   useEffect(() => { api.current?.select(selectedId); }, [selectedId, signature]);
@@ -79,6 +90,7 @@ export default function PropertyPhotoSceneEditor({
     const token = getAuthToken();
     const selectable: any[] = [];
     setRenderState('loading');
+    setCatalogStatus('');
 
     (async () => {
       const THREE = await import('three');
@@ -116,16 +128,19 @@ export default function PropertyPhotoSceneEditor({
       else if (mode === 'floorplan') buildFloorplan(THREE, root, graph, selectable);
       else {
         buildInterior(THREE, root, graph, textures, new Map(), selectable);
+        const wantedModels = new Set(graph.objects.filter(item => item.room === room && !item.hidden && catalogEntry(item.kind)?.assetUrl).map(item => item.kind));
+        if (wantedModels.size) setCatalogStatus('Modelos 3D carregando; elementos simplificados aparecem enquanto isso.');
         const catalogPromise = loadCatalogModels(graph);
         void catalogPromise.then(catalogModels => {
           if (disposed) { catalogModels.forEach(disposeTree); return; }
+          setCatalogStatus(catalogModels.size < wantedModels.size ? 'Modelo detalhado indisponível; exibindo versão simplificada onde necessário.' : wantedModels.size ? 'Modelos licenciados carregados.' : 'Mobiliário paramétrico aproximado.');
           if (catalogModels.size === 0) return;
           disposeTree(root);
           root.clear();
           selectable.length = 0;
           buildInterior(THREE, root, graph, textures, catalogModels, selectable);
-          highlight(selectable, selectedId);
-        });
+          highlight(selectable, selectedIdRef.current);
+        }).catch(() => { if (!disposed) setCatalogStatus('Modelo detalhado indisponível; exibindo versão simplificada.'); });
       }
       if (mode === 'exterior') {
         void loadTextures(THREE, graph, token).then(loadedTextures => {
@@ -134,6 +149,7 @@ export default function PropertyPhotoSceneEditor({
           root.clear();
           selectable.length = 0;
           buildExterior(THREE, root, graph, loadedTextures, selectable);
+          highlight(selectable, selectedIdRef.current);
         });
       }
 
@@ -160,7 +176,7 @@ export default function PropertyPhotoSceneEditor({
         else camera.position.set(distance, distance * 0.65, distance);
         controls.update();
       } };
-      highlight(selectable, selectedId);
+      highlight(selectable, selectedIdRef.current);
 
       const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
       const hit = new THREE.Vector3();
@@ -173,6 +189,7 @@ export default function PropertyPhotoSceneEditor({
         const found = hits[0]?.object;
         const id = found?.userData?.id as string | undefined;
         setSelectedId(id ?? null);
+        if (graph.openings?.some(opening => opening.id === id)) setPanel('aberturas');
         highlight(selectable, id ?? null);
         let objectRoot = found;
         while (objectRoot && !objectRoot.userData.draggable) objectRoot = objectRoot.parent;
@@ -250,13 +267,13 @@ export default function PropertyPhotoSceneEditor({
     };
   }, [signature, mode, readOnly]);
 
-  async function push(actions: Action[]) {
-    if (readOnly) { setSaveState('Comparação somente leitura. Volte à versão atual para editar.'); return; }
-    if (busy || mutationPending.current) return;
+  async function push(actions: Action[]): Promise<boolean> {
+    if (readOnly) { setSaveState('Comparação somente leitura. Volte à versão atual para editar.'); return false; }
+    if (busy || mutationPending.current) return false;
     mutationPending.current = true;
     setSaveState('Salvando...');
-    try { await onMutate(actions); setSaveState('Alteração salva'); }
-    catch (error) { setSaveState(error instanceof Error ? error.message : 'Não foi possível salvar'); }
+    try { await onMutate(actions); setSaveState('Alteração salva'); return true; }
+    catch (error) { setSaveState(error instanceof Error ? error.message : 'Não foi possível salvar'); return false; }
     finally { mutationPending.current = false; }
   }
 
@@ -330,7 +347,7 @@ export default function PropertyPhotoSceneEditor({
         <aside className="border-l border-white/10 p-4 space-y-3 text-sm bg-slate-900/70 lg:max-h-[min(68vh,700px)] overflow-y-auto">
           <label className="block text-xs text-slate-300">Superfície selecionada<select aria-label="Superfície selecionada" value={selectedSurface?.id ?? ''} onChange={event => setSelectedId(event.target.value || null)} className="mt-1 w-full rounded-lg border border-white/20 bg-slate-950 p-2"><option value="">Clique no ambiente ou escolha</option>{surfaces.map(surface => <option key={surface.id} value={surface.id}>{surfaceLabel(surface)}</option>)}</select></label>
           <div className="flex flex-wrap gap-1">
-            {(['ambientes', 'objetos', 'materiais', 'cores', 'iluminacao', 'projetos'] as const).map(item => (
+            {(['ambientes', 'objetos', 'aberturas', 'materiais', 'cores', 'iluminacao', 'projetos'] as const).map(item => (
               <button key={item} type="button" onClick={() => setPanel(panel === item ? null : item)} className={`rounded-md px-2 py-1 text-[11px] font-bold ${panel === item ? 'bg-white text-slate-900' : 'border border-white/15'}`}>{item}</button>
             ))}
           </div>
@@ -345,19 +362,26 @@ export default function PropertyPhotoSceneEditor({
               <div className="rounded-xl border border-white/10 p-3">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-slate-300">Dimensões do ambiente</p>
                 <div className="mt-2 grid grid-cols-3 gap-1">
-                  {(['width', 'depth', 'height'] as const).map(field => <label key={`${room}-${field}-${dimensions[field]}`} className="text-[10px] text-slate-400">{{ width: 'Largura', depth: 'Comprimento', height: 'Pé-direito' }[field]}<input disabled={busy} type="number" min={field === 'height' ? 2 : 1.8} max={field === 'height' ? 8 : 20} step="0.05" defaultValue={dimensions[field]} onBlur={event => { const value = Number(event.target.value); if (event.target.validity.valid && value !== dimensions[field]) void push([{ op: 'set_room_dimensions', room, dimensions: { ...dimensions, [field]: value } }]); }} className="mt-1 w-full rounded-md border border-white/15 bg-black/30 px-2 py-1 text-xs text-white" /></label>)}
+                  {(['width', 'depth', 'height'] as const).map(field => <label key={`${room}-${field}-${dimensions[field]}`} className="text-[10px] text-slate-400">{{ width: 'Largura', depth: 'Comprimento', height: 'Pé-direito' }[field]}<input disabled={busy || readOnly} required type="number" min={field === 'height' ? 2 : 1.8} max={field === 'height' ? 8 : 20} step="0.05" defaultValue={dimensions[field]} onBlur={async event => {
+                    const input = event.currentTarget;
+                    const submitted = input.value;
+                    const persisted = String(dimensions[field]);
+                    if (!input.validity.valid) { input.value = persisted; return; }
+                    const value = Number(submitted);
+                    if (value === dimensions[field]) return;
+                    const saved = await push([{ op: 'set_room_dimensions', room, dimensions: { ...dimensions, [field]: value } }]);
+                    if (!saved && input.isConnected && input.value === submitted) input.value = persisted;
+                  }} className="mt-1 w-full rounded-md border border-white/15 bg-black/30 px-2 py-1 text-xs text-white" /></label>)}
                 </div>
                 <p className="mt-2 text-[10px] text-amber-200">{dimensions.source === 'user' ? 'Medidas informadas pelo usuário.' : 'Proporções aproximadas; informe medidas para ajustar.'}</p>
+                {dimensions.source !== 'user' && <button type="button" disabled={busy || readOnly} onClick={() => void push([{ op: 'set_room_dimensions', room, dimensions }])} className="mt-2 rounded-md border border-white/20 px-2 py-1 text-[11px] disabled:opacity-40">Confirmar estas medidas do ambiente</button>}
               </div>
             </div>
           )}
           {panel === 'objetos' && (
             <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-1">
-                {(graph.library ?? LIBRARY).filter(kind => !['window', 'door', 'partition'].includes(kind)).map(kind => (
-                  <button key={kind} type="button" disabled={busy} onClick={() => void push([{ op: 'add_object', kind, room }])} className="rounded-lg border border-white/15 px-2 py-1.5 text-[11px] font-bold">{objectLabel(kind)}</button>
-                ))}
-              </div>
+              <FurnitureCatalogPanel kinds={graph.library ?? LIBRARY} disabled={busy || readOnly} onAdd={kind => void push([{ op: 'add_object', kind, room }])} />
+              {catalogStatus && <p role="status" className="text-[11px] text-slate-300">{catalogStatus}</p>}
               {mode === 'renovate' && canRenovate && (
                 <button type="button" onClick={() => void push([{ op: 'add_object', kind: 'partition', room }])} className="w-full rounded-lg border border-amber-300/40 px-2 py-1.5 text-[11px] font-bold">Adicionar divisória conceitual</button>
               )}
@@ -382,6 +406,7 @@ export default function PropertyPhotoSceneEditor({
               )}
             </div>
           )}
+          {panel === 'aberturas' && <OpeningPanel key={`${room}-${selectedOpening?.id ?? selectedSurface?.id ?? 'none'}-${JSON.stringify(selectedOpening)}`} graph={graph} selectedSurface={selectedSurface} selectedOpening={selectedOpening} disabled={!!busy || !!readOnly} onSelect={setSelectedId} onMutate={async actions => { await push(actions); }} />}
           {panel === 'materiais' && (
             <div className="space-y-2">
               <p className="text-[11px] text-slate-400">{selectedSurface ? `${surfaceLabel(selectedSurface)}: ${materialLabel(selectedSurface.material)}` : 'Selecione uma superfície para trocar o material.'}</p>
@@ -432,6 +457,56 @@ export default function PropertyPhotoSceneEditor({
       </div>
     </div>
   );
+}
+
+function OpeningPanel({ graph, selectedSurface, selectedOpening, disabled, onSelect, onMutate }: {
+  graph: SceneGraph; selectedSurface: SceneSurface | null; selectedOpening: SceneOpening | null;
+  disabled: boolean; onSelect: (id: string | null) => void; onMutate: (actions: Action[]) => Promise<void>;
+}) {
+  const room = graph.active_room;
+  const dimensions = graph.room_dimensions?.[room];
+  const openings = (graph.openings ?? []).filter(item => item.room === room);
+  const host = selectedOpening ? graph.surfaces.find(surface => surface.room === room && surface.kind === 'wall' && surface.side === selectedOpening.side) : selectedSurface?.kind === 'wall' ? selectedSurface : null;
+  const side = host?.side as SceneOpening['side'] | undefined;
+  const [kind, setKind] = useState<'door' | 'window'>(selectedOpening?.kind ?? 'window');
+  const [values, setValues] = useState({ width: String(selectedOpening?.width ?? 1), height: String(selectedOpening?.height ?? 1.2), offset: String(selectedOpening?.offset ?? 0), sill: String(selectedOpening?.sill ?? 1) });
+  const [error, setError] = useState('');
+  const [sending, setSending] = useState(false);
+  const pending = useRef(false);
+  const editable = dimensions?.source === 'user' && side && WALL_SIDES.includes(side);
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!editable || !dimensions || disabled || pending.current) return;
+    const geometric = { id: selectedOpening?.id, room, side, kind, width: Number(values.width), height: Number(values.height), offset: Number(values.offset), sill: kind === 'door' ? 0 : Number(values.sill) };
+    const message = Object.values(values).some(value => value.trim() === '') ? 'Preencha todas as medidas.' : openingError(geometric, wallTransform(side, dimensions).length, dimensions.height, openings.filter(item => item.side === side));
+    if (message) { setError(message); return; }
+    if (!selectedOpening && openings.length >= 24) { setError('Este ambiente já tem o limite de 24 aberturas.'); return; }
+    setError(''); pending.current = true; setSending(true);
+    try { await onMutate([{ ...geometric, op: selectedOpening ? 'update_opening' : 'add_opening' }]); }
+    finally { pending.current = false; setSending(false); }
+  }
+  return <section aria-label="Portas e janelas da parede" className="space-y-3">
+    <p className="text-xs text-slate-300">Vãos definidos por você em um ambiente aproximado. Não foram medidos nem identificados automaticamente nas fotografias.</p>
+    <p className="text-xs text-amber-100">Vãos exibidos em Interior, Decorar e Reformar. Planta e exterior são esquemáticos.</p>
+    {dimensions?.source !== 'user' && <p className="rounded-lg border border-amber-300/30 p-2 text-xs text-amber-100">Informe e confirme as medidas em Ambientes antes de criar portas ou janelas.</p>}
+    <ul className="space-y-1">{openings.map(opening => <li key={opening.id}><button type="button" onClick={() => onSelect(opening.id)} className={`w-full rounded-lg border p-2 text-left text-xs ${selectedOpening?.id === opening.id ? 'border-cyan-300 bg-cyan-400/10' : 'border-white/15'}`}>{opening.kind === 'door' ? 'Porta' : 'Janela'} · {opening.width} × {opening.height} m · {wallSideLabel(opening.side)}</button></li>)}</ul>
+    {selectedOpening && <button type="button" onClick={() => onSelect(host?.id ?? null)} className="rounded-lg border border-white/15 px-2 py-1 text-xs">Nova abertura nesta parede</button>}
+    {!host ? <p className="text-xs text-amber-100">Selecione uma parede no ambiente ou no campo Superfície selecionada.</p> : <form onSubmit={submit} className="space-y-3">
+      <p className="text-xs font-semibold">{surfaceLabel(host)} · {selectedOpening ? 'Editar abertura' : 'Nova abertura'}</p>
+      <fieldset disabled={disabled || sending || !editable} className="space-y-3 disabled:opacity-50">
+        <label className="block text-xs">Tipo de abertura<select aria-label="Tipo de abertura" value={kind} onChange={event => { const next = event.target.value as 'door' | 'window'; setKind(next); setValues(current => ({ ...current, sill: next === 'door' ? '0' : current.sill === '0' ? '1' : current.sill })); }} className="mt-1 w-full rounded-lg border border-white/20 bg-slate-950 p-2"><option value="window">Janela</option><option value="door">Porta aberta</option></select></label>
+        <div className="grid grid-cols-2 gap-2">{(['width', 'height', 'offset', 'sill'] as const).map(field => <label key={field} className="block text-[11px] text-slate-300">{{ width: 'Largura (m)', height: 'Altura (m)', offset: 'Centro horizontal (m)', sill: 'Base acima do piso (m)' }[field]}<input aria-label={{ width: 'Largura da abertura', height: 'Altura da abertura', offset: 'Centro horizontal da abertura', sill: 'Base da abertura acima do piso' }[field]} required type="number" step="0.01" min={field === 'offset' ? undefined : field === 'sill' ? kind === 'door' ? 0 : 0.1 : 0.3} value={values[field]} disabled={field === 'sill' && kind === 'door'} onChange={event => setValues(current => ({ ...current, [field]: event.target.value }))} className="mt-1 w-full rounded border border-white/20 bg-slate-950 p-2 text-xs" /></label>)}</div>
+        <p className="text-[10px] leading-relaxed text-slate-400">Centro horizontal: 0 é o centro da parede; negativo à esquerda e positivo à direita olhando de dentro do cômodo. Margens laterais e superior mínimas de 0,10 m; intervalo entre vãos de 0,05 m.</p>
+        <button type="submit" className="w-full rounded-lg bg-cyan-400/20 px-3 py-2 text-xs font-bold text-cyan-100">{sending ? 'Salvando abertura...' : selectedOpening ? 'Salvar abertura' : 'Adicionar abertura'}</button>
+        {selectedOpening && <button type="button" onClick={() => void onMutate([{ op: 'remove_opening', id: selectedOpening.id }])} className="w-full rounded-lg border border-rose-300/30 px-3 py-2 text-xs text-rose-200">Remover abertura</button>}
+      </fieldset>
+      {error && <p role="alert" className="text-xs text-rose-200">{error}</p>}
+    </form>}
+  </section>;
+}
+
+function wallSideLabel(side: string): string {
+  return ({ south: 'parede do fundo', north: 'parede frontal', west: 'parede esquerda', east: 'parede direita' } as Record<string, string>)[side] ?? side;
 }
 
 function modeLabel(mode: EditorMode): string {
@@ -526,12 +601,10 @@ function buildInterior(THREE: any, root: any, graph: SceneGraph, textures: Map<n
   const width = dimensions.width;
   const depth = dimensions.depth;
   const height = dimensions.height;
-  const floorTexture = createFloorTexture(THREE, floor?.material ?? 'ceramic', floor?.color ?? '#cbb79a');
-  const surfaceMesh = (surface: SceneSurface | undefined, size: number[], position: number[], rotation: number[], texture?: any) => {
+  const surfaceMesh = (surface: SceneSurface | undefined, size: number[], position: number[], rotation: number[], geometry?: any) => {
     if (!surface) return;
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size[0], size[1]), new THREE.MeshStandardMaterial({
-      color: texture ? '#ffffff' : surface.color, ...floorMaterial(surface.material), ...(surface.finish ? { roughness: { matte: 0.9, satin: 0.5, gloss: 0.22 }[surface.finish] } : {}), map: texture ?? null, side: THREE.FrontSide,
-    }));
+    const material = createSurfaceMaterial(THREE, { kind: surface.material, color: surface.color, finish: surface.finish, width: size[0], height: size[1] });
+    const mesh = new THREE.Mesh(geometry ?? new THREE.PlaneGeometry(size[0], size[1]), material);
     mesh.position.fromArray(position);
     mesh.rotation.set(...rotation);
     mesh.receiveShadow = true;
@@ -539,14 +612,20 @@ function buildInterior(THREE: any, root: any, graph: SceneGraph, textures: Map<n
     root.add(mesh);
     selectable.push(mesh);
   };
-  // Inward-facing planes keep all six surfaces selectable. Exterior backfaces
-  // disappear naturally as the user orbits, without hiding interior geometry.
-  surfaceMesh(floor, [width, depth], [0, 0, 0], [-Math.PI / 2, 0, 0], floorTexture);
+  // The same inward-facing transforms apply to solid wall cells and opening frames.
+  surfaceMesh(floor, [width, depth], [0, 0, 0], [-Math.PI / 2, 0, 0]);
   surfaceMesh(ceiling, [width, depth], [0, height, 0], [Math.PI / 2, 0, 0]);
-  surfaceMesh(wall('south'), [width, height], [0, height / 2, -depth / 2], [0, 0, 0]);
-  surfaceMesh(wall('north'), [width, height], [0, height / 2, depth / 2], [0, Math.PI, 0]);
-  surfaceMesh(wall('west'), [depth, height], [-width / 2, height / 2, 0], [0, Math.PI / 2, 0]);
-  surfaceMesh(wall('east'), [depth, height], [width / 2, height / 2, 0], [0, -Math.PI / 2, 0]);
+  for (const side of WALL_SIDES) {
+    const transform = wallTransform(side, dimensions);
+    const openings = (graph.openings ?? []).filter(opening => opening.room === room && opening.side === side);
+    const data = wallGeometryData(transform.length, height, openings);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(data.positions, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(data.uvs, 2));
+    geometry.computeVertexNormals();
+    surfaceMesh(wall(side), [transform.length, height], transform.position, [0, transform.rotationY, 0], geometry);
+    for (const opening of openings) buildOpening(THREE, root, opening, transform, selectable);
+  }
   for (const plane of graph.photo_planes.filter(item => item.room === room)) {
     const texture = textures.get(plane.asset_id);
     if (!texture) continue;
@@ -565,34 +644,41 @@ function buildInterior(THREE: any, root: any, graph: SceneGraph, textures: Map<n
   }
 }
 
-function createFloorTexture(THREE: any, material: string, baseColor: string) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
-  const context = canvas.getContext('2d')!;
-  context.fillStyle = baseColor;
-  context.fillRect(0, 0, 512, 512);
-  if (material === 'wood' || material === 'laminate') {
-    for (let y = 0; y < 512; y += 64) {
-      context.strokeStyle = 'rgba(50,28,12,.32)';
-      context.lineWidth = 3;
-      context.strokeRect(0, y, 512, 64);
-      for (let x = 0; x < 512; x += 128) context.strokeRect(x + ((y / 64) % 2) * 64, y, 128, 64);
-      context.strokeStyle = 'rgba(255,255,255,.08)';
-      for (let line = 8; line < 64; line += 13) { context.beginPath(); context.moveTo(0, y + line); context.bezierCurveTo(150, y + line + 5, 350, y + line - 4, 512, y + line + 2); context.stroke(); }
-    }
+function buildOpening(THREE: any, root: any, opening: SceneOpening, transform: ReturnType<typeof wallTransform>, selectable: any[]) {
+  const wallGroup = new THREE.Group();
+  wallGroup.position.fromArray(transform.position);
+  wallGroup.rotation.y = transform.rotationY;
+  const frame = new THREE.Group();
+  frame.position.set(opening.offset, opening.sill - transform.height / 2, 0);
+  wallGroup.add(frame);
+  const { width, height } = opening;
+  const thickness = 0.045;
+  const trimMaterial = { roughness: 0.65, metalness: 0 };
+  addBox(THREE, frame, [thickness, height, 0.09], [-width / 2 + thickness / 2, height / 2, 0], '#e5ded2', trimMaterial, false);
+  addBox(THREE, frame, [thickness, height, 0.09], [width / 2 - thickness / 2, height / 2, 0], '#e5ded2', trimMaterial, false);
+  addBox(THREE, frame, [width, thickness, 0.09], [0, height - thickness / 2, 0], '#e5ded2', trimMaterial, false);
+  if (opening.kind === 'window') {
+    addBox(THREE, frame, [width, thickness, 0.09], [0, thickness / 2, 0], '#e5ded2', trimMaterial, false);
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(width - thickness * 2, height - thickness * 2), new THREE.MeshStandardMaterial({ color: '#bad8e5', transparent: true, opacity: 0.18, depthWrite: false, roughness: 0.16, metalness: 0, side: THREE.DoubleSide }));
+    glass.position.y = height / 2;
+    frame.add(glass);
   } else {
-    const size = material === 'porcelain' || material === 'marble' ? 128 : 96;
-    context.strokeStyle = 'rgba(65,70,75,.2)';
-    context.lineWidth = 2;
-    for (let line = 0; line <= 512; line += size) { context.beginPath(); context.moveTo(line, 0); context.lineTo(line, 512); context.stroke(); context.beginPath(); context.moveTo(0, line); context.lineTo(512, line); context.stroke(); }
+    // A hinged leaf opens into the room; no slab is left across the doorway.
+    const hinge = new THREE.Group();
+    hinge.position.set(-width / 2 + thickness, 0, 0);
+    hinge.rotation.y = -Math.PI / 3;
+    const leafWidth = width - thickness * 2, leafHeight = height - thickness;
+    addBox(THREE, hinge, [leafWidth, leafHeight, 0.035], [leafWidth / 2, leafHeight / 2, 0], '#b59470', { roughness: 0.72, metalness: 0 }, false);
+    const handle = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 8), new THREE.MeshStandardMaterial({ color: '#827e75', roughness: 0.4, metalness: 0.5 }));
+    handle.position.set(leafWidth - 0.06, Math.min(1, leafHeight * 0.5), 0.045);
+    hinge.add(handle); frame.add(hinge);
   }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(2.8, 2.3);
-  texture.anisotropy = 8;
-  return texture;
+  wallGroup.traverse((node: any) => {
+    node.userData.id = opening.id;
+    node.userData.opening = true;
+    if (node.isMesh) selectable.push(node);
+  });
+  root.add(wallGroup);
 }
 
 function buildExterior(THREE: any, root: any, graph: SceneGraph, textures: Map<number, any>, selectable: any[]) {
@@ -641,12 +727,6 @@ function addBox(THREE: any, root: any, size: number[], position: number[], color
   root.add(mesh);
   if (selectable) mesh.userData.selectable = true;
   return mesh;
-}
-
-function floorMaterial(kind?: string) {
-  if (kind === 'wood' || kind === 'laminate') return { roughness: 0.45, metalness: 0.05 };
-  if (kind === 'marble' || kind === 'porcelain') return { roughness: 0.28, metalness: 0.08 };
-  return { roughness: 0.7, metalness: 0 };
 }
 
 function furniture(THREE: any, object: SceneObject, catalogModels: Map<string, any>) {

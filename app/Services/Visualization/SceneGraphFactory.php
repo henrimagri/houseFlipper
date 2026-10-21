@@ -77,6 +77,7 @@ class SceneGraphFactory
                 'unknowns' => $room['desconhecido'] ?? [],
             ], $rooms),
             'surfaces' => $surfaces,
+            'openings' => [],
             'objects' => $objects,
             'lighting' => [
                 'preset' => 'daylight',
@@ -148,8 +149,8 @@ class SceneGraphFactory
 
     public function apply(array $graph, array $actions): array
     {
-        $fields = ['active_room', 'surfaces', 'objects', 'lighting', 'room_dimensions', 'project_notes'];
-        $snapshot = fn (array $value) => array_intersect_key($value, array_flip($fields));
+        $fields = ['active_room', 'surfaces', 'objects', 'openings', 'lighting', 'room_dimensions', 'project_notes'];
+        $snapshot = fn (array $value) => array_intersect_key(array_replace(['openings' => []], $value), array_flip($fields));
         $historyOps = ['undo_scene', 'redo_scene'];
         if (count($actions) === 1 && in_array($actions[0]['op'] ?? '', $historyOps, true)) {
             $undo = $actions[0]['op'] === 'undo_scene';
@@ -164,7 +165,10 @@ class SceneGraphFactory
             $graph[$to] = array_slice($graph[$to], -12);
             $graph[$from] = $stack;
 
-            return array_replace(array_diff_key($graph, array_flip($fields)), $snapshot($previous));
+            $restored = array_replace(array_diff_key($graph, array_flip($fields)), $snapshot($previous));
+            $this->assertOpenings($restored);
+
+            return $restored;
         }
         if (collect($actions)->contains(fn ($action) => in_array($action['op'] ?? '', $historyOps, true))) {
             throw new InvalidArgumentException('Desfazer ou refazer deve ser uma operação individual.');
@@ -182,12 +186,31 @@ class SceneGraphFactory
 
     private function applyOperations(array $graph, array $actions): array
     {
+        $graph['openings'] ??= [];
         foreach ($actions as $action) {
             $op = $action['op'] ?? '';
             if (in_array($op, ['add_object', 'duplicate'], true) && count($graph['objects'] ?? []) >= 200) {
                 throw new InvalidArgumentException('Limite de 200 objetos por projeto atingido.');
             }
-            if ($op === 'paint_kind') {
+            if (in_array($op, ['add_opening', 'update_opening', 'remove_opening'], true)) {
+                $index = array_search($action['id'] ?? null, array_column($graph['openings'], 'id'), true);
+                if ($op !== 'add_opening' && $index === false) {
+                    throw new InvalidArgumentException('Abertura não encontrada neste projeto.');
+                }
+                if ($op === 'remove_opening') {
+                    array_splice($graph['openings'], $index, 1);
+
+                    continue;
+                }
+                $opening = $this->openingFromAction($action);
+                $opening['id'] = $op === 'add_opening' ? 'opening-'.bin2hex(random_bytes(8)) : $graph['openings'][$index]['id'];
+                $opening['origin'] = 'user';
+                if ($op === 'add_opening') {
+                    $graph['openings'][] = $opening;
+                } else {
+                    $graph['openings'][$index] = $opening;
+                }
+            } elseif ($op === 'paint_kind') {
                 foreach ($graph['surfaces'] as &$surface) {
                     if (($surface['kind'] ?? '') !== ($action['kind'] ?? '')) {
                         continue;
@@ -270,9 +293,26 @@ class SceneGraphFactory
             } elseif ($op === 'add_object') {
                 $kind = $action['kind'] ?? 'chair';
                 $room = $action['room'] ?? ($graph['active_room'] ?? 'living');
+                if (! collect($graph['rooms'] ?? [])->contains('key', $room)) {
+                    throw new InvalidArgumentException('Selecione um ambiente existente para adicionar o móvel.');
+                }
                 $id = $kind.'-'.substr(md5(json_encode($graph['objects']).microtime(true)), 0, 6);
-                $slot = count($graph['objects'] ?? []);
-                $graph['objects'][] = $this->makeObject($id, $kind, $room, 'editor', $slot);
+                $slot = collect($graph['objects'] ?? [])->where('room', $room)->count();
+                $dimensions = $graph['room_dimensions'][$room] ?? ['width' => 5.2, 'depth' => 4.2];
+                foreach (['width', 'depth'] as $field) {
+                    if (! isset($dimensions[$field]) || ! is_numeric($dimensions[$field]) || ! is_finite((float) $dimensions[$field]) || $dimensions[$field] <= 0) {
+                        throw new InvalidArgumentException('As dimensões do ambiente são inválidas.');
+                    }
+                }
+                $object = $this->makeObject($id, $kind, $room, 'editor', $slot);
+                // Bounded per-room placement, not collision resolution: occupied slots
+                // repeat after nine additions and remain manually editable.
+                $object['position'] = [
+                    round(($slot % 3 - 1) * max(0, (float) $dimensions['width'] / 2 - 1.15), 3),
+                    0,
+                    round((intdiv($slot % 9, 3) - 1) * max(0, (float) $dimensions['depth'] / 2 - 1.15), 3),
+                ];
+                $graph['objects'][] = $object;
             } elseif ($op === 'remove_object') {
                 $graph['objects'] = array_values(array_filter($graph['objects'], fn (array $item) => ($item['id'] ?? '') !== ($action['id'] ?? '')));
             } elseif ($op === 'duplicate') {
@@ -351,7 +391,84 @@ class SceneGraphFactory
             }
         }
 
+        $this->assertOpenings($graph);
+
         return $graph;
+    }
+
+    private function openingFromAction(array $action): array
+    {
+        $opening = [];
+        foreach (['room', 'side', 'kind'] as $field) {
+            if (! isset($action[$field]) || ! is_string($action[$field]) || $action[$field] === '') {
+                throw new InvalidArgumentException('Informe ambiente, parede e tipo da abertura.');
+            }
+            $opening[$field] = $action[$field];
+        }
+        if (! in_array($opening['side'], ['north', 'south', 'west', 'east'], true)
+            || ! in_array($opening['kind'], ['door', 'window'], true)) {
+            throw new InvalidArgumentException('Parede ou tipo de abertura inválido.');
+        }
+        foreach (['width', 'height', 'offset', 'sill'] as $field) {
+            if (! array_key_exists($field, $action) || ! is_numeric($action[$field]) || ! is_finite((float) $action[$field])) {
+                throw new InvalidArgumentException('Informe todas as medidas finitas da abertura em metros.');
+            }
+            $opening[$field] = (float) $action[$field];
+        }
+
+        return $opening;
+    }
+
+    private function assertOpenings(array $graph): void
+    {
+        $openings = $graph['openings'] ?? [];
+        if (count($openings) > 96) {
+            throw new InvalidArgumentException('Limite de 96 aberturas por projeto atingido.');
+        }
+        $roomCounts = [];
+        $validated = [];
+        $epsilon = 1e-8;
+        foreach ($openings as $raw) {
+            $opening = $this->openingFromAction($raw);
+            $room = $opening['room'];
+            $side = $opening['side'];
+            $dimensions = $graph['room_dimensions'][$room] ?? [];
+            $roomCounts[$room] = ($roomCounts[$room] ?? 0) + 1;
+            if ($roomCounts[$room] > 24) {
+                throw new InvalidArgumentException('Limite de 24 aberturas por ambiente atingido.');
+            }
+            if (! collect($graph['rooms'] ?? [])->contains('key', $room)
+                || ! collect($graph['surfaces'] ?? [])->contains(fn ($surface) => ($surface['kind'] ?? '') === 'wall' && ($surface['room'] ?? '') === $room && ($surface['side'] ?? '') === $side)) {
+                throw new InvalidArgumentException('A abertura exige uma parede existente no ambiente selecionado.');
+            }
+            if (($dimensions['source'] ?? '') !== 'user') {
+                throw new InvalidArgumentException('Informe as medidas do ambiente antes de criar aberturas.');
+            }
+            foreach (['width', 'depth', 'height'] as $field) {
+                if (! isset($dimensions[$field]) || ! is_numeric($dimensions[$field]) || ! is_finite((float) $dimensions[$field]) || $dimensions[$field] <= 0) {
+                    throw new InvalidArgumentException('As medidas do ambiente são inválidas.');
+                }
+            }
+            $span = (float) $dimensions[in_array($side, ['north', 'south'], true) ? 'width' : 'depth'];
+            if ($opening['width'] < 0.3 || $opening['height'] < 0.3 || $opening['sill'] < 0
+                || abs($opening['offset']) + $opening['width'] / 2 > $span / 2 - 0.1 + $epsilon
+                || (float) $dimensions['height'] - 0.1 + $epsilon < $opening['sill'] + $opening['height']
+                || ($opening['kind'] === 'door' && $opening['sill'] !== 0.0)
+                || ($opening['kind'] === 'window' && $opening['sill'] < 0.1)) {
+                throw new InvalidArgumentException('A abertura precisa caber na parede com margem de 10 cm; portas começam no piso e janelas têm peitoril mínimo de 10 cm.');
+            }
+            foreach ($validated as $other) {
+                if ($other['room'] !== $room || $other['side'] !== $side) {
+                    continue;
+                }
+                $horizontalGap = abs($opening['offset'] - $other['offset']) - ($opening['width'] + $other['width']) / 2;
+                $verticalGap = max($opening['sill'], $other['sill']) - min($opening['sill'] + $opening['height'], $other['sill'] + $other['height']);
+                if ($horizontalGap < 0.05 - $epsilon && $verticalGap < 0.05 - $epsilon) {
+                    throw new InvalidArgumentException('Aberturas na mesma parede precisam de pelo menos 5 cm de separação.');
+                }
+            }
+            $validated[] = $opening;
+        }
     }
 
     private function makeObject(string $id, string $kind, string $room, string $origin, int $slot, array $evidence = []): array

@@ -50,6 +50,10 @@ Não houve nova inferência SAM real neste marco; sua compatibilidade foi testad
 
 Próxima prioridade local: tornar a máscara automática revisável antes da composição e aproximar a qualidade de materiais/aberturas do editor paramétrico. Fila durável/limites de recurso, streaming da IA, cobrança e expansão dos produtos permanecem na matriz geral. Reconstrução densa depende do ensaio Linux/CUDA autorizado; a malha Fase 8 permanece ativa, sem novas métricas ou promoção.
 
+## Marco 4 — continuação no paramétrico
+
+O incremento posterior à pintura adiciona vãos reais, mapas PBR procedurais e catálogo ao editor 3D existente: [MILESTONE4_PARAMETRIC_EDITOR.md](MILESTONE4_PARAMETRIC_EDITOR.md). QA e persistência executados em sala com medidas informadas. Isso não amplia as três fotografias avaliadas nem transforma acabamento fotográfico aproximado em simulação física. Originais/máscaras/resultados permanecem preservados; nenhuma malha observada substituída.
+
 ## Marco 4 — base neural + ajustes manuais
 
 Fluxo agora conserva a máscara SAM original e seus prompts, aplica traços sobre uma cópia, permite restaurar a base, gera prévia antes de confirmar e reabre seleção/cor/acabamento persistidos. Corrigido o clareamento indevido da cor usando referência de luminância apenas da área selecionada. Três fotos autorizadas × três acabamentos: zero alterações fora da máscara. Quarto e cozinha exercitados no navegador, incluindo zoom, undo/redo, prévia invalidada, salvamento e recarga.

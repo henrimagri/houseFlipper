@@ -193,6 +193,7 @@ export default function PropertyViewer() {
     if (preview) throw new Error('Volte à versão atual antes de editar.');
     setBusy(true);
     setError('');
+    setNotice('');
     try {
       const response = await api.patch(`/visualizations/${subjectType}/${id}/scene`, { actions });
       setData(response.data.data);
