@@ -6,7 +6,8 @@ import GlbViewer from '@/components/GlbViewer';
 import PropertyMaquetteViewer from '@/components/PropertyMaquetteViewer';
 import PropertyPhotoEditor from '@/components/PropertyPhotoEditor';
 import PropertyPhotoSceneEditor from '@/components/PropertyPhotoSceneEditor';
-import { roomLabel, visualizationModeLabel, type ModelViewerDiagnostic, type PhotoEditRequest, type PhotoEditSimulation, type VisualizationAsset, type VisualizationPayload } from '@/lib/propertyVisualization';
+import CreateEditableRoom, { type RoomInput } from '@/components/CreateEditableRoom';
+import { roomLabel, visualizationModeLabel, type ModelViewerDiagnostic, type PhotoEditRequest, type PhotoEditSimulation, type VisualizationAsset, type VisualizationPayload, type SceneGraph } from '@/lib/propertyVisualization';
 
 type WorkspaceMode = 'photo_edit' | 'scene_3d' | 'reconstruction_3d';
 type ReconstructionMethod = 'auto' | 'calibrated' | 'tsdf' | 'dense_colmap';
@@ -41,6 +42,7 @@ export default function PropertyViewer() {
   const [captureConfirmed, setCaptureConfirmed] = useState(false);
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<number[]>([]);
   const [reconstructionMethod, setReconstructionMethod] = useState<ReconstructionMethod>('calibrated');
+  const [preview, setPreview] = useState<{ label: string; graph: SceneGraph } | null>(null);
 
   async function load(nextMode?: WorkspaceMode) {
     setLoading(true);
@@ -52,7 +54,7 @@ export default function PropertyViewer() {
       });
       const payload = response.data.data as VisualizationPayload;
       setData(payload);
-      setMode(nextMode ?? (payload.gallery.some(item => item.kind === 'photo' || item.kind === 'panorama') ? 'photo_edit' : payload.scene_graph ? 'scene_3d' : 'reconstruction_3d'));
+      setMode(nextMode ?? (payload.gallery.some(item => item.kind === 'photo' || item.kind === 'panorama') ? 'photo_edit' : 'scene_3d'));
     } catch (exception: any) {
       setError(exception.response?.data?.message ?? 'Não foi possível abrir a visualização deste imóvel.');
       setData(null);
@@ -160,6 +162,7 @@ export default function PropertyViewer() {
   }
 
   async function rebuild() {
+    if (preview) return;
     setBusy(true);
     setNotice('Analisando fotografias...');
     try {
@@ -174,19 +177,36 @@ export default function PropertyViewer() {
     }
   }
 
-  async function mutate(actions: Array<Record<string, unknown> & { op: string }>) {
+  async function createRoom(input: RoomInput) {
     setBusy(true);
+    setError('');
+    try {
+      const response = await api.post(`/visualizations/${subjectType}/${id}/rooms`, input);
+      setData(response.data.data);
+      setNotice('Ambiente criado e salvo. Selecione uma superfície ou móvel para começar.');
+    } catch (exception: any) {
+      throw new Error(exception.response?.data?.message ?? 'Não foi possível criar o ambiente.');
+    } finally { setBusy(false); }
+  }
+
+  async function mutate(actions: Array<Record<string, unknown> & { op: string }>) {
+    if (preview) throw new Error('Volte à versão atual antes de editar.');
+    setBusy(true);
+    setError('');
     try {
       const response = await api.patch(`/visualizations/${subjectType}/${id}/scene`, { actions });
       setData(response.data.data);
+      setNotice('Alteração salva.');
     } catch (exception: any) {
       setError(exception.response?.data?.message ?? 'Não foi possível aplicar a alteração na cena.');
+      throw new Error(exception.response?.data?.message ?? 'A alteração não foi salva.');
     } finally {
       setBusy(false);
     }
   }
 
   async function command(message: string, selectedId: string | null) {
+    if (preview) return 'A comparação é somente leitura. Volte à versão atual para editar.';
     setBusy(true);
     try {
       const response = await api.post(`/visualizations/${subjectType}/${id}/commands`, { message, selected_id: selectedId });
@@ -200,13 +220,33 @@ export default function PropertyViewer() {
   }
 
   async function saveVersion(label: string) {
-    await api.post(`/visualizations/${subjectType}/${id}/versions`, { label });
-    await load('scene_3d');
+    setBusy(true);
+    try {
+      const response = await api.post(`/visualizations/${subjectType}/${id}/versions`, { label });
+      setData(current => current ? { ...current, versions: [response.data.data, ...(current.versions ?? [])].slice(0, 12) } : current);
+      setNotice('Versão salva.');
+    } catch (exception: any) { setError(exception.response?.data?.message ?? 'Não foi possível salvar a versão.'); }
+    finally { setBusy(false); }
   }
 
   async function restore(versionId: number) {
-    const response = await api.post(`/visualizations/${subjectType}/${id}/versions/${versionId}/restore`);
-    setData(response.data.data);
+    setBusy(true);
+    try {
+      const response = await api.post(`/visualizations/${subjectType}/${id}/versions/${versionId}/restore`);
+      setData(response.data.data);
+      setPreview(null);
+      setNotice('Versão restaurada.');
+    } catch (exception: any) { setError(exception.response?.data?.message ?? 'Não foi possível restaurar a versão.'); }
+    finally { setBusy(false); }
+  }
+
+  async function compareVersion(versionId: number) {
+    setBusy(true);
+    try {
+      const response = await api.get(`/visualizations/${subjectType}/${id}/versions/${versionId}`);
+      setPreview(response.data.data);
+    } catch (exception: any) { setError(exception.response?.data?.message ?? 'Não foi possível abrir a comparação.'); }
+    finally { setBusy(false); }
   }
 
   async function share() {
@@ -289,9 +329,9 @@ export default function PropertyViewer() {
     />
 
     <nav aria-label="Modos da visualização do imóvel" className="grid gap-3 md:grid-cols-3">
-      <ModeButton icon={ScanLine} active={mode === 'reconstruction_3d'} onClick={() => setMode('reconstruction_3d')} title="A · Reconstrução observada" text="Exibe somente geometria sustentada pelas fotos e aprovada pelo gate" />
-      <ModeButton icon={Cuboid} active={mode === 'scene_3d'} onClick={() => setMode('scene_3d')} title="B · Ambiente aproximado" text="Cômodo paramétrico editável com medidas informadas pelo usuário" />
-      <ModeButton icon={Paintbrush} active={mode === 'photo_edit'} onClick={() => setMode('photo_edit')} title="C · Simulação de reforma" text="Compara a fotografia original com materiais e pintura simulados" />
+      <ModeButton icon={Paintbrush} active={mode === 'photo_edit'} onClick={() => setMode('photo_edit')} title="A · Simulação em fotografia" text="Pintura e acabamentos sobre a foto original, sem gerar geometria 3D" />
+      <ModeButton icon={Cuboid} active={mode === 'scene_3d'} onClick={() => setMode('scene_3d')} title="B · Ambiente 3D editável" text="Crie um cômodo com medidas informadas e experimente reformas" />
+      <ModeButton icon={ScanLine} active={mode === 'reconstruction_3d'} onClick={() => setMode('reconstruction_3d')} title="C · Reconstrução multivista" text="Geometria experimental: consulte o método e a qualidade realmente obtidos" />
     </nav>
 
     <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-3 text-xs dark:border-slate-700 dark:bg-slate-900">
@@ -301,16 +341,19 @@ export default function PropertyViewer() {
       <button type="button" onClick={() => setMode('scene_3d')} className="rounded-lg border border-slate-200 px-3 py-1.5 font-bold dark:border-slate-700">Ambiente aproximado</button>
     </div>
 
-    <section className={`overflow-hidden rounded-3xl border border-slate-200 bg-slate-950 dark:border-slate-700 ${fullscreen ? 'fixed inset-3 z-50 overflow-auto' : ''}`}>
+    <section className={`rounded-3xl border border-slate-200 bg-slate-950 dark:border-slate-700 ${fullscreen ? 'fixed inset-3 z-50 overflow-auto' : 'overflow-hidden'}`}>
       {mode === 'photo_edit' && <PropertyPhotoEditor photos={availablePhotos} simulations={data.photo_editing?.simulations ?? []} busy={busy} onAnalyze={analyzeNeural} onApply={applyPhotoSimulation} />}
 
       {mode === 'scene_3d' && <>
         <div className="flex flex-wrap items-center gap-3 border-b border-white/10 px-4 py-3 text-slate-200">
           <div className="min-w-0 flex-1"><p className="font-black">Ambiente editável aproximado</p><p className="text-xs text-slate-400">Geometria paramétrica completa para experimentar reformas. As medidas estimadas são identificadas e podem ser substituídas pelas medidas do usuário.</p></div>
-          <button type="button" onClick={() => void rebuild()} disabled={busy || availablePhotos.length === 0} className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-slate-900 disabled:opacity-40">{busy ? 'Processando...' : graph ? 'Atualizar pelas fotos' : 'Criar pelas fotos'}</button>
+          <button type="button" onClick={() => void rebuild()} disabled={busy || Boolean(preview) || availablePhotos.length === 0} className="rounded-lg bg-white px-3 py-2 text-xs font-bold text-slate-900 disabled:opacity-40">{busy ? 'Processando...' : graph ? 'Atualizar pelas fotos' : 'Criar pelas fotos'}</button>
         </div>
+        {!preview && <CreateEditableRoom busy={busy} hasRooms={Boolean(graph?.rooms.length)} onCreate={createRoom} />}
+        {preview && <div className="flex items-center justify-between gap-3 bg-amber-400/10 px-5 py-3 text-sm text-amber-100"><span>Comparação: {preview.label} · somente leitura. A cena atual está preservada.</span><button className="rounded-lg border border-amber-200/40 px-3 py-2 font-bold" onClick={() => setPreview(null)}>Voltar à versão atual</button></div>}
         {graph ? <PropertyPhotoSceneEditor
-          graph={graph}
+          graph={preview?.graph ?? graph}
+          readOnly={Boolean(preview)}
           canRenovate={Boolean(data.product_features.renovation_simulation)}
           versions={data.versions ?? []}
           busy={busy}
@@ -319,6 +362,7 @@ export default function PropertyViewer() {
           onCommand={command}
           onSaveVersion={saveVersion}
           onRestore={restore}
+          onPreview={compareVersion}
           onFullscreen={() => setFullscreen(value => !value)}
         /> : <div>
           <div className="border-b border-amber-300/20 bg-amber-400/10 px-4 py-3 text-xs text-amber-100">Maquete paramétrica ilustrativa. Ela organiza os dados do anúncio e não representa uma reconstrução fiel do imóvel.</div>
@@ -342,7 +386,7 @@ export default function PropertyViewer() {
       {mode === 'reconstruction_3d' && <div className="space-y-0 text-slate-100">
         <div className="border-b border-white/10 p-5">
           <h2 className="flex items-center gap-2 text-lg font-black"><ScanLine className="h-5 w-5 text-cyan-400" /> Reconstrução observada</h2>
-          <p className="mt-1 text-sm text-slate-400">Mostra apenas superfícies medidas pelas fotografias e câmeras calibradas. Regiões ausentes continuam identificadas como desconhecidas.</p>
+          <p className="mt-1 text-sm text-slate-400">A qualidade depende do método executado. Profundidade monocular calibrada continua sendo uma estimativa; regiões não observadas permanecem desconhecidas.</p>
         </div>
         {data.model?.diagnostic_preview && <div className="border-b border-amber-300/20 bg-amber-400/10 px-5 py-3 text-sm text-amber-100">
           Candidato experimental aberto somente para diagnóstico. O modelo principal do imóvel continua preservado.

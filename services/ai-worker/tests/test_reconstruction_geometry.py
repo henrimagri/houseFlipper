@@ -1,5 +1,8 @@
 import numpy as np
+import struct
+import pytest
 import trimesh
+from PIL import Image
 
 from app import reconstruction
 from app.reconstruction import evaluate_geometry, unavailable_geometry_quality
@@ -247,7 +250,72 @@ def test_dense_capability_requires_gpu_build_and_visible_device(tmp_path) -> Non
     assert enabled["gpu_index"] == "1"
 
 
-def test_dense_pipeline_runs_reproducible_colmap_sequence_and_gates_export(monkeypatch, tmp_path) -> None:
+@pytest.mark.parametrize("configured, expected", [(None, 8), ("invalid", 8), ("4", 6), ("9", 9), ("13", 10)])
+def test_poisson_depth_has_explicit_operational_bounds(configured, expected):
+    environment = {} if configured is None else {"COLMAP_POISSON_DEPTH": configured}
+    capability = reconstruction.dense_reconstruction_capability(environment=environment, gpu_device_visible=False)
+    assert capability["poisson_depth"] == expected
+
+
+@pytest.mark.parametrize("method", ["dense_colmap", "calibrated"])
+def test_reconstruction_propagates_cancellation_without_fallback_or_completed_result(monkeypatch, tmp_path, method):
+    from app import calibrated_depth_fusion
+
+    executable = tmp_path / "colmap.exe"
+    executable.write_bytes(b"stub")
+    sources = []
+    for index in range(8):
+        source = tmp_path / f"source-{index}.jpg"
+        source.write_bytes(b"image")
+        sources.append(source)
+    monkeypatch.setattr(reconstruction, "colmap_executable", lambda: executable)
+    monkeypatch.setattr(reconstruction, "preflight", lambda paths: {"accepted": True})
+    monkeypatch.setenv("AI_CALIBRATED_DEPTH_FALLBACK_ENABLED", "true")
+
+    def fake_run(command, log, timeout=1800):
+        log.write_text("simulated", encoding="utf-8")
+        if command[1] == "mapper":
+            (log.parent / "sparse" / "0").mkdir()
+        elif command[1] == "model_converter":
+            trimesh.points.PointCloud([[0, 0, 0], [1, 0, 0], [0, 1, 0]]).export(log.parent / "sparse.ply")
+        return 0
+
+    def cancelled(**kwargs):
+        raise InterruptedError("cancelled at reconstruction stage")
+
+    monkeypatch.setattr(reconstruction, "_run", fake_run)
+    monkeypatch.setattr(reconstruction, "run_dense_reconstruction", cancelled)
+    monkeypatch.setattr(calibrated_depth_fusion, "reconstruct_calibrated_depth", cancelled)
+    with pytest.raises(InterruptedError, match="cancelled at reconstruction stage"):
+        reconstruction.reconstruct(sources, tmp_path / "artifacts", method=method)
+    assert not list((tmp_path / "artifacts").rglob("result.json"))
+    assert not list((tmp_path / "artifacts").rglob("*-error.txt"))
+
+
+def _write_textured_ply(mesh, output, *, invalid_image=False, invalid_uv=False, binary=False):
+    # COLMAP documents per-face UVs and a TextureFile header, not vertex colors.
+    header = ["ply", "format ascii 1.0", "comment TextureFile texture.png",
+              f"element vertex {len(mesh.vertices)}", "property float x", "property float y", "property float z",
+              f"element face {len(mesh.faces)}", "property list uchar int vertex_indices",
+              "property list uchar float texcoord", "end_header"]
+    vertices = [" ".join(map(str, vertex)) for vertex in mesh.vertices]
+    uv = "nan 0 1 0 0 1" if invalid_uv else "0 0 1 0 0 1"
+    faces = [f"3 {a} {b} {c} 6 {uv}" for a, b, c in mesh.faces]
+    if binary:
+        header[1] = "format binary_little_endian 1.0"
+        body = b"".join(struct.pack("<3f", *vertex) for vertex in mesh.vertices)
+        body += b"".join(struct.pack("<B3iB6f", 3, *face, 6, 0, 0, 1, 0, 0, 1) for face in mesh.faces)
+        (output / "mesh.ply").write_bytes(("\n".join(header) + "\n").encode("ascii") + body)
+    else:
+        (output / "mesh.ply").write_text("\n".join(header + vertices + faces) + "\n", encoding="ascii")
+    if invalid_image:
+        (output / "texture.png").write_bytes(b"not an image")
+    else:
+        Image.new("RGB", (8, 8), "orange").save(output / "texture.png")
+
+
+@pytest.mark.parametrize("texture_case", ["valid", "valid_binary", "no_uv", "invalid_png", "invalid_uv", "missing_binding"])
+def test_dense_pipeline_runs_reproducible_colmap_sequence_and_gates_export(monkeypatch, tmp_path, texture_case) -> None:
     executable = tmp_path / "colmap"
     executable.write_bytes(b"stub")
     images = tmp_path / "images"
@@ -268,8 +336,15 @@ def test_dense_pipeline_runs_reproducible_colmap_sequence_and_gates_export(monke
         elif command[1] == "mesh_texturer":
             textured = output / "dense-textured"
             textured.mkdir()
-            trimesh.creation.icosphere(subdivisions=2).export(textured / "mesh.ply")
-            (textured / "texture.png").write_bytes(b"texture")
+            mesh = trimesh.creation.icosphere(subdivisions=2)
+            if texture_case == "no_uv":
+                mesh.export(textured / "mesh.ply")
+                Image.new("RGB", (8, 8), "orange").save(textured / "texture.png")
+            else:
+                _write_textured_ply(mesh, textured, invalid_image=texture_case == "invalid_png", invalid_uv=texture_case == "invalid_uv", binary=texture_case == "valid_binary")
+                if texture_case == "missing_binding":
+                    path = textured / "mesh.ply"
+                    path.write_text(path.read_text().replace("TextureFile texture.png", "TextureFile missing.png"))
         return 1.0
 
     monkeypatch.setattr(reconstruction, "_run", fake_run)
@@ -305,7 +380,16 @@ def test_dense_pipeline_runs_reproducible_colmap_sequence_and_gates_export(monke
     assert commands[0][commands[0].index("--max_image_size") + 1] == "2048"
     assert "--PatchMatchStereo.geom_consistency" in commands[1]
     assert "--PatchMatchStereo.gpu_index" in commands[1]
+    assert commands[3][commands[3].index("--PoissonMeshing.depth") + 1] == "8"
+    if texture_case not in {"valid", "valid_binary"}:
+        assert result["status"] == "rejected"
+        assert result["geometry_quality"]["viewer_eligible"] is False
+        assert result["artifacts"]["glb"] is None
+        assert not (output / "dense-model.glb").exists()
+        return
     assert result["status"] == "completed"
+    assert result["texture_validation"]["status"] == "verified_binding"
+    assert result["texture_validation"]["photometric_fidelity_validated"] is False
     assert result["geometry_quality"]["method"] == "dense_poisson_preview"
     assert result["geometry_quality"]["status"] == "viewer_ready"
     assert result["geometry_quality"]["viewer_eligible"] is True
@@ -314,6 +398,10 @@ def test_dense_pipeline_runs_reproducible_colmap_sequence_and_gates_export(monke
     assert result["artifacts"]["mesh"] == "dense-mesh.ply"
     assert result["artifacts"]["glb"] == "dense-model.glb"
     assert (output / "dense-model.glb").is_file()
+    exported = trimesh.load(output / "dense-model.glb", force="scene", process=False)
+    for mesh in exported.geometry.values():
+        assert np.isfinite(mesh.visual.uv).all()
+        assert mesh.visual.material.baseColorTexture.size == (8, 8)
 
 
 def test_dense_pipeline_never_exports_geometry_rejected_by_quality_gate(monkeypatch, tmp_path) -> None:
@@ -369,6 +457,9 @@ def test_dense_pipeline_never_exports_geometry_rejected_by_quality_gate(monkeypa
     assert result["geometry_quality"]["final_model_eligible"] is False
     assert result["artifacts"]["glb"] is None
     assert not (output / "dense-model.glb").exists()
+    assert result["texture_validation"]["status"] == "not_attempted"
+    assert "mesh_texturing_ms" not in result["timings"]
+    assert not (output / "dense-textured").exists()
 
 
 def test_colmap_runtime_probe_reports_real_commands_and_rejects_cpu_build(monkeypatch, tmp_path) -> None:

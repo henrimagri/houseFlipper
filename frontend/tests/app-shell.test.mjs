@@ -200,12 +200,12 @@ test('property visualization separates photo editing, scene creation, and valida
     read('src/lib/propertyVisualization.ts'),
   ]);
 
-  assert.match(screen, /A · Reconstrução observada/);
-  assert.match(screen, /B · Ambiente aproximado/);
-  assert.match(screen, /C · Simulação de reforma/);
+  assert.match(screen, /C · Reconstrução multivista/);
+  assert.match(screen, /B · Ambiente 3D editável/);
+  assert.match(screen, /A · Simulação em fotografia/);
   assert.match(screen, /Projeto visual do imóvel/);
   assert.match(screen, /\['6', 'Apresentação'/);
-  assert.match(screen, /Regiões ausentes continuam identificadas como desconhecidas/);
+  assert.match(screen, /regiões não observadas permanecem desconhecidas/i);
   assert.match(screen, /correção estéreo local experimental/);
   assert.match(screen, /fusão híbrida de estéreo verificado/);
   assert.match(screen, /viewer_eligible === true/);
@@ -224,7 +224,7 @@ test('property visualization separates photo editing, scene creation, and valida
   assert.match(screen, /photo-simulations/);
   assert.match(sceneEditor, /ACESFilmicToneMapping/);
   assert.match(sceneEditor, /Proporções aproximadas/);
-  assert.match(sceneEditor, /mode === 'decorate' \? loadCatalogModels/);
+  assert.match(sceneEditor, /loadCatalogModels\(graph\)/);
   assert.match(sceneEditor, /if \(!texture\) continue/);
   assert.match(catalog, /sheen-wood-leather-sofa\.glb/);
   assert.match(catalog, /license: 'CC BY 4\.0/);

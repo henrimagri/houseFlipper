@@ -17,6 +17,7 @@ from .runtime_diagnostics import native_stage, record_event
 
 _executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="reconstruction")
 _write_lock = threading.Lock()
+_terminal_states = {"completed", "failed", "cancelled"}
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -31,13 +32,25 @@ def job_status_path(artifact_root: Path, job_id: str) -> Path:
     return artifact_root / job_id / "job-status.json"
 
 
-def read_job(artifact_root: Path, job_id: str) -> dict[str, Any] | None:
-    result = artifact_root / job_id / "result.json"
-    status = job_status_path(artifact_root, job_id)
-    target = result if result.is_file() else status
-    if not target.is_file():
+def _read_json(path: Path) -> dict[str, Any] | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
         return None
-    return json.loads(target.read_text(encoding="utf-8"))
+    return payload if isinstance(payload, dict) else None
+
+
+def read_job(artifact_root: Path, job_id: str) -> dict[str, Any] | None:
+    status_path = job_status_path(artifact_root, job_id)
+    status = _read_json(status_path)
+    result = _read_json(artifact_root / job_id / "result.json")
+    if result is None:
+        return status
+    # The reconstruction pipeline writes its result independently. Ownership is
+    # established before execution and must survive partial/unscoped results.
+    if status_path.exists():
+        result["scope_hash"] = (status or {}).get("scope_hash")
+    return result
 
 
 def scope_matches(job: dict[str, Any], scope: str) -> bool:
@@ -57,7 +70,6 @@ def submit_reconstruction(
     if existing is not None:
         if not scope_matches(existing, scope):
             raise PermissionError("O identificador idempotente pertence a outro escopo.")
-        shutil.rmtree(artifact_root / ".staging" / job_id, ignore_errors=True)
         return public_job(existing)
     output.mkdir(parents=True, exist_ok=False)
     initial = {
@@ -121,6 +133,7 @@ def _run(inputs: list[Path], artifact_root: Path, job_id: str, method: str = "au
         completed["scope_hash"] = scope_hash
         completed["updated_at"] = time.time()
         _write_json(completed_path, completed)
+        _write_json(status_path, completed)
     except InterruptedError as exception:
         cancelled_result = {
             "job_id": job_id,
@@ -134,6 +147,7 @@ def _run(inputs: list[Path], artifact_root: Path, job_id: str, method: str = "au
             "updated_at": time.time(),
         }
         _write_json(artifact_root / job_id / "result.json", cancelled_result)
+        _write_json(status_path, cancelled_result)
         record_event("reconstruction_job_cancelled", job_id=job_id)
     except Exception as exception:
         failed = {
@@ -148,6 +162,7 @@ def _run(inputs: list[Path], artifact_root: Path, job_id: str, method: str = "au
             "updated_at": time.time(),
         }
         _write_json(artifact_root / job_id / "result.json", failed)
+        _write_json(status_path, failed)
         record_event("reconstruction_job_failed", job_id=job_id, error_type=type(exception).__name__)
     finally:
         staging = artifact_root / ".staging" / job_id
@@ -160,9 +175,14 @@ def recover_interrupted_jobs(artifact_root: Path) -> int:
     if not artifact_root.is_dir():
         return recovered
     for status_path in artifact_root.glob("*/job-status.json"):
-        try:
-            job = json.loads(status_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        job = _read_json(status_path)
+        if job is None:
+            continue
+        result = read_job(artifact_root, status_path.parent.name)
+        if result and result.get("status") in _terminal_states:
+            # A crash may happen after result.json is complete but before the
+            # final progress snapshot. Never overwrite that terminal result.
+            _write_json(status_path, result)
             continue
         if job.get("status") not in {"queued", "processing", "cancelling"}:
             continue
@@ -172,6 +192,7 @@ def recover_interrupted_jobs(artifact_root: Path) -> int:
             "error_type": "WorkerRestarted", "updated_at": time.time(),
         })
         _write_json(status_path.parent / "result.json", job)
+        _write_json(status_path, job)
         recovered += 1
     return recovered
 

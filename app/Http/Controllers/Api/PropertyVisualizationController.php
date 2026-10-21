@@ -176,11 +176,25 @@ class PropertyVisualizationController extends Controller
         return response()->json(['data' => $result['data'], 'command' => $result['command']]);
     }
 
+    public function createRoom(Request $request, string $subjectType, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'type' => ['required', 'in:living,bedroom,kitchen,bathroom,office,outdoor'],
+            'furnished' => ['sometimes', 'boolean'],
+            'dimensions' => ['required', 'array:width,depth,height'],
+            'dimensions.width' => ['required', 'numeric', 'between:1.8,20'],
+            'dimensions.depth' => ['required', 'numeric', 'between:1.8,20'],
+            'dimensions.height' => ['required', 'numeric', 'between:2,8'],
+        ]);
+
+        return response()->json(['data' => $this->visualizations->createRoom($request->user(), $this->subjectType($subjectType), $id, $data)], 201);
+    }
+
     public function mutate(Request $request, string $subjectType, int $id): JsonResponse
     {
         $data = $request->validate([
             'actions' => ['required', 'array', 'min:1', 'max:20'],
-            'actions.*.op' => ['required', 'string', 'in:paint_kind,paint_surface,set_reconstruction_material,undo_reconstruction,redo_reconstruction,add_object,remove_object,set_object_color,transform,hide,duplicate,set_active_room,upsert_object,set_lighting,set_room_dimensions,set_project_brief'],
+            'actions.*.op' => ['required', 'string', 'in:paint_kind,paint_surface,set_reconstruction_material,undo_reconstruction,redo_reconstruction,undo_scene,redo_scene,add_object,remove_object,set_object_color,transform,hide,duplicate,set_active_room,upsert_object,set_lighting,set_room_dimensions,set_project_brief'],
             'actions.*.hidden' => ['nullable', 'boolean'],
             'actions.*.object' => ['nullable', 'array'],
             'actions.*.id' => ['nullable', 'string', 'max:80'],
@@ -188,10 +202,12 @@ class PropertyVisualizationController extends Controller
             'actions.*.room' => ['nullable', 'string', 'max:80'],
             'actions.*.color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'actions.*.material' => ['nullable', 'string', 'max:40'],
+            'actions.*.finish' => ['nullable', 'in:matte,satin,gloss'],
             'actions.*.expected_kind' => ['nullable', 'string', 'in:wall_candidate,floor_candidate,ceiling_candidate,horizontal_surface,other_surface'],
             'actions.*.preset' => ['nullable', 'string', 'in:daylight,warm,cool,soft,evening'],
-            'actions.*.position' => ['nullable', 'array'],
-            'actions.*.rotation' => ['nullable', 'numeric'],
+            'actions.*.position' => ['nullable', 'array', 'size:3'],
+            'actions.*.position.*' => ['required', 'numeric', 'between:-20,20'],
+            'actions.*.rotation' => ['nullable', 'numeric', 'between:-360,360'],
             'actions.*.scale' => ['nullable', 'numeric', 'between:0.4,2.5'],
             'actions.*.dimensions' => ['nullable', 'array'],
             'actions.*.dimensions.width' => ['nullable', 'numeric', 'between:1.8,20'],
@@ -215,6 +231,11 @@ class PropertyVisualizationController extends Controller
     public function restoreVersion(Request $request, string $subjectType, int $id, int $versionId): JsonResponse
     {
         return response()->json(['data' => $this->visualizations->restoreVersion($request->user(), $this->subjectType($subjectType), $id, $versionId)]);
+    }
+
+    public function previewVersion(Request $request, string $subjectType, int $id, int $versionId): JsonResponse
+    {
+        return response()->json(['data' => $this->visualizations->previewVersion($request->user(), $this->subjectType($subjectType), $id, $versionId)]);
     }
 
     private function subjectType(string $value): string

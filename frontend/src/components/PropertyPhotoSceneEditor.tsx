@@ -8,6 +8,7 @@ import {
   roomLabel,
   type SceneGraph,
   type SceneObject,
+  type SceneSurface,
   type VisualizationPayload,
 } from '@/lib/propertyVisualization';
 
@@ -25,6 +26,8 @@ type Props = {
   onCommand: (message: string, selectedId: string | null) => Promise<string>;
   onSaveVersion: (label: string) => Promise<void>;
   onRestore: (versionId: number) => Promise<void>;
+  onPreview?: (versionId: number) => Promise<void>;
+  readOnly?: boolean;
   onFullscreen?: () => void;
   className?: string;
 };
@@ -34,28 +37,32 @@ const MATERIALS = ['ceramic', 'porcelain', 'wood', 'laminate', 'marble', 'paint'
 const COLORS = ['#f4f1ea', '#d9cbb8', '#9bb7d4', '#c5c7cc', '#2f3338', '#9aaa8c', '#e3d39a', '#8b7355'];
 
 export default function PropertyPhotoSceneEditor({
-  graph, canRenovate, versions, busy, commandHint, onMutate, onCommand, onSaveVersion, onRestore, onFullscreen, className,
+  graph, canRenovate, versions, busy, commandHint, onMutate, onCommand, onSaveVersion, onRestore, onPreview, readOnly, onFullscreen, className,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const api = useRef<{ select: (id: string | null) => void } | null>(null);
+  const api = useRef<{ select: (id: string | null) => void; view: (view: string) => void } | null>(null);
+  const cameraState = useRef<{ room: string; mode: string; position: number[]; target: number[]; up: number[] } | null>(null);
+  const mutationPending = useRef(false);
   const [mode, setMode] = useState<EditorMode>('interior');
   const [panel, setPanel] = useState<'ambientes' | 'objetos' | 'materiais' | 'cores' | 'iluminacao' | 'projetos' | null>('ambientes');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [reply, setReply] = useState('');
   const [renderState, setRenderState] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [undo, setUndo] = useState<Array<{ forward: Action[]; inverse: Action[] }>>([]);
-  const [redo, setRedo] = useState<Array<{ forward: Action[]; inverse: Action[] }>>([]);
+  const undo = graph.editor_history ?? [];
+  const redo = graph.editor_redo ?? [];
+  const [saveState, setSaveState] = useState('Alterações salvas automaticamente');
   const [versionLabel, setVersionLabel] = useState('versão 1');
   const signature = useMemo(() => JSON.stringify(graph), [graph]);
 
   const room = graph.active_room;
   const surfaces = graph.surfaces.filter(item => item.room === room);
-  const objects = graph.objects.filter(item => item.room === room && !item.hidden);
+  const objects = graph.objects.filter(item => item.room === room);
   const selected = graph.objects.find(item => item.id === selectedId) ?? null;
-  const floor = surfaces.find(item => item.kind === 'floor');
-  const wall = surfaces.find(item => item.kind === 'wall');
+  const selectedSurface = surfaces.find(item => item.id === selectedId) ?? null;
   const dimensions = graph.room_dimensions?.[room] ?? { width: 5.2, depth: 4.2, height: 2.65, source: 'estimated' as const };
+
+  useEffect(() => { api.current?.select(selectedId); }, [selectedId, signature]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -109,31 +116,51 @@ export default function PropertyPhotoSceneEditor({
       else if (mode === 'floorplan') buildFloorplan(THREE, root, graph, selectable);
       else {
         buildInterior(THREE, root, graph, textures, new Map(), selectable);
-        const catalogPromise = mode === 'decorate' ? loadCatalogModels(graph) : Promise.resolve(new Map<string, any>());
+        const catalogPromise = loadCatalogModels(graph);
         void catalogPromise.then(catalogModels => {
-          if (disposed || catalogModels.size === 0) return;
+          if (disposed) { catalogModels.forEach(disposeTree); return; }
+          if (catalogModels.size === 0) return;
+          disposeTree(root);
           root.clear();
           selectable.length = 0;
           buildInterior(THREE, root, graph, textures, catalogModels, selectable);
+          highlight(selectable, selectedId);
         });
       }
       if (mode === 'exterior') {
         void loadTextures(THREE, graph, token).then(loadedTextures => {
-          if (disposed) return;
+          if (disposed) { loadedTextures.forEach(texture => texture.dispose()); return; }
+          disposeTree(root);
           root.clear();
           selectable.length = 0;
           buildExterior(THREE, root, graph, loadedTextures, selectable);
         });
       }
 
-      camera.position.set(mode === 'floorplan' ? 0.1 : 4.2, mode === 'floorplan' ? 9 : 2.4, mode === 'floorplan' ? 0.1 : 4.8);
-      controls.target.set(0, mode === 'floorplan' ? 0 : 1.1, 0);
+      const baseDistance = Math.max(dimensions.width, dimensions.depth, dimensions.height) * 1.15;
+      let distance = baseDistance / Math.min(1, camera.aspect);
+      camera.position.set(mode === 'floorplan' ? 0.01 : distance, mode === 'floorplan' ? distance * 1.5 : distance * 0.65, mode === 'floorplan' ? 0.01 : distance);
+      controls.target.set(0, mode === 'floorplan' ? 0 : dimensions.height * 0.35, 0);
       if (mode === 'floorplan') {
         camera.up.set(0, 0, -1);
         camera.lookAt(0, 0, 0);
       }
 
-      api.current = { select: (id) => highlight(selectable, id) };
+      if (cameraState.current?.room === room && cameraState.current.mode === mode) {
+        camera.position.fromArray(cameraState.current.position);
+        camera.up.fromArray(cameraState.current.up);
+        controls.target.fromArray(cameraState.current.target);
+      }
+      api.current = { select: (id) => highlight(selectable, id), view: (view) => {
+        camera.up.set(0, 1, 0);
+        controls.target.set(0, dimensions.height * 0.35, 0);
+        if (view === 'top') { camera.position.set(0.01, distance * 1.5, 0.01); camera.up.set(0, 0, -1); }
+        else if (view === 'front') camera.position.set(0, dimensions.height * 0.5, distance * 1.5);
+        else if (view === 'side') camera.position.set(distance * 1.5, dimensions.height * 0.5, 0);
+        else camera.position.set(distance, distance * 0.65, distance);
+        controls.update();
+      } };
+      highlight(selectable, selectedId);
 
       const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
       const hit = new THREE.Vector3();
@@ -147,8 +174,10 @@ export default function PropertyPhotoSceneEditor({
         const id = found?.userData?.id as string | undefined;
         setSelectedId(id ?? null);
         highlight(selectable, id ?? null);
-        if (id && (mode === 'decorate' || mode === 'renovate') && found) {
-          dragging = { id, mesh: found };
+        let objectRoot = found;
+        while (objectRoot && !objectRoot.userData.draggable) objectRoot = objectRoot.parent;
+        if (!busy && !readOnly && id && (mode === 'decorate' || mode === 'renovate') && objectRoot) {
+          dragging = { id, mesh: objectRoot };
           controls.enabled = false;
         }
       };
@@ -158,16 +187,15 @@ export default function PropertyPhotoSceneEditor({
         pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
         raycaster.setFromCamera(pointer, camera);
-        raycaster.ray.intersectPlane(plane, hit);
-        if (!hit) return;
-        dragging.mesh.position.x = Math.max(-2.1, Math.min(2.1, hit.x));
-        dragging.mesh.position.z = Math.max(-1.6, Math.min(1.8, hit.z));
+        if (!raycaster.ray.intersectPlane(plane, hit)) return;
+        dragging.mesh.position.x = Math.max(-dimensions.width / 2, Math.min(dimensions.width / 2, hit.x));
+        dragging.mesh.position.z = Math.max(-dimensions.depth / 2, Math.min(dimensions.depth / 2, hit.z));
       };
       const onPointerUp = () => {
         if (dragging) {
           const mesh = dragging.mesh;
           const id = dragging.id;
-          const position = [Number(mesh.position.x.toFixed(2)), 0, Number(mesh.position.z.toFixed(2))];
+          const position = [Number(mesh.position.x.toFixed(2)), mesh.position.y, Number(mesh.position.z.toFixed(2))];
           void push([{ op: 'transform', id, position }]);
         }
         dragging = null;
@@ -187,12 +215,20 @@ export default function PropertyPhotoSceneEditor({
       setRenderState('ready');
       const onResize = () => {
         if (!canvas || disposed) return;
-        camera.aspect = canvas.clientWidth / Math.max(canvas.clientHeight, 1);
+        const nextAspect = canvas.clientWidth / Math.max(canvas.clientHeight, 1);
+        const resizeRatio = Math.min(1, camera.aspect) / Math.max(0.1, Math.min(1, nextAspect));
+        camera.position.sub(controls.target).multiplyScalar(resizeRatio).add(controls.target);
+        camera.aspect = nextAspect;
+        distance = baseDistance / Math.max(0.1, Math.min(1, nextAspect));
         camera.updateProjectionMatrix();
         renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
       };
+      const observer = new ResizeObserver(onResize);
+      observer.observe(canvas);
       window.addEventListener('resize', onResize);
       (canvas as any)._cleanup = () => {
+        cameraState.current = { room, mode, position: camera.position.toArray(), target: controls.target.toArray(), up: camera.up.toArray() };
+        observer.disconnect();
         canvas.removeEventListener('pointerdown', onPointerDown);
         window.removeEventListener('pointermove', onPointerMove);
         window.removeEventListener('pointerup', onPointerUp);
@@ -207,31 +243,29 @@ export default function PropertyPhotoSceneEditor({
       disposed = true;
       cancelAnimationFrame(frame);
       (canvas as any)._cleanup?.();
+      api.current = null;
+      controls?.dispose?.();
+      if (scene) disposeTree(scene);
       renderer?.dispose?.();
     };
-  }, [signature, mode]);
+  }, [signature, mode, readOnly]);
 
   async function push(actions: Action[]) {
-    const inverse = invertActions(actions, graph);
-    if (inverse.length) setUndo(list => [{ forward: actions, inverse }, ...list].slice(0, 24));
-    setRedo([]);
-    await onMutate(actions);
+    if (readOnly) { setSaveState('Comparação somente leitura. Volte à versão atual para editar.'); return; }
+    if (busy || mutationPending.current) return;
+    mutationPending.current = true;
+    setSaveState('Salvando...');
+    try { await onMutate(actions); setSaveState('Alteração salva'); }
+    catch (error) { setSaveState(error instanceof Error ? error.message : 'Não foi possível salvar'); }
+    finally { mutationPending.current = false; }
   }
 
   async function undoLast() {
-    const [next, ...rest] = undo;
-    if (!next) return;
-    setUndo(rest);
-    setRedo(list => [next, ...list]);
-    await onMutate(next.inverse);
+    await push([{ op: 'undo_scene' }]);
   }
 
   async function redoLast() {
-    const [next, ...rest] = redo;
-    if (!next) return;
-    setRedo(rest);
-    setUndo(list => [next, ...list]);
-    await onMutate(next.forward);
+    await push([{ op: 'redo_scene' }]);
   }
 
   async function sendCommand(event: FormEvent) {
@@ -256,14 +290,17 @@ export default function PropertyPhotoSceneEditor({
             {modeLabel(item)}
           </button>
         ))}
-        <button type="button" disabled={!undo.length} onClick={() => void undoLast()} className="rounded-lg border border-white/15 px-2 py-1 disabled:opacity-40">Desfazer</button>
-        <button type="button" disabled={!redo.length} onClick={() => void redoLast()} className="rounded-lg border border-white/15 px-2 py-1 disabled:opacity-40">Refazer</button>
+        <button type="button" disabled={busy || !undo.length} onClick={() => void undoLast()} className="rounded-lg border border-white/15 px-2 py-1 disabled:opacity-40">Desfazer</button>
+        <button type="button" disabled={busy || !redo.length} onClick={() => void redoLast()} className="rounded-lg border border-white/15 px-2 py-1 disabled:opacity-40">Refazer</button>
+        <select aria-label="Vista da câmera" defaultValue="orbit" onChange={event => api.current?.view(event.target.value)} className="rounded-lg border border-white/15 bg-slate-900 p-1"><option value="orbit">Perspectiva</option><option value="front">Frontal</option><option value="side">Lateral</option><option value="top">Superior</option></select>
+        <button type="button" disabled={renderState !== 'ready'} onClick={() => { const link = document.createElement('a'); link.download = 'simulacao-house-flipper.png'; link.href = canvasRef.current!.toDataURL('image/png'); link.click(); }} className="rounded-lg border border-white/15 px-2 py-1">Exportar imagem</button>
+        <span role="status" className="text-[11px] text-cyan-200">{saveState}</span>
         <span className="ml-auto text-[11px] text-amber-200 max-w-xl truncate">{graph.disclaimer}</span>
         <button type="button" onClick={onFullscreen} className="rounded-lg border border-white/15 p-1.5" aria-label="Tela cheia"><Maximize2 className="h-4 w-4" /></button>
       </div>
       <div className="grid lg:grid-cols-[1fr_280px]">
         <div className="relative">
-          <canvas ref={canvasRef} className="w-full h-[min(68vh,700px)]" role="img" aria-label="Editor 3D do imóvel" />
+          <canvas ref={canvasRef} className="w-full h-[min(48vh,420px)] lg:h-[min(68vh,700px)]" role="img" aria-label="Editor 3D do imóvel" />
           {renderState !== 'ready' && (
             <p className="absolute left-4 top-4 rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-xs text-slate-200">
               {renderState === 'error' ? 'Não foi possível iniciar o render 3D neste navegador.' : 'Preparando a cena 3D…'}
@@ -290,7 +327,8 @@ export default function PropertyPhotoSceneEditor({
             </div>
           </form>
         </div>
-        <aside className="border-l border-white/10 p-4 space-y-3 text-sm bg-slate-900/70">
+        <aside className="border-l border-white/10 p-4 space-y-3 text-sm bg-slate-900/70 lg:max-h-[min(68vh,700px)] overflow-y-auto">
+          <label className="block text-xs text-slate-300">Superfície selecionada<select aria-label="Superfície selecionada" value={selectedSurface?.id ?? ''} onChange={event => setSelectedId(event.target.value || null)} className="mt-1 w-full rounded-lg border border-white/20 bg-slate-950 p-2"><option value="">Clique no ambiente ou escolha</option>{surfaces.map(surface => <option key={surface.id} value={surface.id}>{surfaceLabel(surface)}</option>)}</select></label>
           <div className="flex flex-wrap gap-1">
             {(['ambientes', 'objetos', 'materiais', 'cores', 'iluminacao', 'projetos'] as const).map(item => (
               <button key={item} type="button" onClick={() => setPanel(panel === item ? null : item)} className={`rounded-md px-2 py-1 text-[11px] font-bold ${panel === item ? 'bg-white text-slate-900' : 'border border-white/15'}`}>{item}</button>
@@ -301,13 +339,13 @@ export default function PropertyPhotoSceneEditor({
               {graph.rooms.map(item => (
                 <button key={item.key} type="button" onClick={() => void push([{ op: 'set_active_room', room: item.key }])} className={`w-full text-left rounded-xl border px-3 py-2 ${item.key === room ? 'border-white bg-white/10' : 'border-white/10'}`}>
                   <p className="font-bold">{item.label}</p>
-                  <p className="text-[11px] text-slate-400">confiança estimada {Math.round((item.confidence ?? 0) * 100)}%</p>
+                  <p className="text-[11px] text-slate-400">{item.confidence == null ? 'Ambiente paramétrico editável' : `Confiança visual estimada ${Math.round(item.confidence * 100)}%`}</p>
                 </button>
               ))}
               <div className="rounded-xl border border-white/10 p-3">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-slate-300">Dimensões do ambiente</p>
                 <div className="mt-2 grid grid-cols-3 gap-1">
-                  {(['width', 'depth', 'height'] as const).map(field => <label key={field} className="text-[10px] text-slate-400">{{ width: 'Largura', depth: 'Comprimento', height: 'Pé-direito' }[field]}<input type="number" min="1.8" max="20" step="0.05" defaultValue={dimensions[field]} onBlur={event => { const value = Number(event.target.value); if (Number.isFinite(value)) void push([{ op: 'set_room_dimensions', room, dimensions: { ...dimensions, [field]: value, source: 'user' } }]); }} className="mt-1 w-full rounded-md border border-white/15 bg-black/30 px-2 py-1 text-xs text-white" /></label>)}
+                  {(['width', 'depth', 'height'] as const).map(field => <label key={`${room}-${field}-${dimensions[field]}`} className="text-[10px] text-slate-400">{{ width: 'Largura', depth: 'Comprimento', height: 'Pé-direito' }[field]}<input disabled={busy} type="number" min={field === 'height' ? 2 : 1.8} max={field === 'height' ? 8 : 20} step="0.05" defaultValue={dimensions[field]} onBlur={event => { const value = Number(event.target.value); if (event.target.validity.valid && value !== dimensions[field]) void push([{ op: 'set_room_dimensions', room, dimensions: { ...dimensions, [field]: value } }]); }} className="mt-1 w-full rounded-md border border-white/15 bg-black/30 px-2 py-1 text-xs text-white" /></label>)}
                 </div>
                 <p className="mt-2 text-[10px] text-amber-200">{dimensions.source === 'user' ? 'Medidas informadas pelo usuário.' : 'Proporções aproximadas; informe medidas para ajustar.'}</p>
               </div>
@@ -326,7 +364,7 @@ export default function PropertyPhotoSceneEditor({
               <ul className="space-y-1 max-h-40 overflow-auto">
                 {objects.map(item => (
                   <li key={item.id}>
-                    <button type="button" onClick={() => setSelectedId(item.id)} className={`w-full text-left rounded-lg px-2 py-1 ${selectedId === item.id ? 'bg-white/15' : ''}`}>{objectLabel(item.kind)}</button>
+                    <button type="button" onClick={() => setSelectedId(item.id)} className={`w-full text-left rounded-lg px-2 py-1 ${selectedId === item.id ? 'bg-white/15' : ''}`}>{objectLabel(item.kind)}{item.hidden ? ' · oculto' : ''}</button>
                   </li>
                 ))}
               </ul>
@@ -334,9 +372,11 @@ export default function PropertyPhotoSceneEditor({
                 <div className="space-y-2 rounded-xl border border-white/10 p-2">
                   <div className="flex flex-wrap gap-1">
                   <button type="button" onClick={() => void push([{ op: 'duplicate', id: selected.id }])} className="rounded-md border border-white/15 px-2 py-1 text-[11px]">Duplicar</button>
-                  <button type="button" onClick={() => void push([{ op: 'hide', id: selected.id, hidden: true }])} className="rounded-md border border-white/15 px-2 py-1 text-[11px]">Ocultar</button>
+                  <button type="button" onClick={() => void push([{ op: 'hide', id: selected.id, hidden: !selected.hidden }])} className="rounded-md border border-white/15 px-2 py-1 text-[11px]">{selected.hidden ? 'Mostrar' : 'Ocultar'}</button>
                   <button type="button" onClick={() => void push([{ op: 'remove_object', id: selected.id }])} className="rounded-md border border-white/15 px-2 py-1 text-[11px]">Remover</button>
                   </div>
+                  <label className="block text-xs">Rotação (graus)<input aria-label="Rotação do móvel" key={`${selected.id}-${selected.rotation}`} type="number" min="-360" max="360" step="15" defaultValue={selected.rotation} onBlur={event => { if (event.target.validity.valid) void push([{ op: 'transform', id: selected.id, rotation: Number(event.target.value) }]); }} className="w-full rounded border border-white/20 bg-slate-950 p-1" /></label>
+                  <label className="block text-xs">Escala<input aria-label="Escala do móvel" key={`${selected.id}-${selected.scale}`} type="number" min="0.4" max="2.5" step="0.1" defaultValue={selected.scale} onBlur={event => { if (event.target.validity.valid) void push([{ op: 'transform', id: selected.id, scale: Number(event.target.value) }]); }} className="w-full rounded border border-white/20 bg-slate-950 p-1" /></label>
                   {catalogEntry(selected.kind) && <p className="text-[10px] leading-relaxed text-slate-400">{catalogEntry(selected.kind)?.label} · {catalogEntry(selected.kind)?.dimensionsM.join(' × ')} m · {catalogEntry(selected.kind)?.license}</p>}
                 </div>
               )}
@@ -344,21 +384,23 @@ export default function PropertyPhotoSceneEditor({
           )}
           {panel === 'materiais' && (
             <div className="space-y-2">
-              <p className="text-[11px] text-slate-400">Piso atual: {materialLabel(floor?.material ?? 'ceramic')}</p>
+              <p className="text-[11px] text-slate-400">{selectedSurface ? `${surfaceLabel(selectedSurface)}: ${materialLabel(selectedSurface.material)}` : 'Selecione uma superfície para trocar o material.'}</p>
               {MATERIALS.map(material => (
-                <button key={material} type="button" onClick={() => void push([{ op: 'paint_kind', kind: 'floor', material, color: materialColor(material), room }])} className="w-full rounded-lg border border-white/15 px-2 py-1.5 text-left">{materialLabel(material)}</button>
+                <button key={material} type="button" disabled={busy || !selectedSurface} onClick={() => void push([{ op: 'paint_surface', id: selectedSurface!.id, material, color: materialColor(material) }])} className="w-full rounded-lg border border-white/15 px-2 py-1.5 text-left disabled:opacity-40">{materialLabel(material)}</button>
               ))}
             </div>
           )}
           {panel === 'cores' && (
             <div className="space-y-3">
-              <p className="text-[11px] text-slate-400">Paredes</p>
+              <p className="text-[11px] text-slate-400">{selectedSurface ? surfaceLabel(selectedSurface) : 'Selecione uma parede, piso ou teto.'}</p>
               <div className="flex flex-wrap gap-1">
                 {COLORS.map(color => (
-                  <button key={color} type="button" aria-label={`Parede ${color}`} onClick={() => void push([{ op: 'paint_kind', kind: 'wall', color, room }])} className="h-7 w-7 rounded-full border border-white/30" style={{ background: color }} />
+                  <button key={color} type="button" disabled={busy || !selectedSurface} aria-label={`Cor ${color}`} onClick={() => void push([{ op: 'paint_surface', id: selectedSurface!.id, color }])} className="h-7 w-7 rounded-full border border-white/30 disabled:opacity-30" style={{ background: color }} />
                 ))}
               </div>
-              <input type="color" value={wall?.color ?? '#d9cbb8'} onChange={event => void push([{ op: 'paint_kind', kind: 'wall', color: event.target.value, room }])} className="h-8 w-full bg-transparent" />
+              <input aria-label="Cor da superfície" type="color" disabled={!selectedSurface || busy} key={`${selectedSurface?.id}-${selectedSurface?.color}`} defaultValue={selectedSurface?.color ?? '#d9cbb8'} onBlur={event => { if (selectedSurface && event.target.value !== selectedSurface.color) void push([{ op: 'paint_surface', id: selectedSurface.id, color: event.target.value }]); }} className="h-8 w-full bg-transparent" />
+              <label className="block text-xs">Código hexadecimal<input aria-label="Código da cor da superfície" disabled={!selectedSurface || busy} key={`hex-${selectedSurface?.id}-${selectedSurface?.color}`} defaultValue={selectedSurface?.color ?? ''} pattern="#[0-9A-Fa-f]{6}" maxLength={7} onBlur={event => { if (selectedSurface && event.target.validity.valid && event.target.value !== selectedSurface.color) void push([{ op: 'paint_surface', id: selectedSurface.id, color: event.target.value }]); }} className="mt-1 w-full rounded border border-white/20 bg-slate-950 p-2" /></label>
+              <label className="block text-xs">Acabamento<select aria-label="Acabamento da superfície" disabled={!selectedSurface || busy} value={selectedSurface?.finish ?? 'matte'} onChange={event => void push([{ op: 'paint_surface', id: selectedSurface!.id, finish: event.target.value }])} className="mt-1 w-full rounded border border-white/20 bg-slate-950 p-2"><option value="matte">Fosco</option><option value="satin">Acetinado</option><option value="gloss">Brilhante</option></select></label>
               {selected && (
                 <>
                   <p className="text-[11px] text-slate-400">Móvel selecionado</p>
@@ -379,12 +421,11 @@ export default function PropertyPhotoSceneEditor({
             <div className="space-y-2">
               <div className="flex gap-1">
                 <input value={versionLabel} onChange={event => setVersionLabel(event.target.value)} className="flex-1 rounded-lg bg-black/40 border border-white/15 px-2 py-1 text-xs" />
-                <button type="button" onClick={() => void onSaveVersion(versionLabel)} className="rounded-lg bg-white text-slate-900 px-2"><Save className="h-4 w-4" /></button>
+                <button type="button" disabled={busy || readOnly || versionLabel.trim().length < 2} aria-label="Salvar versão" onClick={() => void onSaveVersion(versionLabel)} className="rounded-lg bg-white text-slate-900 px-2 disabled:opacity-40"><Save className="h-4 w-4" /></button>
               </div>
               <button type="button" onClick={() => undoOriginal(versions, onRestore)} className="w-full rounded-lg border border-white/15 px-2 py-1.5 text-left text-[11px]"><RotateCcw className="inline h-3 w-3 mr-1" /> Restaurar original</button>
-              {versions.map(item => (
-                <button key={item.id} type="button" onClick={() => void onRestore(item.id)} className="w-full rounded-lg border border-white/10 px-2 py-1.5 text-left text-[11px]">{item.label}</button>
-              ))}
+              {versions.map(item => <div key={item.id} className="rounded-lg border border-white/10 p-2 text-xs"><p className="font-bold">{item.label}</p><div className="mt-2 flex gap-3"><button disabled={busy} type="button" onClick={() => void onPreview?.(item.id)} className="text-cyan-200">Comparar</button><button disabled={busy} type="button" onClick={() => void onRestore(item.id)}>Restaurar</button></div></div>)}
+              {graph.project_notes?.map((note, index) => <p key={index} className="rounded-lg border border-white/10 p-2 text-xs leading-relaxed">{note.brief}</p>)}
             </div>
           )}
         </aside>
@@ -401,38 +442,26 @@ function materialColor(material: string): string {
   return { porcelain: '#e8e6e1', wood: '#8b7355', laminate: '#b08968', marble: '#d8d2c8', paint: '#f4f1ea', ceramic: '#cbb79a' }[material] ?? '#cbb79a';
 }
 
-function invertActions(actions: Action[], graph: SceneGraph): Action[] {
-  const inverted: Action[] = [];
-  for (const action of actions) {
-    if (action.op === 'paint_kind') {
-      const surface = graph.surfaces.find(item => item.kind === action.kind && (!action.room || item.room === action.room));
-      if (surface) inverted.push({ op: 'paint_kind', kind: action.kind, room: action.room, color: surface.color, material: surface.material });
-    } else if (action.op === 'paint_surface') {
-      const surface = graph.surfaces.find(item => item.id === action.id);
-      if (surface) inverted.push({ op: 'paint_surface', id: surface.id, color: surface.color, material: surface.material });
-    } else if (action.op === 'set_object_color') {
-      const object = graph.objects.find(item => item.id === action.id);
-      if (object) inverted.push({ op: 'set_object_color', id: object.id, color: object.color });
-    } else if (action.op === 'transform') {
-      const object = graph.objects.find(item => item.id === action.id);
-      if (object) inverted.push({ op: 'transform', id: object.id, position: object.position, rotation: object.rotation, scale: object.scale });
-    } else if (action.op === 'remove_object') {
-      const object = graph.objects.find(item => item.id === action.id);
-      if (object) inverted.push({ op: 'upsert_object', object });
-    } else if (action.op === 'hide') {
-      inverted.push({ op: 'hide', id: action.id, hidden: !(action.hidden as boolean) });
-    } else if (action.op === 'set_active_room') {
-      inverted.push({ op: 'set_active_room', room: graph.active_room });
-    } else if (action.op === 'set_lighting') {
-      inverted.push({ op: 'set_lighting', preset: graph.lighting?.preset ?? 'daylight' });
-    }
-  }
-  return inverted;
-}
-
 function undoOriginal(versions: NonNullable<VisualizationPayload['versions']>, restore: (id: number) => Promise<void>) {
   const original = versions.find(item => item.label === 'original');
   if (original) void restore(original.id);
+}
+
+function surfaceLabel(surface: SceneSurface) {
+  return surface.kind === 'floor' ? 'Piso' : surface.kind === 'ceiling' ? 'Teto' : `Parede ${{ south: 'do fundo', north: 'frontal', west: 'esquerda', east: 'direita' }[surface.side ?? ''] ?? ''}`;
+}
+
+function disposeTree(root: any) {
+  const released = new Set<any>();
+  const release = (resource: any) => { if (resource?.dispose && !released.has(resource)) { released.add(resource); resource.dispose(); } };
+  root.traverse((node: any) => {
+    release(node.geometry);
+    for (const material of (Array.isArray(node.material) ? node.material : [node.material])) {
+      if (!material) continue;
+      for (const value of Object.values(material)) if ((value as any)?.isTexture) release(value);
+      release(material);
+    }
+  });
 }
 
 function highlight(objects: any[], id: string | null) {
@@ -498,16 +527,26 @@ function buildInterior(THREE: any, root: any, graph: SceneGraph, textures: Map<n
   const depth = dimensions.depth;
   const height = dimensions.height;
   const floorTexture = createFloorTexture(THREE, floor?.material ?? 'ceramic', floor?.color ?? '#cbb79a');
-  addBox(THREE, root, [width, 0.06, depth], [0, 0, 0], '#ffffff', { ...floorMaterial(floor?.material), map: floorTexture }, false);
-  addBox(THREE, root, [width, 0.04, depth], [0, height, 0], ceiling?.color ?? '#f4f1ea', { roughness: 0.9, metalness: 0 }, false);
-  const wallMat = { roughness: 0.86, metalness: 0 };
-  addBox(THREE, root, [width, height, 0.08], [0, height / 2, -depth / 2], wall('south')?.color ?? '#d9cbb8', wallMat, false);
-  addBox(THREE, root, [0.08, height, depth], [-width / 2, height / 2, 0], wall('west')?.color ?? '#d9cbb8', wallMat, false);
-  // North/east remain editable in the graph, but are omitted in this cutaway view so
-  // the camera never starts behind an opaque wall.
-  addArchitecturalWindow(THREE, root, width, depth, height);
-  const rug = addBox(THREE, root, [2.7, 0.018, 1.85], [-0.2, 0.055, 0.35], '#b7a48d', { roughness: 0.98, metalness: 0 }, false);
-  rug.receiveShadow = true;
+  const surfaceMesh = (surface: SceneSurface | undefined, size: number[], position: number[], rotation: number[], texture?: any) => {
+    if (!surface) return;
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size[0], size[1]), new THREE.MeshStandardMaterial({
+      color: texture ? '#ffffff' : surface.color, ...floorMaterial(surface.material), ...(surface.finish ? { roughness: { matte: 0.9, satin: 0.5, gloss: 0.22 }[surface.finish] } : {}), map: texture ?? null, side: THREE.FrontSide,
+    }));
+    mesh.position.fromArray(position);
+    mesh.rotation.set(...rotation);
+    mesh.receiveShadow = true;
+    mesh.userData.id = surface.id;
+    root.add(mesh);
+    selectable.push(mesh);
+  };
+  // Inward-facing planes keep all six surfaces selectable. Exterior backfaces
+  // disappear naturally as the user orbits, without hiding interior geometry.
+  surfaceMesh(floor, [width, depth], [0, 0, 0], [-Math.PI / 2, 0, 0], floorTexture);
+  surfaceMesh(ceiling, [width, depth], [0, height, 0], [Math.PI / 2, 0, 0]);
+  surfaceMesh(wall('south'), [width, height], [0, height / 2, -depth / 2], [0, 0, 0]);
+  surfaceMesh(wall('north'), [width, height], [0, height / 2, depth / 2], [0, Math.PI, 0]);
+  surfaceMesh(wall('west'), [depth, height], [-width / 2, height / 2, 0], [0, Math.PI / 2, 0]);
+  surfaceMesh(wall('east'), [depth, height], [width / 2, height / 2, 0], [0, -Math.PI / 2, 0]);
   for (const plane of graph.photo_planes.filter(item => item.room === room)) {
     const texture = textures.get(plane.asset_id);
     if (!texture) continue;
@@ -520,7 +559,8 @@ function buildInterior(THREE: any, root: any, graph: SceneGraph, textures: Map<n
     mesh.rotation.y = ((object.rotation ?? 0) * Math.PI) / 180;
     mesh.scale.setScalar(object.scale ?? 1);
     mesh.userData.id = object.id;
-    mesh.traverse((child: any) => { child.userData.id = object.id; selectable.push(child); });
+    mesh.userData.draggable = true;
+    mesh.traverse((child: any) => { child.userData.id = object.id; if (child.isMesh) selectable.push(child); });
     root.add(mesh);
   }
 }
@@ -553,21 +593,6 @@ function createFloorTexture(THREE: any, material: string, baseColor: string) {
   texture.repeat.set(2.8, 2.3);
   texture.anisotropy = 8;
   return texture;
-}
-
-function addArchitecturalWindow(THREE: any, root: any, width: number, depth: number, height: number) {
-  const frame = new THREE.MeshStandardMaterial({ color: 0xd8dee8, roughness: 0.32, metalness: 0.62 });
-  const glass = new THREE.MeshPhysicalMaterial({ color: 0xaed9ee, roughness: 0.08, metalness: 0, transmission: 0.55, transparent: true, opacity: 0.68 });
-  const back = -depth / 2 + 0.095;
-  addBox(THREE, root, [1.9, 1.28, 0.035], [width * 0.22, height * 0.58, back], '#aed9ee', { roughness: 0.08, metalness: 0, transmission: 0.55, transparent: true, opacity: 0.68 }, false).material = glass;
-  for (const [w, h, x, y] of [[2.02, 0.055, width * 0.22, height * 0.58 - 0.66], [2.02, 0.055, width * 0.22, height * 0.58 + 0.66], [0.055, 1.38, width * 0.22 - 0.98, height * 0.58], [0.055, 1.38, width * 0.22 + 0.98, height * 0.58], [0.045, 1.28, width * 0.22, height * 0.58]] as number[][]) {
-    const bar = addBox(THREE, root, [w, h, 0.06], [x, y, back + 0.01], '#d8dee8', { roughness: 0.32, metalness: 0.62 }, false);
-    bar.material = frame;
-  }
-  const daylight = new THREE.RectAreaLight(0xcfefff, 2.2, 2.0, 1.4);
-  daylight.position.set(width * 0.22, height * 0.58, back + 0.2);
-  daylight.lookAt(width * 0.22, 0.8, 1.5);
-  root.add(daylight);
 }
 
 function buildExterior(THREE: any, root: any, graph: SceneGraph, textures: Map<number, any>, selectable: any[]) {

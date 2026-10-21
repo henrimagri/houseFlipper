@@ -13,7 +13,7 @@ from .runtime_diagnostics import enable_native_diagnostics, record_event, runtim
 enable_native_diagnostics()
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from .async_reconstruction import (
     cancel_job, cleanup_expired_jobs, public_job, read_job, recover_interrupted_jobs,
@@ -267,7 +267,7 @@ def cancel_reconstruction_job(job_id: str, x_worker_scope: str | None = Header(d
 
 
 @app.get("/v1/jobs/{job_id}/artifacts/{name}", dependencies=[Depends(authorize)])
-def artifact(job_id: str, name: str, x_worker_scope: str | None = Header(default=None)) -> FileResponse:
+def artifact(job_id: str, name: str, x_worker_scope: str | None = Header(default=None)):
     try:
         safe_id = str(uuid.UUID(job_id))
     except ValueError:
@@ -276,8 +276,19 @@ def artifact(job_id: str, name: str, x_worker_scope: str | None = Header(default
         raise HTTPException(status_code=404, detail="Artefato não encontrado.")
     target = Path(os.environ.get("AI_WORKER_ARTIFACT_ROOT", Path(__file__).resolve().parents[1] / "artifacts")) / safe_id / name
     job_result = read_job(target.parents[1], safe_id)
-    if job_result is not None and job_result.get("scope_hash") and (not x_worker_scope or not scope_matches(job_result, x_worker_scope)):
+    if job_result is None:
+        raise HTTPException(status_code=404, detail="Artefato não encontrado.")
+    # Legacy synchronous vision jobs retain their internal-token contract.
+    # Reconstruction ownership cannot disappear while result.json is written.
+    legacy_vision = (
+        job_result.get("kind") in {"vision", "photo_simulation"}
+        and not (target.parent / "job-status.json").exists()
+        and not job_result.get("scope_hash")
+    )
+    if not legacy_vision and (not x_worker_scope or not scope_matches(job_result, x_worker_scope)):
         raise HTTPException(status_code=404, detail="Artefato não encontrado.")
     if not target.is_file():
         raise HTTPException(status_code=404, detail="Artefato não encontrado.")
+    if name == "result.json":
+        return JSONResponse(public_job(job_result))
     return FileResponse(target, filename=name)

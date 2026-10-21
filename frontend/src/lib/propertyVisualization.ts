@@ -17,6 +17,7 @@ export type SceneSurface = {
   room: string;
   color: string;
   material: string;
+  finish?: 'matte' | 'satin' | 'gloss';
 };
 
 export type SceneGraph = {
@@ -36,6 +37,9 @@ export type SceneGraph = {
   subject?: Record<string, unknown>;
   reconstruction_overrides?: Record<string, { color?: string; material?: string; source?: string }>;
   reconstruction_history?: Array<{ id: string; previous?: Record<string, unknown> | null }>;
+  editor_history?: Array<Record<string, unknown>>;
+  editor_redo?: Array<Record<string, unknown>>;
+  project_notes?: Array<{ category: string; brief: string; source: string }>;
 };
 
 export type VisualizationAsset = {
@@ -162,7 +166,7 @@ export function visualizationModeLabel(payload: Pick<VisualizationPayload, 'fait
 export function roomLabel(key: string | null | undefined): string {
   const labels: Record<string, string> = {
     living: 'Sala', bedroom: 'Quarto', bathroom: 'Banheiro', kitchen: 'Cozinha',
-    balcony: 'Varanda', garage: 'Garagem', facade: 'Fachada', outdoor: 'Área externa',
+    balcony: 'Varanda', garage: 'Garagem', facade: 'Fachada', outdoor: 'Área externa', office: 'Escritório',
   };
   return key ? (labels[key] ?? key) : 'Ambiente não identificado';
 }

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
+from io import BytesIO
 import os
 import platform
 import shutil
@@ -36,6 +38,8 @@ def inspect_colmap_runtime(executable: Path, *, timeout: int = 15) -> dict[str, 
         completed = subprocess.run(
             [str(executable), "help"], capture_output=True, text=True, timeout=timeout, check=False,
         )
+    except InterruptedError:
+        raise
     except (OSError, subprocess.SubprocessError) as exception:
         return {"available": False, "error": type(exception).__name__, "commands": [], "gpu_support": False}
     output = f"{completed.stdout}\n{completed.stderr}"
@@ -75,6 +79,7 @@ def dense_reconstruction_capability(
     selected_mesher = environment.get("COLMAP_DENSE_MESHER", "poisson").strip().lower()
     valid_mesher = selected_mesher in {"poisson", "delaunay"}
     max_image_size = _bounded_integer(environment.get("COLMAP_DENSE_MAX_IMAGE_SIZE"), 2400, 512, 8192)
+    poisson_depth = _bounded_integer(environment.get("COLMAP_POISSON_DEPTH"), 8, 6, 10)
     gpu_index = environment.get("COLMAP_GPU_INDEX", "0").strip() or "0"
 
     reasons = []
@@ -104,6 +109,7 @@ def dense_reconstruction_capability(
         "gpu_device_visible": bool(gpu_device_visible),
         "mesher": selected_mesher,
         "max_image_size": max_image_size,
+        "poisson_depth": poisson_depth,
         "gpu_index": gpu_index,
         "reasons": reasons,
         "runtime_probe": dict(runtime_probe) if runtime_probe is not None else None,
@@ -351,6 +357,65 @@ def _face_component_sizes(faces: Any) -> list[int]:
     return sorted(components.values(), reverse=True)
 
 
+def export_verified_texture(source: Path, destination: Path, *, expected_faces: int, texture_files: list[Path]) -> dict[str, Any]:
+    """Verify UV/image bindings before and after GLB conversion, not visual fidelity."""
+    import numpy as np
+    import trimesh
+
+    def image_fingerprint(image: Image.Image) -> tuple:
+        image.load()
+        return image.size, hashlib.sha256(image.convert("RGBA").tobytes()).hexdigest()
+
+    # Some loaders silently substitute a generated default image for a broken
+    # texture. Require the bound image to match a decoded worker atlas.
+    authorized_images = set()
+    for path in texture_files:
+        with Image.open(path) as image:
+            authorized_images.add(image_fingerprint(image))
+    if not authorized_images:
+        raise ValueError("Nenhuma imagem válida de atlas foi produzida.")
+
+    def validate(scene) -> int:
+        faces = 0
+        if not scene.geometry:
+            raise ValueError("O atlas não contém uma malha.")
+        for mesh in scene.geometry.values():
+            uv = np.asarray(getattr(mesh.visual, "uv", None))
+            if (getattr(mesh.visual, "kind", None) != "texture"
+                    or uv.shape != (len(mesh.vertices), 2) or not np.isfinite(uv).all()):
+                raise ValueError("A malha não possui UVs finitas vinculadas a todos os vértices.")
+            triangles = uv[mesh.faces]
+            edge_a = triangles[:, 1] - triangles[:, 0]
+            edge_b = triangles[:, 2] - triangles[:, 0]
+            uv_area = np.abs(edge_a[:, 0] * edge_b[:, 1] - edge_a[:, 1] * edge_b[:, 0])
+            if not len(uv_area) or np.any(uv_area <= 1e-12):
+                raise ValueError("O atlas contém faces sem área UV válida.")
+            material = mesh.visual.material
+            image = getattr(material, "baseColorTexture", None)
+            if image is None:
+                image = getattr(material, "image", None)
+            if not isinstance(image, Image.Image):
+                raise ValueError("O material não contém imagem de textura vinculada.")
+            image.load()  # Pillow is lazy: decoding must succeed, not just the header.
+            if image.width < 1 or image.height < 1:
+                raise ValueError("A imagem de textura está vazia.")
+            if image_fingerprint(image) not in authorized_images:
+                raise ValueError("A imagem vinculada ao material não corresponde ao atlas produzido.")
+            faces += len(mesh.faces)
+        if faces != expected_faces:
+            raise ValueError("A conversão texturizada não preservou a quantidade de faces.")
+        return faces
+
+    scene = trimesh.load(source, force="scene", process=False)
+    validate(scene)
+    payload = scene.export(file_type="glb")
+    restored = trimesh.load(BytesIO(payload), file_type="glb", force="scene", process=False)
+    faces = validate(restored)
+    destination.write_bytes(payload)
+    return {"status": "verified_binding", "textured_faces": faces,
+            "uv_and_embedded_images_validated": True, "photometric_fidelity_validated": False}
+
+
 def run_dense_reconstruction(
     *,
     executable: Path,
@@ -444,6 +509,8 @@ def run_dense_reconstruction(
         mesh_command = [
             str(executable),
             "poisson_mesher",
+            "--PoissonMeshing.depth",
+            str(_bounded_integer(capability.get("poisson_depth"), 8, 6, 10)),
             "--input_path",
             str(dense_cloud),
             "--output_path",
@@ -470,37 +537,46 @@ def run_dense_reconstruction(
     if not dense_mesh.is_file() or dense_mesh.stat().st_size == 0:
         raise RuntimeError("COLMAP não gerou a malha densa.")
 
-    checkpoint("dense_texturing", 92)
     textured_workspace = output / "dense-textured"
-    timings["mesh_texturing_ms"] = _run([
-        str(executable), "mesh_texturer", "--workspace_path", str(workspace),
-        "--input_path", str(dense_mesh), "--output_path", str(textured_workspace),
-        "--output_type", "BIN", "--MeshTextureMapping.apply_color_correction", "true",
-    ], output / "mesh-texturer.log")
-
     point_cloud = trimesh.load(dense_cloud, process=False)
     dense_points = len(getattr(point_cloud, "vertices", []))
     loaded_mesh = trimesh.load(dense_mesh, force="mesh", process=False)
     geometry_quality = evaluate_geometry(loaded_mesh, method=method, sparse_point_count=dense_points)
+    texture_validation = {"status": "not_attempted", "photometric_fidelity_validated": False}
+    if geometry_quality["viewer_eligible"]:
+        checkpoint("dense_texturing", 92)
+        timings["mesh_texturing_ms"] = _run([
+            str(executable), "mesh_texturer", "--workspace_path", str(workspace),
+            "--input_path", str(dense_mesh), "--output_path", str(textured_workspace),
+            "--output_type", "BIN", "--MeshTextureMapping.apply_color_correction", "true",
+        ], output / "mesh-texturer.log")
     textured_candidates = [*textured_workspace.rglob("*.obj"), *textured_workspace.rglob("*.ply")]
     texture_files = [
         path for path in textured_workspace.rglob("*")
         if path.is_file() and path.suffix.lower() in {".png", ".jpg", ".jpeg", ".webp"}
     ] if textured_workspace.is_dir() else []
     textured_source = textured_candidates[0] if textured_candidates else None
-    if geometry_quality["viewer_eligible"] and textured_source is not None and texture_files:
-        textured_scene = trimesh.load(textured_source, force="scene", process=False)
-        textured_scene.export(dense_glb, file_type="glb")
-    elif geometry_quality["viewer_eligible"]:
-        geometry_quality["status"] = "rejected"
-        geometry_quality["viewer_eligible"] = False
-        geometry_quality["final_model_eligible"] = False
-        geometry_quality["reasons"].append("A malha não recebeu um atlas fotográfico verificável do COLMAP mesh_texturer.")
+    if geometry_quality["viewer_eligible"]:
+        try:
+            if textured_source is None or not texture_files:
+                raise ValueError("COLMAP não produziu malha e imagem de atlas.")
+            texture_validation = export_verified_texture(
+                textured_source, dense_glb, expected_faces=len(loaded_mesh.faces), texture_files=texture_files,
+            )
+        except InterruptedError:
+            raise
+        except (ValueError, TypeError, OSError, IndexError) as exception:
+            texture_validation = {"status": "rejected", "reason": str(exception), "photometric_fidelity_validated": False}
+            geometry_quality["status"] = "rejected"
+            geometry_quality["viewer_eligible"] = False
+            geometry_quality["final_model_eligible"] = False
+            geometry_quality["reasons"].append("O atlas não passou na validação de UVs, imagem vinculada e GLB: " + str(exception))
 
     return {
         "status": "completed" if geometry_quality["viewer_eligible"] and dense_glb.is_file() else "rejected",
         "capability": capability,
         "geometry_quality": geometry_quality,
+        "texture_validation": texture_validation,
         "artifacts": {
             "point_cloud": dense_cloud.name,
             "mesh": dense_mesh.name,
@@ -590,6 +666,8 @@ def reconstruct(
             if geometry_quality["viewer_eligible"]:
                 loaded.export(glb, file_type="glb")
                 glb_status = "sparse_delaunay_preview"
+    except InterruptedError:
+        raise
     except (ImportError, OSError, RuntimeError, ValueError) as exception:
         geometry_quality = unavailable_geometry_quality(f"Não foi possível validar a malha: {exception}")
         (output / "delaunay-error.txt").write_text(str(exception), encoding="utf-8")
@@ -614,6 +692,8 @@ def reconstruct(
                 "artifacts": {"point_cloud": None, "mesh": None, "glb": None},
                 "timings": {},
             }
+    except InterruptedError:
+        raise
     except (ImportError, OSError, RuntimeError, ValueError) as exception:
         (output / "dense-reconstruction-error.txt").write_text(str(exception), encoding="utf-8")
         dense_reconstruction = {
@@ -696,6 +776,8 @@ def reconstruct(
                     "limitations": calibrated_fallback["limitations"],
                 }
                 dense_artifacts = dense_reconstruction["artifacts"]
+        except InterruptedError:
+            raise
         except (ImportError, OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exception:
             (output / "calibrated-depth-error.txt").write_text(str(exception), encoding="utf-8")
             calibrated_fallback = {"status": "failed", "error": f"{type(exception).__name__}: {exception}"}

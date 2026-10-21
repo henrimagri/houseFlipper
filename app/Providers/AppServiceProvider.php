@@ -7,13 +7,13 @@ use App\Models\CommercializationAuthorization;
 use App\Models\User;
 use App\Services\RealEstateData\SaoPauloItbiDatasetProvider;
 use App\Services\ResendTransportFactory;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -55,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(12)->by('visualization-ip:'.$request->ip()),
         ]);
         Gate::define('import-itbi', fn (User $user) => $user->getAllPermissions()->contains('name', 'itbi.import'));
+        RateLimiter::for('visualization-edit', fn (Request $request) => Limit::perMinute(60)->by('scene-edit:'.$request->user()->id));
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?: $request->ip()));
         RateLimiter::for('login', fn (Request $request) => [
             Limit::perMinute(10)->by('login-ip:'.$request->ip()),

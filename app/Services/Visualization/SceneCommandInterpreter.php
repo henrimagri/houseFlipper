@@ -19,12 +19,22 @@ class SceneCommandInterpreter
 
         $room = $this->currentRoom($graph);
         if (Str::contains($normalized, ['estimativa de custo', 'estimar custo', 'quanto custa', 'orcamento', 'orçamento'])) {
-            $dimensions = $graph['room_dimensions'][$room] ?? ['width' => 5.2, 'depth' => 4.2, 'source' => 'estimated'];
-            $area = round((float) ($dimensions['width'] ?? 5.2) * (float) ($dimensions['depth'] ?? 4.2), 2);
-            $minimum = (int) round($area * 450);
-            $maximum = (int) round($area * 950);
-            $source = ($dimensions['source'] ?? 'estimated') === 'user' ? 'medidas informadas' : 'medidas aproximadas';
-            $brief = sprintf('Estimativa conceitual para %s m² (%s): R$ %s a R$ %s. Validar materiais, mão de obra e condições locais antes de contratar.', number_format($area, 2, ',', '.'), $source, number_format($minimum, 0, ',', '.'), number_format($maximum, 0, ',', '.'));
+            $dimensions = $graph['room_dimensions'][$room] ?? [];
+            $width = (float) ($dimensions['width'] ?? 0);
+            $depth = (float) ($dimensions['depth'] ?? 0);
+            if (($dimensions['source'] ?? null) !== 'user' || ! is_finite($width) || ! is_finite($depth) || $width <= 0 || $depth <= 0) {
+                return $this->confirm('Informe as dimensões do ambiente no editor antes de calcular custos. As medidas aproximadas da cena não são medições do imóvel.');
+            }
+            if (! preg_match('/r\$\s*(\d+(?:\.\d{3})*(?:,\d{1,2})?)\s*(?:por|\/)\s*(?:m2|m\^2|metro quadrado)\b/u', $normalized, $match)) {
+                return $this->confirm('Informe o custo unitário e seu escopo, por exemplo: R$ 500,00 por m². Não há preço de mercado verificado para estimar esta reforma.');
+            }
+            $unitPrice = (float) str_replace(',', '.', str_replace('.', '', $match[1]));
+            $area = round($width * $depth, 2);
+            $total = $area * $unitPrice;
+            if (! is_finite($total) || $unitPrice <= 0) {
+                return $this->confirm('Informe um custo por m² positivo e válido para realizar o cálculo.');
+            }
+            $brief = sprintf('Cálculo com premissas informadas: %s m² de piso × R$ %s/m² informado por você = R$ %s. Não é cotação de mercado; confirme o escopo do valor unitário, materiais, mão de obra e condições locais.', number_format($area, 2, ',', '.'), number_format($unitPrice, 2, ',', '.'), number_format($total, 2, ',', '.'));
 
             return $this->ok([['op' => 'set_project_brief', 'category' => 'cost_estimate', 'brief' => $brief]], $brief);
         }
@@ -39,10 +49,31 @@ class SceneCommandInterpreter
             return $this->ok([['op' => 'set_project_brief', 'category' => 'renovation_proposal', 'brief' => $brief]], 'Proposta preliminar salva no projeto sem tratar a simulação como obra executiva.');
         }
         if (Str::contains($normalized, ['desfaca a ultima', 'desfaça a última', 'desfazer a ultima', 'desfazer a última'])) {
+            if (! $selectedId || ! str_starts_with($selectedId, 'geometry-')) {
+                return empty($graph['editor_history'])
+                    ? $this->fail('Não há alteração da cena editável para desfazer.')
+                    : $this->ok([['op' => 'undo_scene']], 'Última alteração da cena editável desfeita.');
+            }
+            if (empty($graph['reconstruction_history'])) {
+                return $this->fail('Não há alteração da reconstrução para desfazer.');
+            }
+
             return $this->ok([['op' => 'undo_reconstruction']], 'Última alteração da reconstrução desfeita.');
         }
         if (Str::contains($normalized, ['refaca a ultima', 'refaça a última', 'refazer a ultima', 'refazer a última'])) {
+            if (! $selectedId || ! str_starts_with($selectedId, 'geometry-')) {
+                return empty($graph['editor_redo'])
+                    ? $this->fail('Não há alteração da cena editável para refazer.')
+                    : $this->ok([['op' => 'redo_scene']], 'Última alteração da cena editável refeita.');
+            }
+            if (empty($graph['reconstruction_redo'])) {
+                return $this->fail('Não há alteração da reconstrução para refazer.');
+            }
+
             return $this->ok([['op' => 'redo_reconstruction']], 'Última alteração da reconstrução refeita.');
+        }
+        if (Str::contains($normalized, ['selecione', 'selecionar'])) {
+            return $this->confirm('Selecione a superfície diretamente no modelo para confirmar o alvo. O comando não altera materiais enquanto a seleção não estiver confirmada.');
         }
         if ($selectedId && str_starts_with($selectedId, 'geometry-') && Str::contains($normalized, ['pinte', 'parede', 'piso', 'teto', 'material'])) {
             $expectedKind = $this->requestedSurfaceKind($normalized);
@@ -58,9 +89,11 @@ class SceneCommandInterpreter
                 ));
             }
             $color = $this->color($normalized);
-            $material = Str::contains($normalized, ['piso', 'material', 'madeira', 'porcelanato', 'laminado', 'marmore', 'mármore'])
-                ? $this->material($normalized)
-                : 'paint';
+            $material = $this->explicitMaterial($normalized);
+            if ($material === null && Str::contains($normalized, ['material', 'troque', 'substitua'])) {
+                return $this->confirm('Informe o material desejado para a região selecionada, por exemplo madeira ou porcelanato.');
+            }
+            $material ??= 'paint';
             if ($color === null && $material === 'paint') {
                 return $this->confirm('Confirme a cor para a região destacada antes de alterar a reconstrução.');
             }
@@ -72,28 +105,23 @@ class SceneCommandInterpreter
             ]], 'Material aplicado somente à região selecionada da reconstrução.');
         }
         if (Str::contains($normalized, ['parede atras do sofa', 'parede atrás do sofá', 'parede do sofa', 'parede do sofá'])) {
-            $color = $this->color($normalized);
-            if ($color === null) {
-                return $this->confirm('Qual cor deseja aplicar somente na parede atrás do sofá?');
+            if (! $selectedId) {
+                return $this->confirm('Selecione visualmente a parede atrás do sofá. A posição aproximada do móvel não comprova qual parede deve ser alterada.');
             }
 
-            return $this->ok([['op' => 'paint_surface', 'id' => $this->wallBehindSofaId($graph, $room), 'color' => $color]], 'Somente a parede atrás do sofá foi pintada na cena 3D.');
+            return $this->surfaceAction($graph, $room, $selectedId, 'wall', $this->color($normalized));
         }
         if (Str::contains($normalized, ['parede', 'paredes'])) {
-            $color = $this->color($normalized) ?? '#d9cbb8';
-
-            return $this->ok([['op' => 'paint_kind', 'kind' => 'wall', 'color' => $color, 'room' => $room]], 'Paredes pintadas na pré-visualização. Não altera a foto original.');
+            return $this->surfaceAction($graph, $room, $selectedId, 'wall', $this->color($normalized), null, Str::contains($normalized, ['todas as paredes', 'todas paredes']));
         }
         if (Str::contains($normalized, ['teto'])) {
-            $color = $this->color($normalized) ?? '#f4f1ea';
-
-            return $this->ok([['op' => 'paint_kind', 'kind' => 'ceiling', 'color' => $color, 'room' => $room]], 'Teto atualizado na simulação.');
+            return $this->surfaceAction($graph, $room, $selectedId, 'ceiling', $this->color($normalized));
         }
         if (Str::contains($normalized, ['piso', 'chao', 'chão', 'porcelanato', 'ceramica', 'cerâmica', 'madeira', 'marmore', 'mármore', 'laminado'])) {
-            $material = $this->material($normalized);
-            $color = $this->color($normalized) ?? $this->materialColor($material);
+            $material = $this->explicitMaterial($normalized);
+            $color = $this->color($normalized) ?? ($material ? $this->materialColor($material) : null);
 
-            return $this->ok([['op' => 'paint_kind', 'kind' => 'floor', 'color' => $color, 'material' => $material, 'room' => $room]], 'Piso da simulação atualizado. Acabamento real do imóvel não muda.');
+            return $this->surfaceAction($graph, $room, $selectedId, 'floor', $color, $material);
         }
         if (Str::contains($normalized, ['retire', 'remover', 'remova', 'tire esse', 'tira esse'])) {
             if (! $selectedId) {
@@ -165,21 +193,21 @@ class SceneCommandInterpreter
         }
         if (Str::contains($normalized, ['minimalista'])) {
             return $this->ok([
-                ['op' => 'paint_kind', 'kind' => 'wall', 'color' => '#ece8e1'],
-                ['op' => 'paint_kind', 'kind' => 'floor', 'color' => '#d7d2c8', 'material' => 'porcelain'],
+                ['op' => 'paint_kind', 'kind' => 'wall', 'color' => '#ece8e1', 'room' => $room],
+                ['op' => 'paint_kind', 'kind' => 'floor', 'color' => '#d7d2c8', 'material' => 'porcelain', 'room' => $room],
             ], 'Preset minimalista aplicado só na simulação.');
         }
         if (Str::contains($normalized, ['escandinavo', 'escandinava'])) {
             return $this->ok([
-                ['op' => 'paint_kind', 'kind' => 'wall', 'color' => '#f2efe8'],
-                ['op' => 'paint_kind', 'kind' => 'floor', 'color' => '#c7a77a', 'material' => 'wood'],
+                ['op' => 'paint_kind', 'kind' => 'wall', 'color' => '#f2efe8', 'room' => $room],
+                ['op' => 'paint_kind', 'kind' => 'floor', 'color' => '#c7a77a', 'material' => 'wood', 'room' => $room],
                 ['op' => 'set_lighting', 'preset' => 'soft'],
             ], 'Estilo escandinavo aplicado à simulação com paleta clara, madeira e luz suave.');
         }
         if (Str::contains($normalized, ['luxo', 'luxuosa', 'luxuoso', 'alto padrao', 'alto padrão'])) {
             return $this->ok([
-                ['op' => 'paint_kind', 'kind' => 'wall', 'color' => '#e7dcc8'],
-                ['op' => 'paint_kind', 'kind' => 'floor', 'color' => '#cfc6b8', 'material' => 'marble'],
+                ['op' => 'paint_kind', 'kind' => 'wall', 'color' => '#e7dcc8', 'room' => $room],
+                ['op' => 'paint_kind', 'kind' => 'floor', 'color' => '#cfc6b8', 'material' => 'marble', 'room' => $room],
             ], 'Preset de luxo aplicado só na simulação.');
         }
         if (Str::contains($normalized, ['restaurar', 'original', 'desfazer tudo'])) {
@@ -187,8 +215,8 @@ class SceneCommandInterpreter
         }
         if (Str::contains($normalized, ['moderno', 'moderna'])) {
             return $this->ok([
-                ['op' => 'paint_kind', 'kind' => 'wall', 'color' => '#e4e0d8'],
-                ['op' => 'paint_kind', 'kind' => 'floor', 'color' => '#8b7355', 'material' => 'wood'],
+                ['op' => 'paint_kind', 'kind' => 'wall', 'color' => '#e4e0d8', 'room' => $room],
+                ['op' => 'paint_kind', 'kind' => 'floor', 'color' => '#8b7355', 'material' => 'wood', 'room' => $room],
             ], 'Preset moderno aplicado só na simulação.');
         }
 
@@ -209,14 +237,15 @@ class SceneCommandInterpreter
         };
     }
 
-    private function material(string $normalized): string
+    private function explicitMaterial(string $normalized): ?string
     {
         return match (true) {
             Str::contains($normalized, ['porcelanato']) => 'porcelain',
             Str::contains($normalized, ['madeira']) => 'wood',
             Str::contains($normalized, ['laminado']) => 'laminate',
             Str::contains($normalized, ['marmore', 'mármore']) => 'marble',
-            default => 'ceramic',
+            Str::contains($normalized, ['ceramica']) => 'ceramic',
+            default => null,
         };
     }
 
@@ -280,20 +309,31 @@ class SceneCommandInterpreter
         return null;
     }
 
-    private function wallBehindSofaId(array $graph, string $room): string
+    private function surfaceAction(array $graph, string $room, ?string $selectedId, string $kind, ?string $color, ?string $material = null, bool $all = false): array
     {
-        $fallback = null;
-        foreach ($graph['surfaces'] ?? [] as $surface) {
-            if (($surface['room'] ?? null) !== $room || ($surface['kind'] ?? null) !== 'wall') {
-                continue;
-            }
-            $fallback ??= $surface['id'] ?? null;
-            if (($surface['side'] ?? null) === 'south') {
-                return (string) $surface['id'];
-            }
+        $surfaces = array_values(array_filter($graph['surfaces'] ?? [], fn (array $surface) => ($surface['room'] ?? null) === $room && ($surface['kind'] ?? null) === $kind));
+        if ($color === null) {
+            return $this->confirm('Informe a cor ou o material desejado antes de alterar a superfície.');
+        }
+        if ($surfaces === []) {
+            return $this->confirm('Não encontrei essa superfície no ambiente ativo. Selecione o ambiente e a superfície no editor.');
+        }
+        if ($all) {
+            return $this->ok([['op' => 'paint_kind', 'kind' => $kind, 'color' => $color, 'room' => $room]], 'Paredes do ambiente ativo pintadas na simulação.');
+        }
+        if (! $selectedId && $kind !== 'wall' && count($surfaces) === 1) {
+            $selectedId = $surfaces[0]['id'];
+        }
+        $surface = collect($surfaces)->firstWhere('id', $selectedId);
+        if (! $selectedId || $surface === null) {
+            return $this->confirm('Selecione a superfície correspondente no ambiente ativo. Para alterar todas as paredes, peça explicitamente todas as paredes.');
+        }
+        $action = ['op' => 'paint_surface', 'id' => $surface['id'], 'color' => $color];
+        if ($material !== null) {
+            $action['material'] = $material;
         }
 
-        return (string) ($fallback ?? $room.'-wall-south');
+        return $this->ok([$action], 'Somente a superfície selecionada foi alterada na simulação.');
     }
 
     private function ok(array $actions, string $message): array

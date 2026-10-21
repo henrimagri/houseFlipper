@@ -27,3 +27,11 @@ Requisitos estimados para `playroom_small`: Linux x86_64, driver NVIDIA compatí
 - WSL2 e drivers não foram alterados.
 
 Consequência: contratos e testes estão prontos, mas PatchMatch CUDA, Stereo Fusion real, atlas real e GLB denso ainda não foram executados neste host.
+
+## Auditoria corretiva do master (21/10/2026)
+
+Correção das afirmações anteriores: detectar arquivo PNG não comprovava um atlas ligado à malha. O gate agora decodifica a imagem, verifica UVs finitos/não degenerados, vínculo do material ao atlas e round-trip do GLB. `photometric_fidelity_validated=false` distingue isso de fidelidade fotográfica. Testes PLY cobrem ASCII e binário com texcoords por face; não houve novo atlas real do dataset.
+
+Na recuperação, resultado terminal já gravado é preservado; retry não remove staging ativo. Escopo ausente/corrompido em reconstrução falha fechado, e `result.json` não expõe scope_hash. Caminhos legados de visão/simulação ainda dependem do token interno, sem novo contrato de escopo nesta etapa. Cancelamentos propagam `InterruptedError` antes de capturas de `OSError`.
+
+`COLMAP_POISSON_DEPTH` é padrão 8, clamp 6–10, confirmado contra `poisson_mesher -h` local e enviado explicitamente. Timeout permanece 1.800 s por comando, sem limite total de trabalho/RAM/VRAM ou interrupção imediata do subprocesso. Há um worker por processo e fila em memória, não uma fila distribuída durável. Idempotência por UUID não compara hash do conteúdo. Não declarar implantação de produção concluída com esses limites.

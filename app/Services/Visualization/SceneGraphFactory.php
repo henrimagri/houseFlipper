@@ -107,10 +107,86 @@ class SceneGraphFactory
         ];
     }
 
+    public function addRoom(array $graph, string $type, array $dimensions, bool $furnished): array
+    {
+        $labels = ['living' => 'Sala', 'bedroom' => 'Quarto', 'kitchen' => 'Cozinha', 'bathroom' => 'Banheiro', 'office' => 'Escritório', 'outdoor' => 'Área externa'];
+        if (! isset($labels[$type]) || count($graph['rooms'] ?? []) >= 12) {
+            throw new InvalidArgumentException('Tipo de ambiente inválido ou limite de 12 ambientes atingido.');
+        }
+        $key = $type.'-'.bin2hex(random_bytes(4));
+        $roomGraph = $this->fromBrief(['ambientes' => [['nome' => $key, 'rotulo' => $labels[$type]]]], [], []);
+        if ($type === 'outdoor') {
+            $roomGraph['surfaces'] = array_values(array_filter($roomGraph['surfaces'], fn ($surface) => $surface['kind'] === 'floor'));
+        }
+        $graph = $graph ?: $this->fromBrief([], [], []);
+        $graph['rooms'][] = ['key' => $key, 'label' => $labels[$type], 'classification_status' => 'user', 'provenance' => ['user_created']];
+        $graph['surfaces'] = array_merge($graph['surfaces'], $roomGraph['surfaces']);
+        $graph['room_dimensions'][$key] = array_merge($dimensions, ['source' => 'user']);
+        $graph['active_room'] = $key;
+        $graph['fidelity'] = 'parametric';
+        $graph['disclaimer'] = 'Simulação editável. Medidas informadas pelo usuário; móveis e disposição são propostas, não geometria medida nas fotos.';
+        if ($furnished) {
+            $kinds = match ($type) {
+                'living' => ['sofa', 'table', 'chair', 'plant'],
+                'bedroom' => ['bed', 'wardrobe', 'lamp'],
+                'kitchen' => ['sink', 'table', 'chair'],
+                'bathroom' => ['sink'],
+                'office' => ['table', 'chair', 'wardrobe'],
+                default => ['table', 'chair', 'plant'],
+            };
+            foreach ($kinds as $slot => $kind) {
+                $object = $this->makeObject($key.'-'.$kind.'-'.$slot, $kind, $key, 'conceptual_template', $slot);
+                $object['position'] = [($slot % 2 ? 0.22 : -0.22) * $dimensions['width'], 0, ($slot < 2 ? -0.22 : 0.22) * $dimensions['depth']];
+                $graph['objects'][] = $object;
+            }
+        }
+        $graph['editor_history'] = [];
+        $graph['editor_redo'] = [];
+
+        return $graph;
+    }
+
     public function apply(array $graph, array $actions): array
+    {
+        $fields = ['active_room', 'surfaces', 'objects', 'lighting', 'room_dimensions', 'project_notes'];
+        $snapshot = fn (array $value) => array_intersect_key($value, array_flip($fields));
+        $historyOps = ['undo_scene', 'redo_scene'];
+        if (count($actions) === 1 && in_array($actions[0]['op'] ?? '', $historyOps, true)) {
+            $undo = $actions[0]['op'] === 'undo_scene';
+            $from = $undo ? 'editor_history' : 'editor_redo';
+            $to = $undo ? 'editor_redo' : 'editor_history';
+            $stack = $graph[$from] ?? [];
+            $previous = array_pop($stack);
+            if (! is_array($previous)) {
+                return $graph;
+            }
+            $graph[$to][] = $snapshot($graph);
+            $graph[$to] = array_slice($graph[$to], -12);
+            $graph[$from] = $stack;
+
+            return array_replace(array_diff_key($graph, array_flip($fields)), $snapshot($previous));
+        }
+        if (collect($actions)->contains(fn ($action) => in_array($action['op'] ?? '', $historyOps, true))) {
+            throw new InvalidArgumentException('Desfazer ou refazer deve ser uma operação individual.');
+        }
+        $before = $snapshot($graph);
+        $next = $this->applyOperations($graph, $actions);
+        if ($before !== $snapshot($next)) {
+            $next['editor_history'][] = $before;
+            $next['editor_history'] = array_slice($next['editor_history'], -12);
+            $next['editor_redo'] = [];
+        }
+
+        return $next;
+    }
+
+    private function applyOperations(array $graph, array $actions): array
     {
         foreach ($actions as $action) {
             $op = $action['op'] ?? '';
+            if (in_array($op, ['add_object', 'duplicate'], true) && count($graph['objects'] ?? []) >= 200) {
+                throw new InvalidArgumentException('Limite de 200 objetos por projeto atingido.');
+            }
             if ($op === 'paint_kind') {
                 foreach ($graph['surfaces'] as &$surface) {
                     if (($surface['kind'] ?? '') !== ($action['kind'] ?? '')) {
@@ -125,6 +201,9 @@ class SceneGraphFactory
                     if (isset($action['material'])) {
                         $surface['material'] = $action['material'];
                     }
+                    if (isset($action['finish'])) {
+                        $surface['finish'] = $action['finish'];
+                    }
                 }
                 unset($surface);
             } elseif ($op === 'paint_surface') {
@@ -137,6 +216,9 @@ class SceneGraphFactory
                     }
                     if (isset($action['material'])) {
                         $surface['material'] = $action['material'];
+                    }
+                    if (isset($action['finish'])) {
+                        $surface['finish'] = $action['finish'];
                     }
                 }
                 unset($surface);

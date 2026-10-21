@@ -1,4 +1,6 @@
 import os
+import json
+import hashlib
 from io import BytesIO
 
 from PIL import Image
@@ -11,6 +13,70 @@ from app.main import app
 
 os.environ["AI_WORKER_TOKEN"] = "test-secret"
 client = TestClient(app)
+
+
+def test_reconstruction_artifact_never_falls_back_to_unscoped_access(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("AI_WORKER_ARTIFACT_ROOT", str(tmp_path))
+    job_id = "00000000-0000-4000-8000-000000000020"
+    output = tmp_path / job_id
+    output.mkdir()
+    (output / "model.glb").write_bytes(b"model")
+    url = f"/v1/jobs/{job_id}/artifacts/model.glb"
+    headers = {"X-Worker-Token": "test-secret"}
+    assert client.get(url, headers=headers).status_code == 404
+    (output / "job-status.json").write_text(json.dumps({
+        "status": "processing", "kind": "photogrammetry",
+        "scope_hash": hashlib.sha256(b"a" * 64).hexdigest(),
+    }))
+    (output / "result.json").write_text(json.dumps({"status": "completed", "kind": "photogrammetry"}))
+    assert client.get(url, headers=headers).status_code == 404
+    assert client.get(url, headers={**headers, "X-Worker-Scope": "b" * 64}).status_code == 404
+    assert client.get(url, headers={**headers, "X-Worker-Scope": "a" * 64}).status_code == 200
+
+
+def test_result_download_does_not_disclose_scope_hash(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("AI_WORKER_ARTIFACT_ROOT", str(tmp_path))
+    job_id = "00000000-0000-4000-8000-000000000021"
+    output = tmp_path / job_id
+    output.mkdir()
+    (output / "result.json").write_text(json.dumps({
+        "status": "completed", "kind": "photogrammetry",
+        "scope_hash": hashlib.sha256(b"a" * 64).hexdigest(),
+    }))
+    response = client.get(f"/v1/jobs/{job_id}/artifacts/result.json", headers={
+        "X-Worker-Token": "test-secret", "X-Worker-Scope": "a" * 64,
+    })
+    assert response.status_code == 200
+    assert "scope_hash" not in response.json()
+
+
+def test_corrupted_ownership_metadata_does_not_allow_artifacts(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("AI_WORKER_ARTIFACT_ROOT", str(tmp_path))
+    job_id = "00000000-0000-4000-8000-000000000022"
+    output = tmp_path / job_id
+    output.mkdir()
+    (output / "job-status.json").write_text("broken metadata")
+    (output / "result.json").write_text(json.dumps({
+        "kind": "photogrammetry", "status": "completed",
+        "scope_hash": hashlib.sha256(b"a" * 64).hexdigest(),
+    }))
+    (output / "model.glb").write_bytes(b"model")
+    response = client.get(f"/v1/jobs/{job_id}/artifacts/model.glb", headers={
+        "X-Worker-Token": "test-secret", "X-Worker-Scope": "a" * 64,
+    })
+    assert response.status_code == 404
+
+
+def test_legacy_synchronous_vision_artifact_still_requires_internal_token(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("AI_WORKER_ARTIFACT_ROOT", str(tmp_path))
+    job_id = "00000000-0000-4000-8000-000000000023"
+    output = tmp_path / job_id
+    output.mkdir()
+    (output / "result.json").write_text(json.dumps({"kind": "vision", "status": "completed"}))
+    (output / "mask.png").write_bytes(b"mask")
+    url = f"/v1/jobs/{job_id}/artifacts/mask.png"
+    assert client.get(url).status_code == 401
+    assert client.get(url, headers={"X-Worker-Token": "test-secret"}).status_code == 200
 
 
 def test_worker_requires_service_credential() -> None:

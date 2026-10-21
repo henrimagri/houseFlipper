@@ -158,8 +158,10 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
     Route::get('/visualizations/{subjectType}/{id}/reconstruction-jobs/{job}', [PropertyVisualizationController::class, 'reconstructionJob'])->whereNumber(['id', 'job']);
     Route::delete('/visualizations/{subjectType}/{id}/reconstruction-jobs/{job}', [PropertyVisualizationController::class, 'cancelReconstructionJob'])->whereNumber(['id', 'job']);
     Route::post('/visualizations/{subjectType}/{id}/commands', [PropertyVisualizationController::class, 'command'])->middleware('throttle:visualization-upload')->whereNumber('id');
-    Route::patch('/visualizations/{subjectType}/{id}/scene', [PropertyVisualizationController::class, 'mutate'])->middleware('throttle:visualization-upload')->whereNumber('id');
+    Route::patch('/visualizations/{subjectType}/{id}/scene', [PropertyVisualizationController::class, 'mutate'])->middleware('throttle:visualization-edit')->whereNumber('id');
+    Route::post('/visualizations/{subjectType}/{id}/rooms', [PropertyVisualizationController::class, 'createRoom'])->middleware('throttle:visualization-edit')->whereNumber('id');
     Route::post('/visualizations/{subjectType}/{id}/versions', [PropertyVisualizationController::class, 'storeVersion'])->whereNumber('id');
+    Route::get('/visualizations/{subjectType}/{id}/versions/{versionId}', [PropertyVisualizationController::class, 'previewVersion'])->whereNumber(['id', 'versionId']);
     Route::post('/visualizations/{subjectType}/{id}/versions/{versionId}/restore', [PropertyVisualizationController::class, 'restoreVersion'])->whereNumber('id')->whereNumber('versionId');
     Route::post('/opportunities/{id}/photo-analysis', [PropertyVisualizationController::class, 'analyzePhotos'])->whereNumber('id');
     Route::post('/property-market-analysis', PropertyMarketAnalysisController::class)->middleware('throttle:market-data');

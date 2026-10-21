@@ -54,18 +54,18 @@ class SceneCommandInterpreterTest extends TestCase
     public function test_wall_behind_sofa_is_painted_without_changing_other_walls(): void
     {
         $graph = $this->graph();
-        $command = app(SceneCommandInterpreter::class)->interpret('Pinte apenas a parede atrás do sofá de azul', $graph);
+        $command = app(SceneCommandInterpreter::class)->interpret('Pinte apenas a parede atrás do sofá de azul', $graph, 'living-wall-north');
 
         $this->assertTrue($command['ok']);
         $this->assertSame('paint_surface', $command['actions'][0]['op']);
-        $this->assertSame('living-wall-south', $command['actions'][0]['id']);
+        $this->assertSame('living-wall-north', $command['actions'][0]['id']);
 
         $updated = app(SceneGraphFactory::class)->apply($graph, $command['actions']);
-        $this->assertSame('#9bb7d4', collect($updated['surfaces'])->firstWhere('id', 'living-wall-south')['color']);
-        $this->assertSame('#eeeeee', collect($updated['surfaces'])->firstWhere('id', 'living-wall-north')['color']);
+        $this->assertSame('#9bb7d4', collect($updated['surfaces'])->firstWhere('id', 'living-wall-north')['color']);
+        $this->assertSame('#eeeeee', collect($updated['surfaces'])->firstWhere('id', 'living-wall-south')['color']);
     }
 
-    public function test_wall_behind_sofa_supports_legacy_single_wall_graphs(): void
+    public function test_wall_behind_sofa_requires_visual_selection_even_in_legacy_graphs(): void
     {
         $graph = [
             'active_room' => 'living',
@@ -74,8 +74,9 @@ class SceneCommandInterpreterTest extends TestCase
 
         $command = app(SceneCommandInterpreter::class)->interpret('Pinte apenas a parede atrás do sofá de azul', $graph);
 
-        $this->assertTrue($command['ok']);
-        $this->assertSame('living-wall', $command['actions'][0]['id']);
+        $this->assertFalse($command['ok']);
+        $this->assertTrue($command['requires_confirmation']);
+        $this->assertSame([], $command['actions']);
     }
 
     public function test_replacing_an_important_object_requests_selection_confirmation(): void
@@ -102,11 +103,13 @@ class SceneCommandInterpreterTest extends TestCase
     {
         $graph = $this->graph();
         $graph['room_dimensions']['living'] = ['width' => 6, 'depth' => 4, 'height' => 2.8, 'source' => 'user'];
-        $command = app(SceneCommandInterpreter::class)->interpret('Faça uma estimativa de custo', $graph);
+        $command = app(SceneCommandInterpreter::class)->interpret('Faça uma estimativa de custo considerando R$ 500,00 por m²', $graph);
 
         $this->assertTrue($command['ok']);
         $this->assertSame('set_project_brief', $command['actions'][0]['op']);
         $this->assertStringContainsString('24,00 m²', $command['message']);
+        $this->assertStringContainsString('12.000,00', $command['message']);
+        $this->assertStringContainsString('informado por você', $command['message']);
         $updated = app(SceneGraphFactory::class)->apply($graph, $command['actions']);
         $this->assertSame('cost_estimate', $updated['project_notes'][0]['category']);
         $this->assertSame('structured_ai_action', $updated['project_notes'][0]['source']);
@@ -179,6 +182,92 @@ class SceneCommandInterpreterTest extends TestCase
             'expected_kind' => 'wall_candidate',
             'color' => '#9bb7d4',
         ]]);
+    }
+
+    public function test_singular_wall_requires_selection_and_explicit_color(): void
+    {
+        $interpreter = app(SceneCommandInterpreter::class);
+        foreach ([['Pinte esta parede de azul', null], ['Pinte esta parede', 'living-wall-north']] as [$text, $selection]) {
+            $result = $interpreter->interpret($text, $this->graph(), $selection);
+            $this->assertFalse($result['ok']);
+            $this->assertTrue($result['requires_confirmation']);
+            $this->assertSame([], $result['actions']);
+        }
+        $graph = $this->graph();
+        $result = $interpreter->interpret('Pinte esta parede de azul', $graph, 'living-wall-north');
+        $updated = app(SceneGraphFactory::class)->apply($graph, $result['actions']);
+        $this->assertSame('#9bb7d4', collect($updated['surfaces'])->firstWhere('id', 'living-wall-north')['color']);
+        $this->assertSame('#eeeeee', collect($updated['surfaces'])->firstWhere('id', 'living-wall-south')['color']);
+    }
+
+    public function test_selection_mismatch_never_changes_another_surface_or_room(): void
+    {
+        $graph = $this->graph();
+        $graph['surfaces'][] = ['id' => 'bedroom-wall', 'kind' => 'wall', 'room' => 'bedroom', 'color' => '#123456'];
+        foreach (['living-floor', 'bedroom-wall', 'missing-wall'] as $id) {
+            $result = app(SceneCommandInterpreter::class)->interpret('Pinte esta parede de azul', $graph, $id);
+            $this->assertFalse($result['ok']);
+            $this->assertSame([], $result['actions']);
+        }
+        foreach (['Pinte todas as paredes de azul', 'Aplique um estilo escandinavo', 'Aplique um estilo moderno', 'Aplique um estilo minimalista', 'Aplique um estilo de luxo'] as $text) {
+            $result = app(SceneCommandInterpreter::class)->interpret($text, $graph);
+            $updated = app(SceneGraphFactory::class)->apply($graph, $result['actions']);
+            $this->assertSame('#123456', collect($updated['surfaces'])->firstWhere('id', 'bedroom-wall')['color']);
+        }
+    }
+
+    public function test_cost_estimates_do_not_invent_prices_or_dimensions(): void
+    {
+        $graph = $this->graph();
+        $graph['room_dimensions']['living'] = ['width' => 6, 'depth' => 4, 'source' => 'user'];
+        $missingPrice = app(SceneCommandInterpreter::class)->interpret('Faça uma estimativa de custo', $graph);
+        $missingDimensions = app(SceneCommandInterpreter::class)->interpret('Faça uma estimativa de custo com R$ 500 por m²', $this->graph());
+        foreach ([$missingPrice, $missingDimensions] as $result) {
+            $this->assertFalse($result['ok']);
+            $this->assertTrue($result['requires_confirmation']);
+            $this->assertSame([], $result['actions']);
+        }
+    }
+
+    public function test_generic_undo_does_not_claim_or_change_reconstruction_history(): void
+    {
+        $graph = app(SceneGraphFactory::class)->apply($this->graph(), [['op' => 'set_reconstruction_material', 'id' => 'geometry-wall_candidate', 'color' => '#123456']]);
+        foreach (['Desfaça a última alteração', 'Refaça a última alteração'] as $text) {
+            $result = app(SceneCommandInterpreter::class)->interpret($text, $graph, 'living-wall-north');
+            $this->assertFalse($result['ok']);
+            $this->assertSame([], $result['actions']);
+        }
+        $empty = app(SceneCommandInterpreter::class)->interpret('Desfaça a última alteração', $this->graph(), 'geometry-wall_candidate');
+        $this->assertFalse($empty['ok']);
+    }
+
+    public function test_scene_undo_and_redo_restore_the_parametric_scene_without_changing_reconstruction(): void
+    {
+        $factory = app(SceneGraphFactory::class);
+        $interpreter = app(SceneCommandInterpreter::class);
+        $graph = $factory->apply($this->graph(), [['op' => 'set_reconstruction_material', 'id' => 'geometry-wall_candidate', 'color' => '#123456']]);
+        $paint = $interpreter->interpret('Pinte esta parede de azul', $graph, 'living-wall-north');
+        $painted = $factory->apply($graph, $paint['actions']);
+        $undo = $interpreter->interpret('Desfaça a última alteração', $painted, 'living-wall-north');
+        $this->assertSame('undo_scene', $undo['actions'][0]['op']);
+        $restored = $factory->apply($painted, $undo['actions']);
+        $this->assertSame('#eeeeee', collect($restored['surfaces'])->firstWhere('id', 'living-wall-north')['color']);
+        $this->assertSame($graph['reconstruction_overrides'], $restored['reconstruction_overrides']);
+        $redo = $interpreter->interpret('Refaça a última alteração', $restored);
+        $this->assertSame('redo_scene', $redo['actions'][0]['op']);
+        $reapplied = $factory->apply($restored, $redo['actions']);
+        $this->assertSame('#9bb7d4', collect($reapplied['surfaces'])->firstWhere('id', 'living-wall-north')['color']);
+        $this->assertSame($graph['reconstruction_overrides'], $reapplied['reconstruction_overrides']);
+    }
+
+    public function test_selection_only_and_unspecified_material_commands_do_not_mutate_the_graph(): void
+    {
+        foreach ([['Selecione apenas a parede atrás do sofá', 'living-wall-north'], ['Troque o material do piso', 'geometry-floor_candidate'], ['Troque o material do piso', 'living-floor']] as [$text, $selection]) {
+            $result = app(SceneCommandInterpreter::class)->interpret($text, $this->graph(), $selection);
+            $this->assertFalse($result['ok']);
+            $this->assertTrue($result['requires_confirmation']);
+            $this->assertSame([], $result['actions']);
+        }
     }
 
     private function graph(): array

@@ -331,3 +331,9 @@ O dataset autorizado `playroom_small` e seus resultados históricos não foram r
 O pipeline denso foi completado até o contrato de texturização: undistortion, PatchMatch geométrico, Stereo Fusion, meshing, `mesh_texturer`, descoberta do atlas, conversão GLB e gate. Testes simulados verificam ordem, argumentos, cancelamento e rejeição. A sonda local confirmou COLMAP 4.2.1 sem GPU. Docker/Linux/CUDA não estavam disponíveis e não foram instalados; portanto não existem nova nuvem densa, malha, atlas, métricas, tempo ou VRAM reais nesta fase.
 
 O próximo ensaio autorizado deve usar a imagem Linux fixada por digest, registrar hashes e recursos e comparar a malha própria com a referência somente após a geração. Sem esse ensaio e sem inspeção do canvas, reconstrução densa e fototexturização comercial permanecem pendentes.
+
+## 21/10/2026 — Master ASTRA: auditoria do gate e QA paramétrico
+
+Nenhuma fotografia real foi reprocessada para reconstrução neste marco. Fase 8, métricas e atlas ativos preservados. O gate denso agora rejeita atlas inválido, falta de UV/material e perda de textura na reimportação GLB; testes usam fixtures técnicas, não um novo imóvel reconstruído. `photometric_fidelity_validated=false` continua explícito. Cancelamento não é convertido em fallback por `OSError`; Poisson recebe depth padrão 8 (6–10). Não há nova medição de geometria, tempo de MVS ou VRAM.
+
+O navegador oficial permitiu inspecionar o **editor paramétrico**, com pintura, seleção, câmeras, versões e recarga reais. Isso encerra parte da pendência de acesso visual ao editor, mas não valida visualmente um novo GLB denso. Capturas e resultados estão em `MASTER_EDITOR_VALIDATION.md`; reconstrução CUDA permanece pendente.

@@ -17,8 +17,10 @@ use App\Services\Ai\ProductEntitlement;
 use App\Services\DocumentMalwareScanner;
 use App\Support\OpportunityPhotoPathPolicy;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PropertyVisualizationService
@@ -561,6 +563,26 @@ class PropertyVisualizationService
         return substr($hex, 0, 8).'-'.substr($hex, 8, 4).'-4'.substr($hex, 13, 3).'-a'.substr($hex, 17, 3).'-'.substr($hex, 20, 12);
     }
 
+    public function createRoom(User $user, string $subjectType, int $subjectId, array $input): array
+    {
+        $visualization = $this->show($user, $subjectType, $subjectId);
+        DB::transaction(function () use ($visualization, $user, $input): void {
+            $locked = PropertyVisualization::query()->lockForUpdate()->findOrFail($visualization->id);
+            $graph = $locked->scene_graph ?? [];
+            abort_if(count($graph['rooms'] ?? []) >= 12, 422, 'O projeto já possui 12 ambientes.');
+            $next = $this->graphs->addRoom($graph, $input['type'], $input['dimensions'], $input['furnished'] ?? false);
+            if ($graph !== []) {
+                $locked->versions()->create(['user_id' => $user->id, 'label' => 'Antes de adicionar ambiente', 'graph' => $graph]);
+            }
+            $locked->fill(['scene_graph' => $next, 'scene_status' => 'ready'])->save();
+            if ($graph === []) {
+                $locked->versions()->create(['user_id' => $user->id, 'label' => 'original', 'graph' => $next]);
+            }
+        });
+
+        return $this->payload($visualization->fresh('assets', 'versions'), $user, $subjectType, $subjectId);
+    }
+
     public function rebuild(User $user, string $subjectType, int $subjectId): array
     {
         $visualization = $this->show($user, $subjectType, $subjectId);
@@ -640,32 +662,46 @@ class PropertyVisualizationService
     public function applyCommand(User $user, string $subjectType, int $subjectId, string $message, ?string $selectedId = null): array
     {
         $visualization = $this->show($user, $subjectType, $subjectId);
-        $graph = $visualization->scene_graph ?? $this->rebuild($user, $subjectType, $subjectId)['scene_graph'];
-        $parsed = $this->commands->interpret($message, $graph ?? [], $selectedId);
-        if (! ($parsed['ok'] ?? false)) {
-            return ['command' => $parsed, 'data' => $this->payload($visualization, $user, $subjectType, $subjectId)];
-        }
-        $actions = $parsed['actions'];
-        if (collect($actions)->contains(fn (array $action) => ($action['op'] ?? '') === 'restore_original')) {
-            $original = $visualization->versions()->where('label', 'original')->latest('id')->first();
-            if ($original) {
-                $visualization->fill(['scene_graph' => $original->graph])->save();
-            }
-        } else {
-            $visualization->fill(['scene_graph' => $this->graphs->apply($graph ?? [], $actions)])->save();
+        if (! is_array($visualization->scene_graph)) {
+            $this->rebuild($user, $subjectType, $subjectId);
         }
 
-        return ['command' => $parsed, 'data' => $this->payload($visualization->fresh('assets', 'versions'), $user, $subjectType, $subjectId)];
+        return DB::transaction(function () use ($visualization, $user, $subjectType, $subjectId, $message, $selectedId): array {
+            $visualization = PropertyVisualization::query()->lockForUpdate()->findOrFail($visualization->id);
+            $graph = $visualization->scene_graph;
+            $parsed = $this->commands->interpret($message, $graph ?? [], $selectedId);
+            if (! ($parsed['ok'] ?? false)) {
+                return ['command' => $parsed, 'data' => $this->payload($visualization, $user, $subjectType, $subjectId)];
+            }
+            $actions = $parsed['actions'];
+            if (collect($actions)->contains(fn (array $action) => ($action['op'] ?? '') === 'restore_original')) {
+                $original = $visualization->versions()->where('label', 'original')->latest('id')->first();
+                if ($original) {
+                    $visualization->fill(['scene_graph' => $original->graph])->save();
+                }
+            } else {
+                $visualization->fill(['scene_graph' => $this->graphs->apply($graph ?? [], $actions)])->save();
+            }
+
+            return ['command' => $parsed, 'data' => $this->payload($visualization->fresh('assets', 'versions'), $user, $subjectType, $subjectId)];
+        });
     }
 
     public function applyActions(User $user, string $subjectType, int $subjectId, array $actions): array
     {
         $visualization = $this->show($user, $subjectType, $subjectId);
-        $graph = $visualization->scene_graph;
-        if (! is_array($graph)) {
-            $graph = $this->rebuild($user, $subjectType, $subjectId)['scene_graph'];
+        if (! is_array($visualization->scene_graph)) {
+            $this->rebuild($user, $subjectType, $subjectId);
         }
-        $visualization->fill(['scene_graph' => $this->graphs->apply($graph ?? [], $actions)])->save();
+        DB::transaction(function () use ($visualization, $actions): void {
+            $locked = PropertyVisualization::query()->lockForUpdate()->findOrFail($visualization->id);
+            try {
+                $next = $this->graphs->apply($locked->scene_graph ?? [], $actions);
+            } catch (\InvalidArgumentException $exception) {
+                throw ValidationException::withMessages(['actions' => $exception->getMessage()]);
+            }
+            $locked->fill(['scene_graph' => $next])->save();
+        });
 
         return $this->payload($visualization->fresh('assets', 'versions'), $user, $subjectType, $subjectId);
     }
@@ -689,6 +725,16 @@ class PropertyVisualizationService
         $visualization->fill(['scene_graph' => $version->graph])->save();
 
         return $this->payload($visualization->fresh('assets', 'versions'), $user, $subjectType, $subjectId);
+    }
+
+    public function previewVersion(User $user, string $subjectType, int $subjectId, int $versionId): array
+    {
+        $visualization = $this->show($user, $subjectType, $subjectId);
+        $version = $visualization->versions()->whereKey($versionId)->firstOrFail();
+        // In-memory presentation only; comparison never overwrites the saved scene.
+        $visualization->scene_graph = $version->graph;
+
+        return ['label' => $version->label, 'graph' => $this->withPhotoUrls($visualization, $subjectType, $subjectId)];
     }
 
     private function importOpportunityPhotos(User $user, PropertyVisualization $visualization, int $opportunityId): void

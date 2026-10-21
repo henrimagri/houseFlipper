@@ -501,3 +501,13 @@ O produto agora separa A) reconstrução observada, B) ambiente editável aproxi
 Comandos estruturados foram ampliados para estilo escandinavo, proposta preliminar, texto de apresentação e estimativa conceitual por área. Notas ficam no grafo com `source=structured_ai_action`; nenhuma operação executa JavaScript. DETR, SAM 2 e Depth Anything V2 não foram retreinados. As lacunas mensuráveis continuam classes arquitetônicas, materiais e correspondência densa; nenhum fine-tuning visual foi iniciado sem dataset autorizado, licença e benchmark.
 
 Validação: Python completo **64/64**; Laravel **70/70, 303 assertions**; frontend **12/12**, TypeScript e build Vite. Não há nova aprovação de canvas: o navegador oficial recusou adquirir a aba local pela política de URL, e nenhum contorno foi usado. Detalhes: `docs/ai/GPU_DENSE_WORKER.md`.
+
+## 21/10/2026 — Master ASTRA: criação editável e validação efetiva do canvas
+
+Marco implementado e testado, prontidão comercial global ainda parcial. Criar ambientes sem fotografias, seis templates com medidas informadas, seleção individual de seis superfícies, acabamentos, histórico persistido de 12 operações, comparação de versões sem escrita e restauração. Câmera responsiva, rolagem de tela cheia, liberação de recursos Three.js e comandos espaciais conservadores corrigidos. Laravel mantém autorização e bloqueio transacional. Estimativas monetárias arbitrárias foram removidas.
+
+Worker: staging de retry preservado, recuperação de resultados terminais, escopo falhando fechado, cancelamento propagado, Poisson limitado por depth e atlas com vínculo UV/material verificado após round-trip GLB. Sem execução densa CUDA nem promoção de malha. Fase 8 preservada; nenhuma métrica geométrica nova.
+
+Testes: Laravel 87/87, 438 assertions; Python 83/83 (warning da fixture UV inválido); frontend 12/12 verificações estáticas; TypeScript/Vite aprovados. QA real no navegador: criação, pintura isolada, seleção por clique, rotação/zoom, vistas frontal/lateral/superior, undo/redo, recarga, comparação de versão e rejeição de parede com teto selecionado. Tela móvel 390×844 inspecionada e corrigida. Evidências, caminhos, comandos e limites: `MASTER_EDITOR_VALIDATION.md`. Inventário amplo: `COMMERCIAL_READINESS_MATRIX.md`.
+
+Próximo marco: máscara manual verdadeira sobre fotografia, sem chamar pontos SAM de pincel raster. Catálogo, aberturas, performance, streaming, cobrança e demais requisitos permanecem parciais; não houve declaração de sistema comercial concluído.

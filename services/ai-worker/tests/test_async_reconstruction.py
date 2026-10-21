@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 
 from app import async_reconstruction
@@ -9,6 +10,53 @@ from app import async_reconstruction
 class ImmediateExecutor:
     def submit(self, callback, *args):
         callback(*args)
+
+
+def test_retry_does_not_remove_inputs_of_queued_job(tmp_path: Path, monkeypatch) -> None:
+    class PendingExecutor:
+        def submit(self, callback, *args):
+            pass
+
+    job_id = "00000000-0000-4000-8000-000000000010"
+    source = tmp_path / ".staging" / job_id / "photo.jpg"
+    source.parent.mkdir(parents=True)
+    source.write_bytes(b"authorized photo")
+    monkeypatch.setattr(async_reconstruction, "_executor", PendingExecutor())
+    for _ in range(2):
+        async_reconstruction.submit_reconstruction(
+            inputs=[source], artifact_root=tmp_path, job_id=job_id, scope="a" * 64,
+        )
+    assert source.read_bytes() == b"authorized photo"
+
+
+def test_recovery_preserves_completed_result_despite_stale_progress(tmp_path: Path) -> None:
+    job_id = "00000000-0000-4000-8000-000000000011"
+    output = tmp_path / job_id
+    output.mkdir()
+    scope_hash = hashlib.sha256(b"a" * 64).hexdigest()
+    (output / "job-status.json").write_text(json.dumps({
+        "status": "processing", "scope_hash": scope_hash,
+    }))
+    result = {"status": "completed", "artifacts": {"glb": "model.glb"}}
+    (output / "result.json").write_text(json.dumps(result))
+    assert async_reconstruction.recover_interrupted_jobs(tmp_path) == 0
+    recovered = async_reconstruction.read_job(tmp_path, job_id)
+    assert recovered["status"] == "completed"
+    assert recovered["artifacts"] == result["artifacts"]
+    assert async_reconstruction.scope_matches(recovered, "a" * 64)
+
+
+def test_reader_preserves_scope_during_pipeline_result_write(tmp_path: Path) -> None:
+    job_id = "00000000-0000-4000-8000-000000000012"
+    output = tmp_path / job_id
+    output.mkdir()
+    (output / "job-status.json").write_text(json.dumps({
+        "status": "processing", "scope_hash": hashlib.sha256(b"a" * 64).hexdigest(),
+    }))
+    (output / "result.json").write_text('{"status":')
+    assert async_reconstruction.read_job(tmp_path, job_id)["status"] == "processing"
+    (output / "result.json").write_text(json.dumps({"status": "completed"}))
+    assert async_reconstruction.scope_matches(async_reconstruction.read_job(tmp_path, job_id), "a" * 64)
 
 
 def test_submission_persists_progress_and_final_result(tmp_path: Path, monkeypatch) -> None:
@@ -37,6 +85,8 @@ def test_submission_persists_progress_and_final_result(tmp_path: Path, monkeypat
     assert accepted["status"] == "queued"
     completed = async_reconstruction.read_job(tmp_path, job_id)
     assert completed["status"] == "completed"
+    assert json.loads((tmp_path / job_id / "job-status.json").read_text())["status"] == "completed"
+    assert async_reconstruction.recover_interrupted_jobs(tmp_path) == 0
     assert async_reconstruction.scope_matches(completed, "a" * 64)
     assert not staging.exists()
 
