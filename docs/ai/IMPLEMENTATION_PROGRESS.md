@@ -265,3 +265,25 @@ Verificações executadas sobre o estado integrado:
 A preparação do commit exclui por `.gitignore` o `.env`, datasets e resultados reais em `storage/app`, ambientes virtuais, logs do worker, pesos/tokenizer locais, malhas e texturas de referência do Eyeful Tower e duplicatas de execuções fotográficas. Os dois GLBs do catálogo de móveis permanecem porque são ativos redistribuíveis do produto, acompanhados por `frontend/public/models/furniture/LICENSES.md`. As fixtures multivista versionadas são sintéticas e possuem manifesto próprio.
 
 Pendências registradas: migrar os eventos de inicialização do FastAPI para `lifespan`, dividir os chunks grandes do frontend e executar reconstrução estéreo densa em ambiente Linux/CUDA antes de qualquer aprovação comercial.
+
+## 21/10/2026 — Ponte local ChatGPT ↔ Codex CLI no Windows
+
+A ponte local foi estabilizada em `docs/ai/bridge.ps1`. A raiz é descoberta a partir da localização do script e validada por `.git`, Laravel e frontend; caminhos relativos não dependem mais do diretório atual. Git usa `git -C`, a branch `Correção-visua/proteção` é comparada exatamente e o script UTF-8 com BOM foi validado no Windows PowerShell 5.1.26100.9711 e PowerShell 7.6.5.
+
+Controles implementados: validação da CLI e do login sem expor credenciais, esquema e limite de 32 KiB para a tarefa, origem local humana, aprovação explícita, lock exclusivo, bloqueio de `Task-ID`/SHA-256 duplicado, timeout com encerramento da árvore de processos, código de saída preservado, estado local e relatórios ignorados pelo Git, além de filtragem de padrões comuns de segredos. Os atalhos em `tools/ai-bridge` permitem verificar, consultar e executar sem digitar comandos no PowerShell.
+
+Evidências executadas:
+
+- `codex-cli 0.163.0-alpha.10.2` encontrado e autenticado via ChatGPT;
+- `check` e `status` aprovados a partir de `C:\WINDOWS\system32` em PowerShell 7 e Windows PowerShell 5.1;
+- caminho relativo `RepoPath=..\..` resolvido em relação ao script e `TaskPath` resolvido em relação ao repositório;
+- tarefa sem cabeçalho rejeitada e execução sem `-Approve` bloqueada;
+- E2E real com `codex exec`, `workspace-write` e tarefa diagnóstica: código 0 em 35,923 s, sem alteração de arquivos pelo agente;
+- segunda execução da mesma tarefa rejeitada por ID/hash;
+- timeout de 5 s terminou com código 124, encerrou a árvore do processo e produziu relatório local;
+- GitHub remoto e push em modo `--dry-run` aprovados para a branch autorizada; a indisponibilidade anterior de escrita em issues (HTTP 403) permanece registrada;
+- `git diff --check` aprovado.
+
+Arquivos locais preservados e não versionados por `.git/info/exclude`: `NEXT_TASK.md`, `Novo(a) Documento de Texto.txt`, `bridge.ps1.backup` e `bridge.ps1.bak2`. Nenhum foi apagado.
+
+Limite real: não existe no repositório um canal oficial autenticado capaz de receber automaticamente uma conversa privada do ChatGPT. A entrada operacional permanece um arquivo local revisado e aprovado por uma pessoa. O retorno ocorre pelos commits enviados à branch que o monitor configurado consulta; cookies e tokens de sessão não são usados. O desenho de um receptor automático fica pendente até existir um canal oficial com credencial de serviço e permissão explícita.
