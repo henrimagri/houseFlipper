@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from app.calibrated_depth_fusion import Camera, View, _fit_metric_depth, _fuse_surface_mesh, _voxel_fuse, write_binary_ply
+from app.calibrated_depth_fusion import Camera, View, _fit_metric_depth, _fuse_surface_mesh, _topology_metrics, _voxel_fuse, write_binary_ply
 
 
 def test_metric_depth_fit_uses_sparse_geometry_without_reference_mesh() -> None:
@@ -78,3 +78,19 @@ def test_multiview_surface_fusion_keeps_faces_and_aligns_opposite_normals() -> N
         "removed_degenerate_faces": 0,
         "removed_duplicate_faces": 2,
     }
+
+
+def test_topology_metrics_distinguish_open_and_nonmanifold_edges() -> None:
+    import trimesh
+
+    mesh = trimesh.Trimesh(
+        vertices=np.asarray([[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1]], dtype=float),
+        faces=np.asarray([[0, 1, 2], [1, 0, 3], [0, 1, 4]], dtype=np.int64),
+        process=False,
+    )
+
+    report = _topology_metrics(mesh)
+
+    assert report["boundary_edges"] == 6
+    assert report["nonmanifold_edges"] == 1
+    assert report["watertight"] is False

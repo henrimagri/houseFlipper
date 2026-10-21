@@ -225,7 +225,10 @@ test('property visualization separates photo editing, scene creation, and valida
   assert.match(viewer, /Falha ao abrir o modelo/);
   assert.match(viewer, /outputColorSpace = THREE\.SRGBColorSpace/);
   assert.match(viewer, /toneMapping = THREE\.ACESFilmicToneMapping/);
-  assert.match(viewer, /const thinnestAxis = dimensions\.indexOf/);
+  assert.match(viewer, /viewPreset === 'top'/);
+  assert.match(viewer, /Confiança geométrica estimada/);
+  assert.match(viewer, /Desmarcar superfície/);
+  assert.match(viewer, /Refazer/);
   assert.match(viewer, /side: THREE\.DoubleSide/);
   assert.match(viewer, /vertexColors: true/);
   assert.match(viewer, /Math\.tan\(fovRadians \/ 2\)\) \* 1\.25/);

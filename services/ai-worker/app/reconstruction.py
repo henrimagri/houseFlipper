@@ -442,11 +442,18 @@ def reconstruct(
     artifact_root: Path,
     *,
     job_id: str | None = None,
+    method: str = "auto",
+    cancel: Callable[[], bool] | None = None,
     progress: Callable[[str, int], None] | None = None,
 ) -> dict[str, Any]:
     def report(stage: str, percent: int) -> None:
+        if cancel and cancel():
+            raise InterruptedError("Reconstrução cancelada pelo usuário.")
         if progress is not None:
             progress(stage, percent)
+
+    if method not in {"auto", "calibrated", "tsdf", "dense_colmap"}:
+        raise ValueError("Método de reconstrução inválido.")
 
     report("validating_photos", 5)
     executable = colmap_executable()
@@ -513,13 +520,22 @@ def reconstruct(
 
     report("reconstructing_dense", 64)
     try:
-        dense_reconstruction = run_dense_reconstruction(
-            executable=executable,
-            images=images,
-            sparse_model=model,
-            output=output,
-            capability=dense_capability,
-        )
+        if method in {"auto", "dense_colmap"}:
+            dense_reconstruction = run_dense_reconstruction(
+                executable=executable,
+                images=images,
+                sparse_model=model,
+                output=output,
+                capability=dense_capability,
+            )
+        else:
+            dense_reconstruction = {
+                "status": "skipped",
+                "capability": dense_capability,
+                "geometry_quality": unavailable_geometry_quality("Método denso não solicitado.", method="dense_photogrammetry"),
+                "artifacts": {"point_cloud": None, "mesh": None, "glb": None},
+                "timings": {},
+            }
     except (ImportError, OSError, RuntimeError, ValueError) as exception:
         (output / "dense-reconstruction-error.txt").write_text(str(exception), encoding="utf-8")
         dense_reconstruction = {
@@ -537,7 +553,7 @@ def reconstruct(
     calibrated_enabled = os.environ.get(
         "AI_CALIBRATED_DEPTH_FALLBACK_ENABLED", "true" if os.name == "nt" else "false",
     ).strip().lower() in {"1", "true", "yes", "on"}
-    if dense_reconstruction["status"] != "completed" and calibrated_enabled:
+    if dense_reconstruction["status"] != "completed" and calibrated_enabled and method != "dense_colmap":
         report("calibrating_depth", 68)
         try:
             from .calibrated_depth_fusion import reconstruct_calibrated_depth
@@ -561,31 +577,47 @@ def reconstruct(
                 maximum_views=min(42, len(image_paths)),
                 stride=max(3, min(int(os.environ.get("AI_DEPTH_FUSION_STRIDE", "7")), 16)),
                 voxel_size=max(0.005, min(float(os.environ.get("AI_DEPTH_FUSION_VOXEL", "0.01")), 0.05)),
+                method="tsdf" if method == "tsdf" else "calibrated",
+                cancel=cancel,
                 progress=calibrated_progress,
             )
             fallback_artifacts = calibrated_fallback["artifacts"]
-            standard_cloud = output / "dense.ply"
-            standard_mesh = output / "dense-mesh.ply"
-            standard_glb = output / "dense-model.glb"
-            shutil.copy2(calibrated_output / fallback_artifacts["dense_point_cloud"], standard_cloud)
-            shutil.copy2(calibrated_output / fallback_artifacts["clean_mesh"], standard_mesh)
-            shutil.copy2(calibrated_output / fallback_artifacts["glb"], standard_glb)
-            dense_reconstruction = {
-                "status": "completed",
-                "capability": dense_capability,
-                "method": calibrated_fallback["method"],
-                "geometry_quality": calibrated_fallback["geometry_quality"],
-                "photo_texturing": calibrated_fallback.get("photo_texturing"),
-                "surface_stitching": calibrated_fallback.get("surface_stitching"),
-                "artifacts": {
-                    "point_cloud": standard_cloud.name,
-                    "mesh": standard_mesh.name,
-                    "glb": standard_glb.name,
-                },
-                "timings": {"calibrated_depth_seconds": calibrated_fallback["elapsed_seconds"]},
-                "limitations": calibrated_fallback["limitations"],
-            }
-            dense_artifacts = dense_reconstruction["artifacts"]
+            if calibrated_fallback["status"] != "completed" or not fallback_artifacts.get("glb"):
+                dense_reconstruction = {
+                    "status": "rejected",
+                    "capability": dense_capability,
+                    "method": calibrated_fallback["method"],
+                    "geometry_quality": calibrated_fallback["geometry_quality"],
+                    "photo_texturing": calibrated_fallback.get("photo_texturing"),
+                    "surface_stitching": calibrated_fallback.get("surface_stitching"),
+                    "artifacts": {"point_cloud": None, "mesh": None, "glb": None},
+                    "timings": {"calibrated_depth_seconds": calibrated_fallback["elapsed_seconds"]},
+                    "limitations": calibrated_fallback["limitations"],
+                }
+                dense_artifacts = dense_reconstruction["artifacts"]
+            else:
+                standard_cloud = output / "dense.ply"
+                standard_mesh = output / "dense-mesh.ply"
+                standard_glb = output / "dense-model.glb"
+                shutil.copy2(calibrated_output / fallback_artifacts["dense_point_cloud"], standard_cloud)
+                shutil.copy2(calibrated_output / fallback_artifacts["clean_mesh"], standard_mesh)
+                shutil.copy2(calibrated_output / fallback_artifacts["glb"], standard_glb)
+                dense_reconstruction = {
+                    "status": "completed",
+                    "capability": dense_capability,
+                    "method": calibrated_fallback["method"],
+                    "geometry_quality": calibrated_fallback["geometry_quality"],
+                    "photo_texturing": calibrated_fallback.get("photo_texturing"),
+                    "surface_stitching": calibrated_fallback.get("surface_stitching"),
+                    "artifacts": {
+                        "point_cloud": standard_cloud.name,
+                        "mesh": standard_mesh.name,
+                        "glb": standard_glb.name,
+                    },
+                    "timings": {"calibrated_depth_seconds": calibrated_fallback["elapsed_seconds"]},
+                    "limitations": calibrated_fallback["limitations"],
+                }
+                dense_artifacts = dense_reconstruction["artifacts"]
         except (ImportError, OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exception:
             (output / "calibrated-depth-error.txt").write_text(str(exception), encoding="utf-8")
             calibrated_fallback = {"status": "failed", "error": f"{type(exception).__name__}: {exception}"}
@@ -600,6 +632,8 @@ def reconstruct(
         "job_id": job_id,
         "status": "completed",
         "kind": "photogrammetry",
+        "requested_method": method,
+        "actual_method": dense_reconstruction.get("method") or geometry_quality.get("method"),
         "colmap": {"version": "4.2.1", "gpu_build": dense_capability["gpu_build_confirmed"], "license": "BSD-3-Clause"},
         "quality_gate": quality,
         "geometry_quality": geometry_quality,

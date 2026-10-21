@@ -15,7 +15,7 @@ enable_native_diagnostics()
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
-from .async_reconstruction import read_job, submit_reconstruction
+from .async_reconstruction import cancel_job, read_job, submit_reconstruction
 from .reconstruction import (
     colmap_executable,
     dense_reconstruction_capability,
@@ -173,11 +173,14 @@ async def vision_simulate(
 async def reconstruct(
     files: list[UploadFile] = File(...),
     overlap_acknowledged: bool = Form(default=False),
+    method: str = Form(default="auto"),
 ) -> dict:
     if len(files) < 8 or not overlap_acknowledged:
         raise HTTPException(status_code=422, detail="Reconstrução fiel exige ao menos 8 fotos sobrepostas do mesmo ambiente.")
     if len(files) > 120:
         raise HTTPException(status_code=422, detail="O limite por processamento é de 120 imagens.")
+    if method not in {"auto", "calibrated", "tsdf", "dense_colmap"}:
+        raise HTTPException(status_code=422, detail="Método de reconstrução inválido.")
     if colmap_executable() is None:
         raise HTTPException(status_code=503, detail="COLMAP não está instalado neste worker.")
     artifact_root = Path(os.environ.get("AI_WORKER_ARTIFACT_ROOT", Path(__file__).resolve().parents[1] / "artifacts"))
@@ -192,7 +195,7 @@ async def reconstruct(
             target = staging / f"{index:04d}{suffix}"
             target.write_bytes(data)
             inputs.append(target)
-        return submit_reconstruction(inputs=inputs, artifact_root=artifact_root, job_id=job_id)
+        return submit_reconstruction(inputs=inputs, artifact_root=artifact_root, job_id=job_id, method=method)
     except Exception:
         import shutil
 
@@ -208,6 +211,19 @@ def job(job_id: str) -> dict:
         raise HTTPException(status_code=404, detail="Job não encontrado.") from None
     artifact_root = Path(os.environ.get("AI_WORKER_ARTIFACT_ROOT", Path(__file__).resolve().parents[1] / "artifacts"))
     result = read_job(artifact_root, safe_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Job não encontrado.")
+    return result
+
+
+@app.delete("/v1/jobs/{job_id}", dependencies=[Depends(authorize)])
+def cancel_reconstruction_job(job_id: str) -> dict:
+    try:
+        safe_id = str(uuid.UUID(job_id))
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Job não encontrado.") from None
+    artifact_root = Path(os.environ.get("AI_WORKER_ARTIFACT_ROOT", Path(__file__).resolve().parents[1] / "artifacts"))
+    result = cancel_job(artifact_root, safe_id)
     if result is None:
         raise HTTPException(status_code=404, detail="Job não encontrado.")
     return result

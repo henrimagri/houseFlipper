@@ -46,7 +46,7 @@ class AiWorkerClient
             ])->throw()->json();
     }
 
-    public function reconstruct(array $files): array
+    public function reconstruct(array $files, string $method = 'auto'): array
     {
         $request = $this->http()->timeout((int) config('ai.worker.processing_timeout', 1800));
         foreach ($files as $file) {
@@ -55,6 +55,7 @@ class AiWorkerClient
 
         return $request->post($this->endpoint('/v1/3d/reconstruct'), [
             'overlap_acknowledged' => 'true',
+            'method' => $method,
         ])->throw()->json();
     }
 
@@ -74,6 +75,15 @@ class AiWorkerClient
         }
 
         return $this->http()->get($this->endpoint('/v1/jobs/'.$jobId))->throw()->json();
+    }
+
+    public function cancelJob(string $jobId): array
+    {
+        if (! preg_match('/^[0-9a-f-]{36}$/i', $jobId)) {
+            throw new RuntimeException('Identificador de job inválido.');
+        }
+
+        return $this->http()->delete($this->endpoint('/v1/jobs/'.$jobId))->throw()->json();
     }
 
     private function http(): PendingRequest

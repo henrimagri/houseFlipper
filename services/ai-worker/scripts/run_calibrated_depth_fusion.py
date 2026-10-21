@@ -19,6 +19,7 @@ def main() -> None:
     parser.add_argument("--maximum-views", type=int, default=42)
     parser.add_argument("--stride", type=int, default=7)
     parser.add_argument("--voxel-size", type=float, default=0.025)
+    parser.add_argument("--method", choices=("calibrated", "tsdf"), default="calibrated")
     args = parser.parse_args()
     result = reconstruct_calibrated_depth(
         images=args.images.resolve(),
@@ -28,6 +29,7 @@ def main() -> None:
         maximum_views=max(8, min(args.maximum_views, 126)),
         stride=max(3, min(args.stride, 24)),
         voxel_size=max(0.005, min(args.voxel_size, 0.2)),
+        method=args.method,
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

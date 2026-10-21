@@ -9,6 +9,7 @@ import PropertyPhotoSceneEditor from '@/components/PropertyPhotoSceneEditor';
 import { roomLabel, visualizationModeLabel, type ModelViewerDiagnostic, type PhotoEditRequest, type PhotoEditSimulation, type VisualizationAsset, type VisualizationPayload } from '@/lib/propertyVisualization';
 
 type WorkspaceMode = 'photo_edit' | 'scene_3d' | 'reconstruction_3d';
+type ReconstructionMethod = 'auto' | 'calibrated' | 'tsdf' | 'dense_colmap';
 
 export default function PropertyViewer() {
   const { id = '' } = useParams();
@@ -27,6 +28,7 @@ export default function PropertyViewer() {
   const [notice, setNotice] = useState('');
   const [captureConfirmed, setCaptureConfirmed] = useState(false);
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<number[]>([]);
+  const [reconstructionMethod, setReconstructionMethod] = useState<ReconstructionMethod>('calibrated');
 
   async function load(nextMode?: WorkspaceMode) {
     setLoading(true);
@@ -93,11 +95,12 @@ export default function PropertyViewer() {
     const assetIds = selectedPhotoIds;
     setBusy(true);
     setError('');
-    setNotice('Validando captura e executando a reconstrução COLMAP...');
+    setNotice('Validando captura e iniciando o método selecionado...');
     try {
       const response = await api.post(`/visualizations/${subjectType}/${id}/reconstruct`, {
         asset_ids: assetIds,
         capture_confirmed: captureConfirmed,
+        method: reconstructionMethod,
       });
       let current = response.data.data as VisualizationPayload;
       setData(current);
@@ -105,7 +108,7 @@ export default function PropertyViewer() {
       const job = current.processing_jobs?.find((item) => item.kind === 'photogrammetry');
       if (!job) throw new Error('O job de reconstrução não foi registrado.');
       setNotice('Reconstrução aceita. Você pode acompanhar as etapas sem manter uma requisição aberta.');
-      for (let attempt = 0; attempt < 600 && !['completed', 'failed'].includes(job.status); attempt += 1) {
+      for (let attempt = 0; attempt < 600 && !['completed', 'failed', 'cancelled'].includes(job.status); attempt += 1) {
         await new Promise((resolve) => window.setTimeout(resolve, 3000));
         const polled = await api.get(`/visualizations/${subjectType}/${id}/reconstruction-jobs/${job.id}`);
         current = polled.data.data as VisualizationPayload;
@@ -122,6 +125,7 @@ export default function PropertyViewer() {
       if (job.status === 'failed') {
         throw new Error(job.error ?? 'O worker não concluiu a reconstrução.');
       }
+      if (job.status === 'cancelled') throw new Error('A reconstrução foi cancelada.');
       if (job.status !== 'completed') {
         throw new Error('A reconstrução excedeu o tempo máximo de acompanhamento.');
       }
@@ -131,6 +135,13 @@ export default function PropertyViewer() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function cancelReconstruction() {
+    const job = data?.processing_jobs?.find(item => item.kind === 'photogrammetry' && !['completed', 'failed', 'cancelled'].includes(item.status));
+    if (!job) return;
+    await api.delete(`/visualizations/${subjectType}/${id}/reconstruction-jobs/${job.id}`);
+    setNotice('Cancelamento solicitado. O worker encerrará no próximo ponto seguro.');
   }
 
   async function rebuild() {
@@ -312,6 +323,7 @@ export default function PropertyViewer() {
           overrides={graph?.reconstruction_overrides}
           onEdit={(regionId, color, material) => mutate([{ op: 'set_reconstruction_material', id: regionId, color, material }])}
           onUndo={() => mutate([{ op: 'undo_reconstruction' }])}
+          onRedo={() => mutate([{ op: 'redo_reconstruction' }])}
           onCommand={command}
         /> : <ModelDiagnosticPanel diagnostic={modelDiagnostic} hasModel={Boolean(modelUrl)} artifacts={reconstructionArtifacts} />}
 
@@ -330,7 +342,19 @@ export default function PropertyViewer() {
               </div>
               <p className="mt-2 text-xs font-bold uppercase tracking-wide text-cyan-300">{capturePhotos.length} selecionadas de {availablePhotos.length} disponíveis</p>
               <label className="mt-2 flex items-start gap-2 text-sm font-medium"><input type="checkbox" checked={captureConfirmed} onChange={event => setCaptureConfirmed(event.target.checked)} className="mt-1" /> Confirmo que as {capturePhotos.length} fotos selecionadas são autorizadas, pertencem ao mesmo ambiente e possuem sobreposição.</label>
-              <button type="button" disabled={busy || !captureConfirmed || capturePhotos.length < 8} onClick={() => void reconstruct()} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"><Box className="h-4 w-4" /> Reconstruir com COLMAP ({capturePhotos.length}/8 mín.)</button>
+              <label className="mt-4 block max-w-md text-xs font-black uppercase tracking-wide text-slate-300">Método real utilizado
+                <select value={reconstructionMethod} onChange={event => setReconstructionMethod(event.target.value as ReconstructionMethod)} disabled={busy} className="mt-2 w-full rounded-xl border border-white/15 bg-slate-950 px-3 py-2.5 text-sm font-semibold normal-case tracking-normal text-slate-100">
+                  <option value="tsdf">TSDF volumétrico em CPU</option>
+                  <option value="calibrated">Fallback multivista calibrado</option>
+                  <option value="auto">Automático: denso quando disponível</option>
+                  <option value="dense_colmap">COLMAP denso (exige CUDA compatível)</option>
+                </select>
+              </label>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" disabled={busy || !captureConfirmed || capturePhotos.length < 8} onClick={() => void reconstruct()} className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-black text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"><Box className="h-4 w-4" /> Iniciar reconstrução ({capturePhotos.length}/8 mín.)</button>
+                {busy && <button type="button" onClick={() => void cancelReconstruction()} className="rounded-xl border border-rose-300/40 px-4 py-2.5 text-sm font-black text-rose-200">Cancelar com segurança</button>}
+              </div>
+              {data.processing_jobs?.find(item => item.kind === 'photogrammetry')?.result && <p className="mt-3 text-xs text-slate-400">Método solicitado: {String(data.processing_jobs.find(item => item.kind === 'photogrammetry')?.result?.requested_method ?? 'não informado')} · método efetivo: {String(data.processing_jobs.find(item => item.kind === 'photogrammetry')?.result?.actual_method ?? 'em processamento')}</p>}
             </div>
           </div>
         </div>

@@ -165,3 +165,25 @@ Capturas reais do Three.js:
 - `evidence/multiview-fusion/phase8-final-app-undo.jpg`.
 
 A vista frontal confirma textura coerente em regiões observadas; as vistas lateral e superior expõem costuras, grandes lacunas e componentes ainda desconectados. No aplicativo autenticado, o GLB final abriu no Three.js, `geometry-ceiling_candidate` foi selecionado por raycast, o comando “Pinte esta parede de azul.” alterou somente essa região e o botão Desfazer restaurou a alteração com confirmação visível. Efeitos visuais não foram usados para ocultar os defeitos geométricos. O resultado é uma prévia texturizada e progressivamente editável, não uma reconstrução fiel final do ambiente completo.
+
+## Fase 9 — avaliação TSDF volumétrica em CPU
+
+A geração usou as mesmas 39 vistas aceitas, calibrações e profundidades da Fase 8. A malha oficial permaneceu inacessível ao gerador e foi aberta pelo comparador somente depois de cada PLY ter sido gravado. A implementação armazena blocos esparsos, integra distâncias assinadas truncadas por raio e extrai a isossuperfície por tetraedros com vértices compartilhados.
+
+| Métrica | Fase 8 | TSDF 4 cm | TSDF 6 cm |
+|---|---:|---:|---:|
+| Precisão mediana | 9,8261 cm | 10,1926 cm | 9,3568 cm |
+| Precisão até 5/10/20 cm | 25,11% / 50,73% / 77,52% | 22,93% / 49,28% / 79,14% | 22,46% / 52,99% / 81,81% |
+| Completude mediana | 7,8980 cm | 11,3354 cm | 11,4979 cm |
+| Completude até 5/10/20 cm | 32,43% / 55,81% / 66,06% | 28,55% / 47,90% / 57,94% | 25,72% / 47,44% / 58,56% |
+| Componentes | 14 significativos | 2.505 totais | 728 totais |
+| Bordas abertas | 12.052 | 119.278 | 49.412 |
+| Arestas não manifold | 2.326 | 31.395 | 14.636 |
+| Fototextura | 57,51% | não executada | não executada |
+| Resultado | preservado | rejeitado | rejeitado |
+
+Os candidatos volumétricos não foram texturizados nem enviados ao imóvel de QA porque falharam antes no gate geométrico. Isso evita transformar regressão em nova prévia. Os artefatos locais e relatórios estão em `storage/app/ai-real-results/playroom-small-independent/phase9-tsdf-*` e permanecem fora do Git.
+
+A Fase 8 continua sendo a melhor prévia disponível, ainda sem qualidade comercial. O próximo avanço geométrico depende de mapas de profundidade multivista mais consistentes ou densificação estéreo real; suavizar/agrupar componentes deste TSDF sem essa evidência apenas ocultaria o erro.
+
+O teste visual novo ficou bloqueado pela política de acesso da automação à aba localhost. Servidor/Vite foram verificados por HTTP 200, mas isso não substitui inspeção do canvas. As vistas da Fase 8 permanecem a referência visual; nenhuma captura nova foi declarada.

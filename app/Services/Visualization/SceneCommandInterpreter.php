@@ -21,7 +21,22 @@ class SceneCommandInterpreter
         if (Str::contains($normalized, ['desfaca a ultima', 'desfaça a última', 'desfazer a ultima', 'desfazer a última'])) {
             return $this->ok([['op' => 'undo_reconstruction']], 'Última alteração da reconstrução desfeita.');
         }
+        if (Str::contains($normalized, ['refaca a ultima', 'refaça a última', 'refazer a ultima', 'refazer a última'])) {
+            return $this->ok([['op' => 'redo_reconstruction']], 'Última alteração da reconstrução refeita.');
+        }
         if ($selectedId && str_starts_with($selectedId, 'geometry-') && Str::contains($normalized, ['pinte', 'parede', 'piso', 'teto', 'material'])) {
+            $expectedKind = $this->requestedSurfaceKind($normalized);
+            $selectedKind = $this->selectedSurfaceKind($selectedId);
+            if ($selectedKind === null) {
+                return $this->fail('A região selecionada não possui uma classificação geométrica reconhecida. Selecione novamente no modelo.');
+            }
+            if ($expectedKind !== null && $selectedKind !== $expectedKind) {
+                return $this->confirm(sprintf(
+                    'A região selecionada é %s, mas o comando pede %s. Selecione a superfície correspondente ou confirme explicitamente a alteração na região atual.',
+                    $this->surfaceKindLabel($selectedKind),
+                    $this->surfaceKindLabel($expectedKind),
+                ));
+            }
             $color = $this->color($normalized);
             $material = Str::contains($normalized, ['piso', 'material', 'madeira', 'porcelanato', 'laminado', 'marmore', 'mármore'])
                 ? $this->material($normalized)
@@ -33,7 +48,7 @@ class SceneCommandInterpreter
 
             return $this->ok([[
                 'op' => 'set_reconstruction_material', 'id' => $selectedId,
-                'color' => $color, 'material' => $material,
+                'color' => $color, 'material' => $material, 'expected_kind' => $expectedKind,
             ]], 'Material aplicado somente à região selecionada da reconstrução.');
         }
         if (Str::contains($normalized, ['parede atras do sofa', 'parede atrás do sofá', 'parede do sofa', 'parede do sofá'])) {
@@ -192,6 +207,36 @@ class SceneCommandInterpreter
     private function currentRoom(array $graph): string
     {
         return $graph['active_room'] ?? $graph['rooms'][0]['key'] ?? 'living';
+    }
+
+    private function requestedSurfaceKind(string $normalized): ?string
+    {
+        return match (true) {
+            Str::contains($normalized, ['parede', 'paredes']) => 'wall_candidate',
+            Str::contains($normalized, ['piso', 'chao', 'chão']) => 'floor_candidate',
+            Str::contains($normalized, ['teto']) => 'ceiling_candidate',
+            default => null,
+        };
+    }
+
+    private function selectedSurfaceKind(string $selectedId): ?string
+    {
+        $kind = str_starts_with($selectedId, 'geometry-') ? substr($selectedId, 9) : '';
+
+        return in_array($kind, ['wall_candidate', 'floor_candidate', 'ceiling_candidate', 'horizontal_surface', 'other_surface'], true)
+            ? $kind
+            : null;
+    }
+
+    private function surfaceKindLabel(string $kind): string
+    {
+        return match ($kind) {
+            'wall_candidate' => 'uma parede candidata',
+            'floor_candidate' => 'um piso candidato',
+            'ceiling_candidate' => 'um teto candidato',
+            'horizontal_surface' => 'uma superfície horizontal',
+            default => 'outra superfície',
+        };
     }
 
     private function selectedObject(array $graph, ?string $selectedId): ?array

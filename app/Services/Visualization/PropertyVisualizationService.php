@@ -292,7 +292,7 @@ class PropertyVisualizationService
         }
     }
 
-    public function reconstructPhotogrammetry(User $user, string $subjectType, int $subjectId, array $assetIds): array
+    public function reconstructPhotogrammetry(User $user, string $subjectType, int $subjectId, array $assetIds, string $method = 'auto'): array
     {
         $visualization = $this->show($user, $subjectType, $subjectId);
         $limit = (int) config('visualizations.max_capture_images', 120);
@@ -308,7 +308,7 @@ class PropertyVisualizationService
         $job = $this->startProcessingJob($visualization, $user, 'photogrammetry', $assets->pluck('id')->all());
 
         try {
-            $result = $this->worker->reconstruct($files);
+            $result = $this->worker->reconstruct($files, $method);
             if (($result['status'] ?? null) === 'completed') {
                 $job->fill(['worker_job_id' => $result['job_id']])->save();
                 $this->completeReconstructionJob($visualization, $job, $result);
@@ -333,7 +333,7 @@ class PropertyVisualizationService
             ->where('kind', 'photogrammetry')
             ->whereKey($processingJobId)
             ->firstOrFail();
-        if (in_array($job->status, ['completed', 'failed'], true)) {
+        if (in_array($job->status, ['completed', 'failed', 'cancelled'], true)) {
             return $this->payload($visualization->fresh('assets', 'versions'), $user, $subjectType, $subjectId);
         }
         abort_unless($job->worker_job_id, 409, 'O worker ainda não aceitou este processamento.');
@@ -347,10 +347,30 @@ class PropertyVisualizationService
                 'error' => Str::limit((string) ($result['error'] ?? 'Falha no worker de reconstrução.'), 1000, ''),
                 'completed_at' => now(),
             ])->save();
+        } elseif ($status === 'cancelled') {
+            $job->fill(['status' => 'cancelled', 'result' => $result, 'completed_at' => now()])->save();
         } elseif ($status === 'completed') {
             $this->completeReconstructionJob($visualization, $job, $result);
         } else {
             $job->fill(['status' => $status === 'queued' ? 'queued' : 'processing', 'result' => $result])->save();
+        }
+
+        return $this->payload($visualization->fresh('assets', 'versions'), $user, $subjectType, $subjectId);
+    }
+
+    public function cancelReconstructionJob(User $user, string $subjectType, int $subjectId, int $processingJobId): array
+    {
+        $visualization = $this->show($user, $subjectType, $subjectId);
+        $job = $visualization->processingJobs()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('user_id', $user->id)
+            ->where('kind', 'photogrammetry')
+            ->whereKey($processingJobId)
+            ->firstOrFail();
+        abort_unless($job->worker_job_id, 409, 'O worker ainda não aceitou este processamento.');
+        if (! in_array($job->status, ['completed', 'failed', 'cancelled'], true)) {
+            $result = $this->worker->cancelJob($job->worker_job_id);
+            $job->fill(['status' => 'processing', 'result' => $result])->save();
         }
 
         return $this->payload($visualization->fresh('assets', 'versions'), $user, $subjectType, $subjectId);

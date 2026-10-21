@@ -357,3 +357,30 @@ Validação:
 - navegador: fotografia fonte e GLB próprio foram comparados nas vistas frontal, lateral e superior. O GLB final foi enviado pelo fluxo Laravel, aberto no Three.js, teve `geometry-ceiling_candidate` selecionado por raycast, recebeu o comando real “Pinte esta parede de azul.” somente na região selecionada e restaurou a última alteração pelo botão Desfazer. A textura torna objetos observados reconhecíveis, mas as capturas também registram buracos, folhas separadas e áreas neutras. Evidências em `evidence/multiview-fusion/phase8-*`, incluindo `phase8-final-app-edited.jpg` e `phase8-final-app-undo.jpg`.
 
 Próxima prioridade: integração TSDF realmente volumétrica e limitada por blocos, com extração de superfície em runtime compatível. A etapa deve reduzir as 12.052 bordas abertas e 2.326 arestas não manifold sem usar a referência como entrada e sem perder a cobertura observada. A densificação COLMAP CUDA continua não executada neste host.
+
+## 21/10/2026 — Fase 9: TSDF limitado, gate de regressão e comandos espaciais
+
+Foi implementado `bounded_sparse_projective_tsdf`, um volume TSDF em CPU organizado em blocos NumPy. Cada atualização usa fotografia autorizada, profundidade Depth Anything V2 alinhada aos pontos SfM, intrínsecas escaladas e extrínsecas COLMAP `world → camera`. Somente a banda truncada ao redor de cada observação é alocada; espaço desconhecido não vira superfície. Voxel, truncamento, resolução e limite de blocos, peso mínimo, passo de pixels e máximo de vistas são configuráveis. O worker registra memória estimada, observações, blocos descartados, tempo, topologia e aceita cancelamento cooperativo por marcador de job.
+
+O Open3D oficial 0.20.0 e, como contraprova, 0.19.0 foram instalados apenas no ambiente virtual local e testados no Python 3.12.10/Windows. Ambos falharam ao importar `open3d.cpu.pybind`; `Open3D.dll` retornou WinError 1114, embora `tbb12.dll` carregasse e a CPU suportasse AVX2. Nenhuma dessas versões foi adicionada aos requisitos. O pacote experimental foi removido do ambiente após o diagnóstico; sistema, driver, WSL2 e BIOS não foram alterados.
+
+Ensaios reais, sempre gerados antes de abrir a referência:
+
+| Configuração | Vistas | Blocos / memória estimada | Vértices / faces extraídos | Componentes | Precisão 10 cm | Completude 10 cm | Decisão |
+|---|---:|---:|---:|---:|---:|---:|---|
+| pequeno, voxel 5 cm | 8/8 | 542 / 5,55 MB | 2.794 / 3.948 | fragmento retido 1 | não comparado | não comparado | prova operacional, não promovido |
+| voxel 4 cm | 39/42 | 940 / 9,63 MB | 91.734 / 167.176 | 2.505 | 49,28% | 47,90% | rejeitado |
+| voxel 6 cm | 39/42 | 427 / 4,37 MB | 38.328 / 73.472 | 728 | 52,99% | 47,44% | rejeitado |
+| Fase 8 preservada | 39/42 | — | 132.538 / 263.104 | 14 significativos | 50,73% | 55,81% | melhor prévia disponível |
+
+O candidato de 6 cm melhorou a precisão isolada, mas perdeu 8,37 pontos percentuais de completude a 10 cm e permaneceu muito mais fragmentado. Ele possui 49.412 bordas abertas e 14.636 arestas não manifold, contra 12.052 e 2.326 na Fase 8. O candidato de 4 cm foi ainda pior: 119.278 bordas abertas e 31.395 arestas não manifold. Os dois foram rejeitados; nenhum GLB ou atlas TSDF foi promovido. `final_model_eligible` permanece falso. A causa dominante observada é a inconsistência entre mapas monoculares calibrados por vista: aumentar o voxel melhora a sobreposição, mas não elimina folhas e cruzamentos incompatíveis.
+
+O fluxo existente agora permite selecionar `auto`, `calibrated`, `tsdf` ou `dense_colmap`, informa método solicitado/efetivo e oferece cancelamento. Resultado TSDF reprovado não é copiado para o modelo público. O fallback calibrado existente continua sendo a melhor prévia e a reconstrução densa permanece disponível somente quando o runtime confirma suporte.
+
+A edição espacial foi corrigida no Laravel e revalidada no backend. Teto selecionado + “Pinte esta parede de azul” retorna confirmação e nenhuma ação; teto + “Pinte este teto de azul” produz ação estruturada com `expected_kind=ceiling_candidate`; “esta superfície” usa a região atual. IDs geométricos desconhecidos e divergência de tipo são recusados pela fábrica da cena. Desfazer/refazer mantêm pilhas limitadas e persistíveis.
+
+O viewer realça a região selecionada, permite desmarcar, informa que a confiança é heurística geométrica, expõe vistas frontal/lateral/superior, luz, edição isolada e desfazer/refazer em um painel lateral que não cobre o centro do modelo.
+
+Validação desta etapa: worker completo **38/38**; Laravel completo **67/67, 276 assertions** usando o PHP com SQLite; frontend **12/12**; TypeScript e build Vite aprovados. Uma tentativa com outro binário PHP falhou por ausência de `pdo_sqlite`, defeito do runtime e não do código. Resultados grandes permanecem ignorados em `storage/app`.
+
+O backend local respondeu HTTP 200 e o Vite iniciou normalmente. A automação visual não conseguiu adquirir a aba `http://127.0.0.1:5173/app/house-flipper/imoveis/30/3d`: a política interna do controlador recusou a URL local apesar do protocolo HTTP. Nenhuma captura da Fase 9 foi fabricada e a barreira não foi contornada. A inspeção visual nova permanece pendente; as capturas reais da Fase 8 continuam sendo a última evidência visual válida.

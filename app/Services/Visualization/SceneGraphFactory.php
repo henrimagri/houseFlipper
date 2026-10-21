@@ -2,6 +2,8 @@
 
 namespace App\Services\Visualization;
 
+use InvalidArgumentException;
+
 class SceneGraphFactory
 {
     public function fromBrief(array $brief, array $photoAssets, array $subject): array
@@ -139,17 +141,25 @@ class SceneGraphFactory
                 unset($surface);
             } elseif ($op === 'set_reconstruction_material') {
                 $id = (string) ($action['id'] ?? '');
-                if (! str_starts_with($id, 'geometry-')) {
-                    continue;
+                $kind = str_starts_with($id, 'geometry-') ? substr($id, 9) : '';
+                $allowed = ['wall_candidate', 'floor_candidate', 'ceiling_candidate', 'horizontal_surface', 'other_surface'];
+                if (! in_array($kind, $allowed, true)) {
+                    throw new InvalidArgumentException('A região da reconstrução não é editável.');
+                }
+                $expectedKind = $action['expected_kind'] ?? null;
+                if ($expectedKind !== null && ($expectedKind !== $kind || ! in_array($expectedKind, $allowed, true))) {
+                    throw new InvalidArgumentException('O tipo solicitado não corresponde à região selecionada.');
                 }
                 $previous = $graph['reconstruction_overrides'][$id] ?? null;
-                $graph['reconstruction_history'][] = ['id' => $id, 'previous' => $previous];
-                $graph['reconstruction_history'] = array_slice($graph['reconstruction_history'], -20);
-                $graph['reconstruction_overrides'][$id] = array_filter([
+                $next = array_filter([
                     'color' => $action['color'] ?? null,
                     'material' => $action['material'] ?? null,
                     'source' => 'authorized_editor_action',
                 ], fn ($value) => $value !== null);
+                $graph['reconstruction_history'][] = ['id' => $id, 'previous' => $previous, 'next' => $next];
+                $graph['reconstruction_history'] = array_slice($graph['reconstruction_history'], -20);
+                $graph['reconstruction_redo'] = [];
+                $graph['reconstruction_overrides'][$id] = $next;
             } elseif ($op === 'undo_reconstruction') {
                 $history = $graph['reconstruction_history'] ?? [];
                 $last = array_pop($history);
@@ -161,6 +171,19 @@ class SceneGraphFactory
                     }
                 }
                 $graph['reconstruction_history'] = $history;
+                if (is_array($last)) {
+                    $graph['reconstruction_redo'][] = $last;
+                    $graph['reconstruction_redo'] = array_slice($graph['reconstruction_redo'], -20);
+                }
+            } elseif ($op === 'redo_reconstruction') {
+                $redo = $graph['reconstruction_redo'] ?? [];
+                $last = array_pop($redo);
+                if (is_array($last) && str_starts_with((string) ($last['id'] ?? ''), 'geometry-') && is_array($last['next'] ?? null)) {
+                    $graph['reconstruction_overrides'][$last['id']] = $last['next'];
+                    $graph['reconstruction_history'][] = $last;
+                    $graph['reconstruction_history'] = array_slice($graph['reconstruction_history'], -20);
+                }
+                $graph['reconstruction_redo'] = $redo;
             } elseif ($op === 'add_object') {
                 $kind = $action['kind'] ?? 'chair';
                 $room = $action['room'] ?? ($graph['active_room'] ?? 'living');

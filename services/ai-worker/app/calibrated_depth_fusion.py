@@ -19,6 +19,7 @@ from .runtime_diagnostics import native_stage, record_event
 from .vision import vision_pipeline
 from .photo_texturing import TextureCamera, texture_mesh_from_photos
 from .surface_stitching import stitch_nearby_surfaces
+from .sparse_tsdf import SparseTsdfVolume, TsdfConfig
 
 
 Progress = Callable[[str, int, dict[str, Any]], None]
@@ -157,9 +158,7 @@ def _view_cloud(
     scale_x, scale_y = width / camera.width, height / camera.height
     focal_x, focal_y = camera.focal * scale_x, camera.focal * scale_y
     cx, cy = camera.cx * scale_x, camera.cy * scale_y
-    inverse = fit["slope"] * relative + fit["intercept"]
-    metric = np.where(inverse > 1e-6, 1.0 / inverse, np.nan)
-    metric[(metric < max(0.05, fit["z_min"] * 0.55)) | (metric > fit["z_max"] * 1.7)] = np.nan
+    metric = _metric_depth(relative, fit)
 
     ys = np.arange(stride, height - stride, stride)
     xs = np.arange(stride, width - stride, stride)
@@ -200,6 +199,28 @@ def _view_cloud(
         np.column_stack((top_right, bottom_left, bottom_right)),
     ), axis=0) if int(quads.sum()) else np.empty((0, 3), dtype=np.int64)
     return world.astype(np.float32), world_normals.astype(np.float32), colors.astype(np.uint8), faces
+
+
+def _metric_depth(relative: np.ndarray, fit: dict[str, Any]) -> np.ndarray:
+    inverse = fit["slope"] * relative + fit["intercept"]
+    metric = np.where(inverse > 1e-6, 1.0 / inverse, np.nan)
+    metric[(metric < max(0.05, fit["z_min"] * 0.55)) | (metric > fit["z_max"] * 1.7)] = np.nan
+    return metric.astype(np.float32)
+
+
+def _topology_metrics(mesh: Any) -> dict[str, Any]:
+    faces = np.asarray(mesh.faces, dtype=np.int64)
+    edges = np.sort(np.vstack((faces[:, [0, 1]], faces[:, [1, 2]], faces[:, [2, 0]])), axis=1)
+    _, counts = np.unique(edges, axis=0, return_counts=True)
+    return {
+        "vertices": int(len(mesh.vertices)),
+        "faces": int(len(faces)),
+        "boundary_edges": int(np.sum(counts == 1)),
+        "nonmanifold_edges": int(np.sum(counts > 2)),
+        "invalid_faces": int(np.sum(np.any(faces < 0, axis=1) | np.any(faces >= len(mesh.vertices), axis=1))),
+        "degenerate_faces": int(np.sum((faces[:, 0] == faces[:, 1]) | (faces[:, 1] == faces[:, 2]) | (faces[:, 0] == faces[:, 2]))),
+        "watertight": bool(mesh.is_watertight),
+    }
 
 
 def _voxel_fuse(
@@ -307,6 +328,8 @@ def reconstruct_calibrated_depth(
     maximum_views: int = 42,
     stride: int = 7,
     voxel_size: float = 0.025,
+    method: str = "calibrated",
+    cancel: Callable[[], bool] | None = None,
     progress: Progress | None = None,
 ) -> dict[str, Any]:
     """Generate new geometry from photos/depth; never reads a reference mesh."""
@@ -322,7 +345,9 @@ def reconstruct_calibrated_depth(
         if progress:
             progress(stage, percent, details)
 
-    report("validating_calibration", 5)
+    if method not in {"calibrated", "tsdf"}:
+        raise ValueError("Método calibrado inválido; use calibrated ou tsdf.")
+    report("validating_calibration", 5, requested_method=method)
     cameras, all_views, sparse_points = read_colmap_text(colmap_text_model)
     available = [view for view in all_views if (images / view.name).is_file()]
     if len(available) < 8:
@@ -338,7 +363,22 @@ def reconstruct_calibrated_depth(
     surface_offset = 0
     fit_reports: list[dict[str, Any]] = []
     accepted_views: list[View] = []
+    tsdf = None
+    if method == "tsdf":
+        tsdf_voxel = max(0.01, min(float(os.environ.get("AI_TSDF_VOXEL", "0.035")), 0.12))
+        requested_block_resolution = int(os.environ.get("AI_TSDF_BLOCK_RESOLUTION", "8"))
+        block_resolution = min((4, 8, 16), key=lambda value: abs(value - requested_block_resolution))
+        tsdf = SparseTsdfVolume(TsdfConfig(
+            voxel_size=tsdf_voxel,
+            truncation=max(tsdf_voxel * 1.5, min(float(os.environ.get("AI_TSDF_TRUNCATION", str(tsdf_voxel * 3))), tsdf_voxel * 8)),
+            block_resolution=block_resolution,
+            max_blocks=max(64, min(int(os.environ.get("AI_TSDF_MAX_BLOCKS", "12000")), 100000)),
+            pixel_stride=max(2, min(int(os.environ.get("AI_TSDF_PIXEL_STRIDE", str(stride))), 32)),
+            minimum_mesh_weight=max(0.5, min(float(os.environ.get("AI_TSDF_MINIMUM_WEIGHT", "1.25")), 12)),
+        ))
     for index, view in enumerate(selected):
+        if cancel and cancel():
+            raise InterruptedError("Reconstrução cancelada pelo usuário.")
         with Image.open(images / view.name) as opened:
             image = opened.convert("RGB")
         with native_stage("calibrated_depth_view", image=view.name):
@@ -351,6 +391,22 @@ def reconstruct_calibrated_depth(
             if len(points) < 100:
                 fit_reports.append({"image": view.name, "accepted": False, "reason": "insufficient_filtered_points", **fit})
                 continue
+            if tsdf is not None:
+                camera = cameras[view.camera_id]
+                height, width = relative.shape
+                scale_x, scale_y = width / camera.width, height / camera.height
+                tsdf.integrate(
+                    depth=_metric_depth(relative, fit),
+                    color=np.asarray(image.resize((width, height)).convert("RGB")),
+                    focal_x=camera.focal * scale_x,
+                    focal_y=camera.focal * scale_y,
+                    cx=camera.cx * scale_x,
+                    cy=camera.cy * scale_y,
+                    rotation=view.rotation,
+                    translation=view.translation,
+                    confidence=max(0.08, 1.0 - float(fit["median_relative_error"])),
+                    cancel=cancel,
+                )
             clouds.append(points)
             normals.append(view_normals)
             colors.append(view_colors)
@@ -387,7 +443,7 @@ def reconstruct_calibrated_depth(
     cloud_path = output / "depth-fused.ply"
     write_binary_ply(cloud_path, fused_points, fused_normals, fused_colors)
 
-    report("generating_mesh", 70, raw_points=len(raw_points), fused_points=len(fused_points))
+    report("generating_mesh", 70, raw_points=len(raw_points), fused_points=len(fused_points), requested_method=method)
     raw_mesh = output / "depth-poisson-raw.ply"
     import trimesh
 
@@ -396,7 +452,25 @@ def reconstruct_calibrated_depth(
     poisson_enabled = os.environ.get(
         "AI_POISSON_ENABLED", "false" if os.name == "nt" else "true",
     ).strip().lower() in {"1", "true", "yes", "on"}
-    if poisson_enabled:
+    tsdf_report = None
+    if tsdf is not None:
+        tsdf_vertices, tsdf_faces, tsdf_colors, tsdf_report = tsdf.extract_mesh(cancel=cancel)
+        tsdf_mesh = trimesh.Trimesh(
+            vertices=tsdf_vertices,
+            faces=tsdf_faces,
+            vertex_colors=tsdf_colors,
+            process=False,
+        )
+        tsdf_mesh.remove_degenerate_faces()
+        tsdf_mesh.remove_duplicate_faces()
+        tsdf_mesh.remove_unreferenced_vertices()
+        if len(tsdf_mesh.faces) < 100:
+            raise RuntimeError("A extração TSDF não preservou faces suficientes para validação.")
+        tsdf_mesh.export(raw_mesh)
+        meshing_method = "bounded_sparse_projective_tsdf"
+        poisson_enabled = False
+        (output / "tsdf-report.json").write_text(json.dumps(tsdf_report, ensure_ascii=False, indent=2), encoding="utf-8")
+    elif poisson_enabled:
         try:
             completed = subprocess.run(
                 [
@@ -419,7 +493,7 @@ def reconstruct_calibrated_depth(
     else:
         poisson_error = "Poisson mesher desativado neste runtime; usando superfície multivista calibrada."
 
-    if poisson_error:
+    if poisson_error and tsdf is None:
         meshing_method = "calibrated_multiview_depth_surface"
         (output / "poisson-mesher-error.txt").write_text(poisson_error, encoding="utf-8")
         fallback = trimesh.Trimesh(
@@ -432,9 +506,10 @@ def reconstruct_calibrated_depth(
         fallback.export(raw_mesh)
 
     report("cleaning_mesh", 82)
-    loaded = trimesh.load(raw_mesh, force="mesh", process=True)
+    loaded = trimesh.load(raw_mesh, force="mesh", process=tsdf is None)
+    loaded.metadata.clear()
     stitching_report = None
-    stitching_enabled = poisson_error and os.environ.get("AI_SURFACE_STITCHING_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
+    stitching_enabled = poisson_error and tsdf is None and os.environ.get("AI_SURFACE_STITCHING_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
     if stitching_enabled:
         stitch_voxel = max(0.005, min(float(os.environ.get("AI_SURFACE_STITCHING_VOXEL", "0.0125")), 0.03))
         loaded_colors = np.asarray(loaded.visual.vertex_colors)[:, :3]
@@ -449,14 +524,23 @@ def reconstruct_calibrated_depth(
             vertex_colors=stitched[2], process=False,
         )
         stitching_report = stitched[4]
-    components = loaded.split(only_watertight=False)
-    if not components:
-        raise RuntimeError("A malha Poisson não possui componentes válidos.")
     minimum_faces = max(100, int(len(loaded.faces) * 0.002))
-    kept = [mesh for mesh in components if len(mesh.faces) >= minimum_faces]
-    if poisson_error:
-        kept = sorted(kept, key=lambda mesh: len(mesh.faces), reverse=True)[:64]
-    clean = trimesh.util.concatenate(kept or [max(components, key=lambda mesh: len(mesh.faces))])
+    if tsdf is not None:
+        # The extracted TSDF already shares edge vertices. Splitting every
+        # component duplicates large vertex arrays and can exceed the Windows
+        # worker budget; preserve all observed components and let the quality
+        # gate report their topology instead.
+        components = []
+        kept = []
+        clean = loaded
+    else:
+        components = loaded.split(only_watertight=False)
+        if not components:
+            raise RuntimeError("A malha Poisson não possui componentes válidos.")
+        kept = [mesh for mesh in components if len(mesh.faces) >= minimum_faces]
+        if poisson_error:
+            kept = sorted(kept, key=lambda mesh: len(mesh.faces), reverse=True)[:64]
+        clean = trimesh.util.concatenate(kept or [max(components, key=lambda mesh: len(mesh.faces))])
     clean.remove_unreferenced_vertices()
     clean.remove_infinite_values()
     if stitching_report is not None:
@@ -471,9 +555,11 @@ def reconstruct_calibrated_depth(
         )
     clean_mesh = output / "depth-poisson-clean.ply"
     clean.export(clean_mesh)
+    topology = _topology_metrics(clean)
+    (output / "topology-report.json").write_text(json.dumps(topology, ensure_ascii=False, indent=2), encoding="utf-8")
 
     quality_thresholds = None
-    if poisson_error:
+    if poisson_error and tsdf is None:
         quality_thresholds = {
             "max_connected_components": 64,
             "min_largest_component_face_ratio": 0.02,
@@ -526,6 +612,8 @@ def reconstruct_calibrated_depth(
         cloud_path, raw_mesh, clean_mesh, glb, fusion_report_path,
         output / "texture-atlas.jpg", output / "texture-report.json", output / "surface-regions.json",
         output / "stitching-report.json",
+        output / "tsdf-report.json",
+        output / "topology-report.json",
     ):
         if artifact.is_file():
             hashes[artifact.name] = hashlib.sha256(artifact.read_bytes()).hexdigest()
@@ -537,6 +625,8 @@ def reconstruct_calibrated_depth(
         "inputs": {"available_views": len(available), "selected_views": len(selected), "accepted_views": len(clouds)},
         "fit_reports": fit_reports,
         "fusion_metrics": fusion_metrics,
+        "tsdf": tsdf_report,
+        "topology": topology,
         "poisson_attempted": poisson_enabled,
         "photo_texturing": texture_report,
         "photo_texturing_error": texture_error,
@@ -552,12 +642,15 @@ def reconstruct_calibrated_depth(
             "texture_report": "texture-report.json" if (output / "texture-report.json").is_file() else None,
             "surface_regions": "surface-regions.json" if (output / "surface-regions.json").is_file() else None,
             "stitching_report": "stitching-report.json" if (output / "stitching-report.json").is_file() else None,
+            "tsdf_report": "tsdf-report.json" if (output / "tsdf-report.json").is_file() else None,
+            "topology_report": "topology-report.json",
         },
         "hashes": hashes,
         "stages": stages,
         "elapsed_seconds": round(time.perf_counter() - started, 3),
         "limitations": [
             "A profundidade monocular foi alinhada por vista aos pontos SfM; não equivale a estéreo denso COLMAP.",
+            "A TSDF aloca apenas a banda truncada observada; regiões sem observação permanecem ausentes.",
             "Quando o Poisson excede o limite de execução, a malha preserva os componentes significativos das superfícies calibradas e fundidas por voxel.",
             "Faces sem projeção fotográfica válida usam um bloco neutro do atlas e são contabilizadas separadamente.",
             "Regiões arquitetônicas são candidatos geométricos corrigíveis, não classes semânticas confirmadas.",

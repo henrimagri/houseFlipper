@@ -21,3 +21,8 @@ Uma captura autorizada real deve produzir e comparar nuvem esparsa, nuvem densa,
 Quando o Poisson está indisponível, a fusão calibrada preserva as faces de todas as vistas aceitas, remapeia vértices pelo voxel, normaliza normais com sinal consistente e remove faces degeneradas ou duplicadas. Componentes pequenos são filtrados, mas o pipeline não reduz mais toda a reconstrução ao único maior componente. O relatório `fusion-report.json` registra contagens antes e depois da fusão e participa dos hashes de artefatos.
 
 Esse fallback possui limites próprios para exibição de prévia (`64` componentes no máximo e pelo menos `2%` das faces no maior componente). Esses limites não promovem a malha para uso final: `final_model_eligible` permanece falso, e a inspeção visual do teste real mostrou aberturas e fragmentação apesar da melhoria de completude de 12,71% para 55,41% até 10 cm.
+# Gate volumétrico da Fase 9
+
+O worker oferece `bounded_sparse_projective_tsdf` como método selecionável e limitado por blocos. A promoção exige simultaneamente elegibilidade interna, ausência de regressão importante de precisão/completude e inspeção visual. No `playroom_small`, os candidatos de 4 cm e 6 cm falharam por perda de completude e forte aumento de componentes/bordas; a Fase 8 foi preservada. Resultado rejeitado não é copiado para `model.glb` nem recebe atlas para apresentação.
+
+O cancelamento é cooperativo: o endpoint autenticado cria `cancel.requested`, o job verifica o marcador entre etapas/vistas/blocos e persiste estado `cancelled`. Processos nativos COLMAP já iniciados continuam limitados pelos timeouts existentes e só observam o cancelamento no próximo ponto seguro.

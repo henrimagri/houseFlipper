@@ -122,6 +122,7 @@ class PropertyVisualizationController extends Controller
             'asset_ids' => ['required', 'array', 'min:8', 'max:120'],
             'asset_ids.*' => ['required', 'integer', 'distinct', 'min:1'],
             'capture_confirmed' => ['required', 'accepted'],
+            'method' => ['required', 'string', 'in:auto,calibrated,tsdf,dense_colmap'],
         ]);
 
         return response()->json(['data' => $this->visualizations->reconstructPhotogrammetry(
@@ -129,12 +130,23 @@ class PropertyVisualizationController extends Controller
             $this->subjectType($subjectType),
             $id,
             array_map('intval', $data['asset_ids']),
+            $data['method'],
         )]);
     }
 
     public function reconstructionJob(Request $request, string $subjectType, int $id, int $job): JsonResponse
     {
         return response()->json(['data' => $this->visualizations->refreshReconstructionJob(
+            $request->user(),
+            $this->subjectType($subjectType),
+            $id,
+            $job,
+        )]);
+    }
+
+    public function cancelReconstructionJob(Request $request, string $subjectType, int $id, int $job): JsonResponse
+    {
+        return response()->json(['data' => $this->visualizations->cancelReconstructionJob(
             $request->user(),
             $this->subjectType($subjectType),
             $id,
@@ -163,7 +175,7 @@ class PropertyVisualizationController extends Controller
     {
         $data = $request->validate([
             'actions' => ['required', 'array', 'min:1', 'max:20'],
-            'actions.*.op' => ['required', 'string', 'in:paint_kind,paint_surface,set_reconstruction_material,undo_reconstruction,add_object,remove_object,set_object_color,transform,hide,duplicate,set_active_room,upsert_object,set_lighting,set_room_dimensions'],
+            'actions.*.op' => ['required', 'string', 'in:paint_kind,paint_surface,set_reconstruction_material,undo_reconstruction,redo_reconstruction,add_object,remove_object,set_object_color,transform,hide,duplicate,set_active_room,upsert_object,set_lighting,set_room_dimensions'],
             'actions.*.hidden' => ['nullable', 'boolean'],
             'actions.*.object' => ['nullable', 'array'],
             'actions.*.id' => ['nullable', 'string', 'max:80'],
@@ -171,6 +183,7 @@ class PropertyVisualizationController extends Controller
             'actions.*.room' => ['nullable', 'string', 'max:80'],
             'actions.*.color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'actions.*.material' => ['nullable', 'string', 'max:40'],
+            'actions.*.expected_kind' => ['nullable', 'string', 'in:wall_candidate,floor_candidate,ceiling_candidate,horizontal_surface,other_surface'],
             'actions.*.preset' => ['nullable', 'string', 'in:daylight,warm,cool,soft,evening'],
             'actions.*.position' => ['nullable', 'array'],
             'actions.*.rotation' => ['nullable', 'numeric'],

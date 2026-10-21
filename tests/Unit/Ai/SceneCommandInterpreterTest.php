@@ -113,6 +113,48 @@ class SceneCommandInterpreterTest extends TestCase
         $undo = app(SceneCommandInterpreter::class)->interpret('Desfaça a última alteração', $updated, $selected);
         $restored = app(SceneGraphFactory::class)->apply($updated, $undo['actions']);
         $this->assertArrayNotHasKey($selected, $restored['reconstruction_overrides']);
+
+        $redo = app(SceneCommandInterpreter::class)->interpret('Refaça a última alteração', $restored, $selected);
+        $reapplied = app(SceneGraphFactory::class)->apply($restored, $redo['actions']);
+        $this->assertSame('#9bb7d4', $reapplied['reconstruction_overrides'][$selected]['color']);
+    }
+
+    public function test_wall_command_rejects_selected_ceiling_candidate(): void
+    {
+        $command = app(SceneCommandInterpreter::class)->interpret(
+            'Pinte esta parede de azul',
+            $this->graph(),
+            'geometry-ceiling_candidate',
+        );
+
+        $this->assertFalse($command['ok']);
+        $this->assertTrue($command['requires_confirmation']);
+        $this->assertSame([], $command['actions']);
+        $this->assertStringContainsString('teto candidato', $command['message']);
+    }
+
+    public function test_ceiling_and_generic_surface_commands_accept_selected_ceiling(): void
+    {
+        $interpreter = app(SceneCommandInterpreter::class);
+        $ceiling = $interpreter->interpret('Pinte este teto de azul', $this->graph(), 'geometry-ceiling_candidate');
+        $generic = $interpreter->interpret('Pinte esta superfície de azul', $this->graph(), 'geometry-ceiling_candidate');
+
+        $this->assertTrue($ceiling['ok']);
+        $this->assertSame('ceiling_candidate', $ceiling['actions'][0]['expected_kind']);
+        $this->assertTrue($generic['ok']);
+        $this->assertNull($generic['actions'][0]['expected_kind']);
+    }
+
+    public function test_backend_revalidates_reconstruction_surface_kind(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        app(SceneGraphFactory::class)->apply($this->graph(), [[
+            'op' => 'set_reconstruction_material',
+            'id' => 'geometry-ceiling_candidate',
+            'expected_kind' => 'wall_candidate',
+            'color' => '#9bb7d4',
+        ]]);
     }
 
     private function graph(): array

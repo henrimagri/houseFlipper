@@ -29,6 +29,17 @@ def test_reconstruction_rejects_inadequate_capture() -> None:
     assert "sobrepostas" in response.json()["detail"]
 
 
+def test_reconstruction_rejects_unknown_method_before_processing() -> None:
+    response = client.post(
+        "/v1/3d/reconstruct",
+        headers={"X-Worker-Token": "test-secret"},
+        files=[("files", (f"{index}.jpg", b"x", "image/jpeg")) for index in range(8)],
+        data={"overlap_acknowledged": "true", "method": "invented"},
+    )
+    assert response.status_code == 422
+    assert "Método" in response.json()["detail"]
+
+
 def test_vision_returns_model_artifacts_from_neural_pipeline(monkeypatch) -> None:
     buffer = BytesIO()
     Image.new("RGB", (32, 32), "white").save(buffer, format="JPEG")

@@ -156,6 +156,7 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
     Route::post('/visualizations/{subjectType}/{id}/photo-simulations', [PropertyVisualizationController::class, 'simulatePhoto'])->middleware('throttle:visualization-upload')->whereNumber('id');
     Route::post('/visualizations/{subjectType}/{id}/reconstruct', [PropertyVisualizationController::class, 'reconstructPhotogrammetry'])->middleware('throttle:visualization-upload')->whereNumber('id');
     Route::get('/visualizations/{subjectType}/{id}/reconstruction-jobs/{job}', [PropertyVisualizationController::class, 'reconstructionJob'])->whereNumber(['id', 'job']);
+    Route::delete('/visualizations/{subjectType}/{id}/reconstruction-jobs/{job}', [PropertyVisualizationController::class, 'cancelReconstructionJob'])->whereNumber(['id', 'job']);
     Route::post('/visualizations/{subjectType}/{id}/commands', [PropertyVisualizationController::class, 'command'])->middleware('throttle:visualization-upload')->whereNumber('id');
     Route::patch('/visualizations/{subjectType}/{id}/scene', [PropertyVisualizationController::class, 'mutate'])->middleware('throttle:visualization-upload')->whereNumber('id');
     Route::post('/visualizations/{subjectType}/{id}/versions', [PropertyVisualizationController::class, 'storeVersion'])->whereNumber('id');
