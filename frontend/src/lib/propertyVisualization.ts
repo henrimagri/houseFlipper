@@ -34,6 +34,8 @@ export type SceneGraph = {
   exterior?: { kind: string; has_facade_photo: boolean; label: string };
   library?: string[];
   subject?: Record<string, unknown>;
+  reconstruction_overrides?: Record<string, { color?: string; material?: string; source?: string }>;
+  reconstruction_history?: Array<{ id: string; previous?: Record<string, unknown> | null }>;
 };
 
 export type VisualizationAsset = {

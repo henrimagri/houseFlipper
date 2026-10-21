@@ -315,3 +315,45 @@ Validação no navegador: o upload, carregamento, persistência e controles de �
 Verificações desta etapa: worker completo **30/30** antes da migração de ciclo de vida e API FastAPI **7/7** depois dela, sem avisos de `on_event`; Laravel de visualização neural **5/5, 36 assertions**; frontend **12/12**; TypeScript e build Vite aprovados. O build mantém o aviso conhecido de chunks maiores que 500 kB. O experimento, dataset, GLBs, pesos e resultados permanecem ignorados em `storage/app`; somente código, testes, documentação e capturas sem credenciais são preparados para commit.
 
 Pendências: fechar as lacunas por TSDF/Poisson em runtime Linux/CUDA autorizado, gerar atlas UV/textura coerente, reduzir componentes sem descartar cobertura e repetir a avaliação visual em várias câmeras antes de promover qualquer reconstrução como modelo final.
+
+## 21/10/2026 — Fase 8: costura conservadora, atlas fotográfico e regiões editáveis
+
+O baseline foi repetido com a mesma amostragem determinística de 10.000 vértices, sem ICP e nas coordenadas COLMAP originais. A faixa de 20 cm foi acrescentada sem alterar os resultados anteriores: precisão 25,51%/51,67%/78,14% em 5/10/20 cm e completude 31,28%/55,41%/65,83%. A malha oficial continuou ausente da geração e foi aberta somente pelo comparador posterior.
+
+A investigação confirmou que a fusão anterior unia vértices coincidentes, mas mantinha folhas trianguladas por vista e não resolvia oclusão nem continuidade volumétrica. Um marching cubes anterior já havia excedido o limite operacional. Nesta etapa não foi repetido Poisson/marching cubes sem limite e nenhuma superfície distante foi conectada para melhorar métricas.
+
+Foi implementada costura limitada a **1,25 cm**, com chave espacial e família dominante de normal. Ela preserva paredes/pisos perpendiculares como regiões distintas, elimina faces colapsadas/duplicadas e mantém somente componentes que atendem ao mesmo limiar significativo usado no baseline. O candidato maior de 1,5 cm foi rejeitado por aumentar os componentes totais e não melhorar o candidato de 1,25 cm.
+
+| Métrica | Fusão anterior | Fase 8 costurada |
+|---|---:|---:|
+| Vértices | 139.033 | 132.538 |
+| Faces | 267.722 | 263.104 |
+| Componentes significativos | 30 | 14 |
+| Precisão mediana gerado → referência | 0,095919 m | 0,098261 m |
+| Precisão até 5/10/20 cm | 25,51% / 51,67% / 78,14% | 25,11% / 50,73% / 77,52% |
+| Completude mediana referência → gerado | 0,081763 m | 0,078980 m |
+| Completude até 5/10/20 cm | 31,28% / 55,41% / 65,83% | 32,43% / 55,81% / 66,06% |
+| Faces inválidas/degeneradas | 0 / 0 | 0 / 0 |
+| Bordas abertas | não registrado | 12.052 |
+| Arestas não manifold | não registrado | 2.326 |
+| Watertight | não | não |
+
+A redução de componentes trouxe um pequeno ganho de completude e uma pequena perda de precisão. O resultado foi mantido porque a continuidade melhorou sem alterar os limites espaciais, mas ele permanece uma prévia técnica. Buracos, arestas não manifold e folhas separadas continuam visíveis; `final_model_eligible` não é promovido.
+
+### Textura e edição
+
+Foi criado um atlas UV **4092 × 4092** a partir das fotografias autorizadas. Cada face é projetada nas câmeras calibradas e avaliada por enquadramento, ângulo, nitidez e um z-buffer de baixa resolução para oclusão. A exposição recebe correção mediana limitada a 0,72–1,38. Na malha costurada, 151.307 de 263.104 faces receberam fotografia válida (**57,51%**); 111.797 faces usam bloco neutro e não são declaradas fototexturizadas. O atlas tem 1.286.537 bytes. O GLB final possui 22.874.024 bytes, cinco malhas/materiais PBR identificados e SHA-256 `eb201b5561f65483a93e0b3b05bb4b97b8fb7d19098f662104f0abca9721861f`; a texturização medida levou 518,272 s. O pico de RAM observado na execução anterior equivalente foi 1.103 MB; essa etapa não executou inferência CUDA, e a VRAM não foi medida separadamente.
+
+Cinco regiões candidatas são exportadas com origem, confiança, intervalos de faces e correção manual: parede, piso, teto, superfície horizontal e outra superfície. São inferências geométricas; portas, janelas e móveis não recebem classe arquitetônica fictícia. Materiais PBR carregam IDs `geometry-*`, o viewer usa raycast para selecionar somente a região atingida e o Laravel persiste `reconstruction_overrides` e histórico no `scene_graph`, sempre sob a autorização existente por tenant/usuário. O comando “pinte esta parede de azul” gera `set_reconstruction_material`; “desfaça a última alteração” restaura o estado anterior. Ambiguidade sem cor/seleção retorna confirmação em vez de executar.
+
+O fallback calibrado foi conectado ao job assíncrono real no Windows. Quando o COLMAP denso opt-in não conclui, o worker converte o modelo esparso para texto, executa profundidade calibrada, costura e texturização, e publica `dense.ply`, `dense-mesh.ply` e `dense-model.glb` nos nomes já autorizados pela API. O Laravel continua sendo a autoridade que importa o GLB somente após `viewer_eligible` e persiste o resultado do job.
+
+Validação:
+
+- worker completo: **33/33 testes** em 235,30 s;
+- Laravel completo: **64/64 testes**, 266 assertions em 217,768 s;
+- frontend: **12/12 testes**;
+- TypeScript/Vite: build aprovado em 8 min 34 s; permanece o aviso conhecido de chunks grandes;
+- navegador: fotografia fonte e GLB próprio foram comparados nas vistas frontal, lateral e superior. O GLB final foi enviado pelo fluxo Laravel, aberto no Three.js, teve `geometry-ceiling_candidate` selecionado por raycast, recebeu o comando real “Pinte esta parede de azul.” somente na região selecionada e restaurou a última alteração pelo botão Desfazer. A textura torna objetos observados reconhecíveis, mas as capturas também registram buracos, folhas separadas e áreas neutras. Evidências em `evidence/multiview-fusion/phase8-*`, incluindo `phase8-final-app-edited.jpg` e `phase8-final-app-undo.jpg`.
+
+Próxima prioridade: integração TSDF realmente volumétrica e limitada por blocos, com extração de superfície em runtime compatível. A etapa deve reduzir as 12.052 bordas abertas e 2.326 arestas não manifold sem usar a referência como entrada e sem perder a cobertura observada. A densificação COLMAP CUDA continua não executada neste host.

@@ -18,6 +18,24 @@ class SceneCommandInterpreter
         }
 
         $room = $this->currentRoom($graph);
+        if (Str::contains($normalized, ['desfaca a ultima', 'desfaça a última', 'desfazer a ultima', 'desfazer a última'])) {
+            return $this->ok([['op' => 'undo_reconstruction']], 'Última alteração da reconstrução desfeita.');
+        }
+        if ($selectedId && str_starts_with($selectedId, 'geometry-') && Str::contains($normalized, ['pinte', 'parede', 'piso', 'teto', 'material'])) {
+            $color = $this->color($normalized);
+            $material = Str::contains($normalized, ['piso', 'material', 'madeira', 'porcelanato', 'laminado', 'marmore', 'mármore'])
+                ? $this->material($normalized)
+                : 'paint';
+            if ($color === null && $material === 'paint') {
+                return $this->confirm('Confirme a cor para a região destacada antes de alterar a reconstrução.');
+            }
+            $color ??= $this->materialColor($material);
+
+            return $this->ok([[
+                'op' => 'set_reconstruction_material', 'id' => $selectedId,
+                'color' => $color, 'material' => $material,
+            ]], 'Material aplicado somente à região selecionada da reconstrução.');
+        }
         if (Str::contains($normalized, ['parede atras do sofa', 'parede atrás do sofá', 'parede do sofa', 'parede do sofá'])) {
             $color = $this->color($normalized);
             if ($color === null) {

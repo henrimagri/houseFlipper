@@ -137,6 +137,30 @@ class SceneGraphFactory
                     }
                 }
                 unset($surface);
+            } elseif ($op === 'set_reconstruction_material') {
+                $id = (string) ($action['id'] ?? '');
+                if (! str_starts_with($id, 'geometry-')) {
+                    continue;
+                }
+                $previous = $graph['reconstruction_overrides'][$id] ?? null;
+                $graph['reconstruction_history'][] = ['id' => $id, 'previous' => $previous];
+                $graph['reconstruction_history'] = array_slice($graph['reconstruction_history'], -20);
+                $graph['reconstruction_overrides'][$id] = array_filter([
+                    'color' => $action['color'] ?? null,
+                    'material' => $action['material'] ?? null,
+                    'source' => 'authorized_editor_action',
+                ], fn ($value) => $value !== null);
+            } elseif ($op === 'undo_reconstruction') {
+                $history = $graph['reconstruction_history'] ?? [];
+                $last = array_pop($history);
+                if (is_array($last) && str_starts_with((string) ($last['id'] ?? ''), 'geometry-')) {
+                    if (is_array($last['previous'] ?? null)) {
+                        $graph['reconstruction_overrides'][$last['id']] = $last['previous'];
+                    } else {
+                        unset($graph['reconstruction_overrides'][$last['id']]);
+                    }
+                }
+                $graph['reconstruction_history'] = $history;
             } elseif ($op === 'add_object') {
                 $kind = $action['kind'] ?? 'chair';
                 $room = $action['room'] ?? ($graph['active_room'] ?? 'living');

@@ -163,7 +163,7 @@ class PropertyVisualizationController extends Controller
     {
         $data = $request->validate([
             'actions' => ['required', 'array', 'min:1', 'max:20'],
-            'actions.*.op' => ['required', 'string', 'in:paint_kind,paint_surface,add_object,remove_object,set_object_color,transform,hide,duplicate,set_active_room,upsert_object,set_lighting,set_room_dimensions'],
+            'actions.*.op' => ['required', 'string', 'in:paint_kind,paint_surface,set_reconstruction_material,undo_reconstruction,add_object,remove_object,set_object_color,transform,hide,duplicate,set_active_room,upsert_object,set_lighting,set_room_dimensions'],
             'actions.*.hidden' => ['nullable', 'boolean'],
             'actions.*.object' => ['nullable', 'array'],
             'actions.*.id' => ['nullable', 'string', 'max:80'],

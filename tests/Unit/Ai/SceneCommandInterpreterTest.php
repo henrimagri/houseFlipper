@@ -98,6 +98,23 @@ class SceneCommandInterpreterTest extends TestCase
         $this->assertSame(['width' => 6.4, 'depth' => 4.8, 'height' => 2.9, 'source' => 'user'], $updated['room_dimensions']['living']);
     }
 
+    public function test_reconstruction_material_changes_only_selected_region_and_can_be_undone(): void
+    {
+        $graph = $this->graph();
+        $selected = 'geometry-wall_candidate';
+        $command = app(SceneCommandInterpreter::class)->interpret('Pinte esta parede de azul', $graph, $selected);
+
+        $this->assertTrue($command['ok']);
+        $this->assertSame('set_reconstruction_material', $command['actions'][0]['op']);
+        $updated = app(SceneGraphFactory::class)->apply($graph, $command['actions']);
+        $this->assertSame('#9bb7d4', $updated['reconstruction_overrides'][$selected]['color']);
+        $this->assertCount(1, $updated['reconstruction_overrides']);
+
+        $undo = app(SceneCommandInterpreter::class)->interpret('Desfaça a última alteração', $updated, $selected);
+        $restored = app(SceneGraphFactory::class)->apply($updated, $undo['actions']);
+        $this->assertArrayNotHasKey($selected, $restored['reconstruction_overrides']);
+    }
+
     private function graph(): array
     {
         return app(SceneGraphFactory::class)->fromBrief([

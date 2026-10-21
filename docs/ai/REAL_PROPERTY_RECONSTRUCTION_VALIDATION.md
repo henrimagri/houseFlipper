@@ -143,3 +143,25 @@ Comparação determinística de até 10.000 vértices, sem ICP:
 O arquivo foi enviado e reaberto na rota autenticada do imóvel de QA. As capturas em `evidence/multiview-fusion/` mostram o baseline, o novo enquadramento e uma segunda posição de câmera. A navegação funciona, mas o render ainda contém superfícies abertas e componentes visualmente separados. A maior cobertura não resolve texturização, watertightness nem continuidade de paredes; por isso o modelo permanece uma prévia técnica e `final_model_eligible=false`.
 
 Uma tentativa independente de marching cubes em CPU foi interrompida por não concluir em tempo operacional útil. Nenhum resultado desse experimento foi promovido. O próximo passo de qualidade exige TSDF/Poisson em Linux/CUDA autorizado ou outro método volumétrico que seja medido e visualmente validado. A suíte completa do worker aprovou 30 testes; após migrar o FastAPI para `lifespan`, os 7 testes da API passaram sem os avisos de depreciação anteriores.
+
+## Costura e fototexturização da Fase 8
+
+A mesma malha multivista foi processada por uma costura conservadora de 1,25 cm condicionada pela orientação dominante das normais. O pós-processamento reduziu os componentes significativos de 30 para 14 e preservou 263.104 faces. A completude até 10 cm passou de 55,41% para 55,81%; a precisão até 10 cm passou de 51,67% para 50,73%. A troca é registrada como tal e não representa melhora uniforme.
+
+A malha resultante possui 12.052 bordas abertas, 2.326 arestas não manifold, zero faces inválidas, zero faces degeneradas e não é watertight. Esses defeitos também aparecem nas renderizações e impedem aprovação comercial.
+
+O atlas fotográfico usa 35 das 39 câmeras aceitas, projeção calibrada, ângulo de vista, nitidez, oclusão aproximada e compensação limitada de exposição. Ele cobre 151.307 das 263.104 faces (57,51%). As demais 111.797 faces recebem cor neutra e são contabilizadas explicitamente como sem textura válida. O atlas JPEG possui 1.286.537 bytes. A exportação final separada em cinco malhas/materiais PBR produziu GLB de 22.874.024 bytes, SHA-256 `eb201b5561f65483a93e0b3b05bb4b97b8fb7d19098f662104f0abca9721861f`, em 518,272 s de texturização. O pós-processamento equivalente anterior consumiu no máximo 1.103 MB de RAM observado no processo; ele não usou inferência neural e a VRAM não foi medida isoladamente.
+
+As regiões `geometry-wall_candidate`, `geometry-floor_candidate`, `geometry-ceiling_candidate`, `geometry-horizontal_surface` e `geometry-other_surface` são evidências geométricas corrigíveis. Elas não classificam portas, janelas ou móveis. O GLB PBR final separa os materiais por esses IDs, permitindo seleção por raycast e edição isolada. As alterações ficam em `scene_graph.reconstruction_overrides`, com histórico de vinte operações e desfazer da última mudança. A validação automatizada comprova a ação estruturada e persistida; a fidelidade da seleção ainda exige revisão visual por imóvel.
+
+Capturas reais do Three.js:
+
+- `evidence/multiview-fusion/phase8-textured-front.png`;
+- `evidence/multiview-fusion/phase8-textured-side.png`;
+- `evidence/multiview-fusion/phase8-textured-top.png`;
+- `evidence/multiview-fusion/phase8-stitched-textured-front.jpg`;
+- `evidence/multiview-fusion/phase8-stitched-textured-side.jpg`.
+- `evidence/multiview-fusion/phase8-final-app-edited.jpg`;
+- `evidence/multiview-fusion/phase8-final-app-undo.jpg`.
+
+A vista frontal confirma textura coerente em regiões observadas; as vistas lateral e superior expõem costuras, grandes lacunas e componentes ainda desconectados. No aplicativo autenticado, o GLB final abriu no Three.js, `geometry-ceiling_candidate` foi selecionado por raycast, o comando “Pinte esta parede de azul.” alterou somente essa região e o botão Desfazer restaurou a alteração com confirmação visível. Efeitos visuais não foram usados para ocultar os defeitos geométricos. O resultado é uma prévia texturizada e progressivamente editável, não uma reconstrução fiel final do ambiente completo.

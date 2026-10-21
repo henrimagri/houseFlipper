@@ -302,7 +302,18 @@ export default function PropertyViewer() {
           <h2 className="flex items-center gap-2 text-lg font-black"><ScanLine className="h-5 w-5 text-cyan-400" /> Reconstrução fotogramétrica</h2>
           <p className="mt-1 text-sm text-slate-400">Um arquivo só aparece no visualizador depois de passar pela validação de elegibilidade.</p>
         </div>
-        {modelUrl && modelEligible ? <GlbViewer src={modelUrl} eligible={modelEligible} diagnostic={data.model?.viewer_diagnostic} className="h-[min(70vh,720px)] w-full" /> : <ModelDiagnosticPanel diagnostic={modelDiagnostic} hasModel={Boolean(modelUrl)} artifacts={reconstructionArtifacts} />}
+        {modelUrl && modelEligible ? <GlbViewer
+          src={modelUrl}
+          eligible={modelEligible}
+          diagnostic={data.model?.viewer_diagnostic}
+          className="h-[min(70vh,720px)] w-full"
+          editable
+          busy={busy}
+          overrides={graph?.reconstruction_overrides}
+          onEdit={(regionId, color, material) => mutate([{ op: 'set_reconstruction_material', id: regionId, color, material }])}
+          onUndo={() => mutate([{ op: 'undo_reconstruction' }])}
+          onCommand={command}
+        /> : <ModelDiagnosticPanel diagnostic={modelDiagnostic} hasModel={Boolean(modelUrl)} artifacts={reconstructionArtifacts} />}
 
         <div className="border-t border-white/10 bg-slate-900/70 p-5">
           <div className="flex items-start gap-3">

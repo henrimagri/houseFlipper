@@ -533,6 +533,62 @@ def reconstruct(
             "timings": {},
         }
     dense_artifacts = dense_reconstruction["artifacts"]
+    calibrated_fallback = None
+    calibrated_enabled = os.environ.get(
+        "AI_CALIBRATED_DEPTH_FALLBACK_ENABLED", "true" if os.name == "nt" else "false",
+    ).strip().lower() in {"1", "true", "yes", "on"}
+    if dense_reconstruction["status"] != "completed" and calibrated_enabled:
+        report("calibrating_depth", 68)
+        try:
+            from .calibrated_depth_fusion import reconstruct_calibrated_depth
+
+            text_model = output / "calibrated-sparse-txt"
+            text_model.mkdir(exist_ok=False)
+            _run([
+                str(executable), "model_converter", "--input_path", str(model),
+                "--output_path", str(text_model), "--output_type", "TXT",
+            ], output / "calibrated-model-converter.log")
+            calibrated_output = output / "calibrated-depth"
+
+            def calibrated_progress(stage: str, percent: int, _details: dict[str, Any]) -> None:
+                report(f"calibrated_{stage}", min(91, 68 + int(percent * 0.23)))
+
+            calibrated_fallback = reconstruct_calibrated_depth(
+                images=images,
+                colmap_text_model=text_model,
+                output=calibrated_output,
+                colmap_executable=executable,
+                maximum_views=min(42, len(image_paths)),
+                stride=max(3, min(int(os.environ.get("AI_DEPTH_FUSION_STRIDE", "7")), 16)),
+                voxel_size=max(0.005, min(float(os.environ.get("AI_DEPTH_FUSION_VOXEL", "0.01")), 0.05)),
+                progress=calibrated_progress,
+            )
+            fallback_artifacts = calibrated_fallback["artifacts"]
+            standard_cloud = output / "dense.ply"
+            standard_mesh = output / "dense-mesh.ply"
+            standard_glb = output / "dense-model.glb"
+            shutil.copy2(calibrated_output / fallback_artifacts["dense_point_cloud"], standard_cloud)
+            shutil.copy2(calibrated_output / fallback_artifacts["clean_mesh"], standard_mesh)
+            shutil.copy2(calibrated_output / fallback_artifacts["glb"], standard_glb)
+            dense_reconstruction = {
+                "status": "completed",
+                "capability": dense_capability,
+                "method": calibrated_fallback["method"],
+                "geometry_quality": calibrated_fallback["geometry_quality"],
+                "photo_texturing": calibrated_fallback.get("photo_texturing"),
+                "surface_stitching": calibrated_fallback.get("surface_stitching"),
+                "artifacts": {
+                    "point_cloud": standard_cloud.name,
+                    "mesh": standard_mesh.name,
+                    "glb": standard_glb.name,
+                },
+                "timings": {"calibrated_depth_seconds": calibrated_fallback["elapsed_seconds"]},
+                "limitations": calibrated_fallback["limitations"],
+            }
+            dense_artifacts = dense_reconstruction["artifacts"]
+        except (ImportError, OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exception:
+            (output / "calibrated-depth-error.txt").write_text(str(exception), encoding="utf-8")
+            calibrated_fallback = {"status": "failed", "error": f"{type(exception).__name__}: {exception}"}
     if dense_reconstruction["status"] == "completed" and dense_artifacts["glb"]:
         shutil.copy2(output / dense_artifacts["glb"], glb)
         geometry_quality = dense_reconstruction["geometry_quality"]
@@ -548,6 +604,7 @@ def reconstruct(
         "quality_gate": quality,
         "geometry_quality": geometry_quality,
         "dense_reconstruction": dense_reconstruction,
+        "calibrated_depth_fallback": calibrated_fallback,
         "timings": timings,
         "artifacts": {
             "sparse_point_cloud": sparse_ply.name,

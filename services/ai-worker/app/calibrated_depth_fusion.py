@@ -17,6 +17,8 @@ from PIL import Image
 from .reconstruction import evaluate_geometry
 from .runtime_diagnostics import native_stage, record_event
 from .vision import vision_pipeline
+from .photo_texturing import TextureCamera, texture_mesh_from_photos
+from .surface_stitching import stitch_nearby_surfaces
 
 
 Progress = Callable[[str, int, dict[str, Any]], None]
@@ -335,6 +337,7 @@ def reconstruct_calibrated_depth(
     surface_faces: list[np.ndarray] = []
     surface_offset = 0
     fit_reports: list[dict[str, Any]] = []
+    accepted_views: list[View] = []
     for index, view in enumerate(selected):
         with Image.open(images / view.name) as opened:
             image = opened.convert("RGB")
@@ -353,6 +356,7 @@ def reconstruct_calibrated_depth(
             colors.append(view_colors)
             surface_faces.append(view_faces + surface_offset)
             surface_offset += len(points)
+            accepted_views.append(view)
             fit_reports.append({"image": view.name, "accepted": True, "points": len(points), **fit})
         report("estimating_depth", 10 + int(45 * (index + 1) / len(selected)), processed=index + 1, accepted=len(clouds))
 
@@ -429,6 +433,22 @@ def reconstruct_calibrated_depth(
 
     report("cleaning_mesh", 82)
     loaded = trimesh.load(raw_mesh, force="mesh", process=True)
+    stitching_report = None
+    stitching_enabled = poisson_error and os.environ.get("AI_SURFACE_STITCHING_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
+    if stitching_enabled:
+        stitch_voxel = max(0.005, min(float(os.environ.get("AI_SURFACE_STITCHING_VOXEL", "0.0125")), 0.03))
+        loaded_colors = np.asarray(loaded.visual.vertex_colors)[:, :3]
+        stitched = stitch_nearby_surfaces(
+            np.asarray(loaded.vertices),
+            np.asarray(loaded.faces),
+            loaded_colors,
+            voxel_size=stitch_voxel,
+        )
+        loaded = trimesh.Trimesh(
+            vertices=stitched[0], faces=stitched[3], vertex_normals=stitched[1],
+            vertex_colors=stitched[2], process=False,
+        )
+        stitching_report = stitched[4]
     components = loaded.split(only_watertight=False)
     if not components:
         raise RuntimeError("A malha Poisson não possui componentes válidos.")
@@ -439,6 +459,16 @@ def reconstruct_calibrated_depth(
     clean = trimesh.util.concatenate(kept or [max(components, key=lambda mesh: len(mesh.faces))])
     clean.remove_unreferenced_vertices()
     clean.remove_infinite_values()
+    if stitching_report is not None:
+        stitching_report.update({
+            "all_components_after_stitching": len(components),
+            "significant_component_minimum_faces": minimum_faces,
+            "retained_significant_components": len(kept),
+            "retained_faces": int(len(clean.faces)),
+        })
+        (output / "stitching-report.json").write_text(
+            json.dumps(stitching_report, ensure_ascii=False, indent=2), encoding="utf-8",
+        )
     clean_mesh = output / "depth-poisson-clean.ply"
     clean.export(clean_mesh)
 
@@ -456,11 +486,47 @@ def reconstruct_calibrated_depth(
     )
     report("exporting_glb", 92, viewer_eligible=quality["viewer_eligible"])
     glb = output / "depth-fusion.glb"
+    texture_report = None
+    texture_error = None
     if quality["viewer_eligible"]:
-        clean.export(glb, file_type="glb")
+        texture_enabled = os.environ.get("AI_PHOTO_TEXTURE_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
+        if texture_enabled:
+            try:
+                texture_cameras = [
+                    TextureCamera(
+                        name=view.name,
+                        width=cameras[view.camera_id].width,
+                        height=cameras[view.camera_id].height,
+                        focal=cameras[view.camera_id].focal,
+                        cx=cameras[view.camera_id].cx,
+                        cy=cameras[view.camera_id].cy,
+                        rotation=view.rotation,
+                        translation=view.translation,
+                    )
+                    for view in accepted_views
+                ]
+                texture_report = texture_mesh_from_photos(
+                    mesh=clean,
+                    images=images,
+                    cameras=texture_cameras,
+                    output_glb=glb,
+                    atlas_path=output / "texture-atlas.jpg",
+                    report_path=output / "texture-report.json",
+                    regions_path=output / "surface-regions.json",
+                    atlas_size=max(1024, min(int(os.environ.get("AI_TEXTURE_ATLAS_SIZE", "4096")), 4096)),
+                )
+            except Exception as exception:
+                texture_error = f"{type(exception).__name__}: {exception}"
+                (output / "texture-error.txt").write_text(texture_error, encoding="utf-8")
+        if not glb.is_file():
+            clean.export(glb, file_type="glb")
 
     hashes = {}
-    for artifact in (cloud_path, raw_mesh, clean_mesh, glb, fusion_report_path):
+    for artifact in (
+        cloud_path, raw_mesh, clean_mesh, glb, fusion_report_path,
+        output / "texture-atlas.jpg", output / "texture-report.json", output / "surface-regions.json",
+        output / "stitching-report.json",
+    ):
         if artifact.is_file():
             hashes[artifact.name] = hashlib.sha256(artifact.read_bytes()).hexdigest()
     result = {
@@ -472,6 +538,9 @@ def reconstruct_calibrated_depth(
         "fit_reports": fit_reports,
         "fusion_metrics": fusion_metrics,
         "poisson_attempted": poisson_enabled,
+        "photo_texturing": texture_report,
+        "photo_texturing_error": texture_error,
+        "surface_stitching": stitching_report,
         "geometry_quality": quality,
         "artifacts": {
             "dense_point_cloud": cloud_path.name,
@@ -479,6 +548,10 @@ def reconstruct_calibrated_depth(
             "clean_mesh": clean_mesh.name,
             "glb": glb.name if glb.is_file() else None,
             "fusion_report": fusion_report_path.name,
+            "texture_atlas": "texture-atlas.jpg" if (output / "texture-atlas.jpg").is_file() else None,
+            "texture_report": "texture-report.json" if (output / "texture-report.json").is_file() else None,
+            "surface_regions": "surface-regions.json" if (output / "surface-regions.json").is_file() else None,
+            "stitching_report": "stitching-report.json" if (output / "stitching-report.json").is_file() else None,
         },
         "hashes": hashes,
         "stages": stages,
@@ -486,7 +559,9 @@ def reconstruct_calibrated_depth(
         "limitations": [
             "A profundidade monocular foi alinhada por vista aos pontos SfM; não equivale a estéreo denso COLMAP.",
             "Quando o Poisson excede o limite de execução, a malha preserva os componentes significativos das superfícies calibradas e fundidas por voxel.",
-            "Cores de vértice vêm das fotos, sem atlas UV; regiões sem observação não são preenchidas semanticamente.",
+            "Faces sem projeção fotográfica válida usam um bloco neutro do atlas e são contabilizadas separadamente.",
+            "Regiões arquitetônicas são candidatos geométricos corrigíveis, não classes semânticas confirmadas.",
+            "A costura aproxima somente superfícies dentro do limite configurado e com a mesma família dominante de normal; ela não preenche regiões ocultas.",
             "A malha requer comparação independente com a referência antes de qualquer aprovação comercial.",
         ],
     }
