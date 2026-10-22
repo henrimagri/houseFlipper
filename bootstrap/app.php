@@ -51,6 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->prependToPriorityList([ThrottleRequests::class, SubstituteBindings::class, Authorize::class], EnsureVerifiedAccount::class);
         $middleware->prependToPriorityList(EnsureVerifiedAccount::class, EnsureActiveAccount::class);
+        $middleware->prependToPriorityList([ThrottleRequests::class, SubstituteBindings::class, Authorize::class], \App\Http\Middleware\EnsurePlatformAdmin::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -137,6 +137,14 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
         $controller=\App\Http\Controllers\Api\PlatformOperationsController::class;
         foreach (['clients','subscriptions','trials','churn','funnel','cohorts','events'] as $method) Route::get('/'.$method, [$controller,$method]);
         Route::get('/clients/{id}', [$controller,'client'])->whereNumber('id');
+        $security=\App\Http\Controllers\Api\PlatformSecurityController::class;
+        foreach(['incidents','sessions','ips'] as $method) Route::get('/'.$method,[$security,$method]);
+        Route::get('/events/{id}',[$security,'event'])->whereNumber('id');
+        Route::post('/incidents',[$security,'storeIncident']);
+        Route::patch('/incidents/{id}',[$security,'updateIncident'])->whereNumber('id');
+        Route::post('/actions',[$security,'action'])->middleware('throttle:10,1');
+        Route::post('/clients/{id}/notes',[$security,'support'])->whereNumber('id');
+
         Route::get('/saas-leads', [SaasLeadController::class, 'index']);
         Route::patch('/saas-leads/{lead}', [SaasLeadController::class, 'update'])->whereNumber('lead');
     });

@@ -22,7 +22,10 @@ class ObservePlatformRequest
         $start = hrtime(true);
         $exceptionType = null;
         try {
-            $response = $next($request);
+            $ipHash=hash_hmac('sha256',(string)$request->ip(),(string)config('app.key'));
+            $blocked=false;
+            try { $blocked=\App\Models\PlatformControl::where('kind','ip')->where('key',$ipHash)->where('expires_at','>',now())->where('value->status','blocked')->exists(); } catch (\Throwable) {}
+            $response = $blocked ? response()->json(['message'=>'Acesso temporariamente restrito.'],403) : $next($request);
         } catch (\Throwable $e) {
             $exceptionType = class_basename($e);
             app(ExceptionHandler::class)->report($e);
@@ -35,6 +38,7 @@ class ObservePlatformRequest
         try {
             $rec = app(EventRecorder::class);
             $status = $response->getStatusCode();
+            foreach(app(\App\Services\Platform\SecuritySignals::class)->inspect($request) as $rule) $rec->record('security','security.signal.detected',['rule'=>$rule,'outcome'=>'observed'],$request,'medium');
             $row = $rec->record('api', $status >= 400 ? 'api.request.failed' : 'api.request.completed', ['exception_type' => $status >= 500 ? $exceptionType : null], $request, $status >= 500 ? 'high' : 'info');
             $row->update(['status' => $status, 'duration_ms' => min(4294967295, (int) round((hrtime(true) - $start) / 1e6)),
                 'request_bytes' => is_numeric($request->header('Content-Length')) ? min(1000000000, max(0, (int) $request->header('Content-Length'))) : null,
