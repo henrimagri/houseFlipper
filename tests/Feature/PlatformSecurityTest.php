@@ -20,7 +20,7 @@ class PlatformSecurityTest extends TestCase
     {
         $u = User::factory()->create(['email_verified_at' => now(), 'password' => 'test-password']);
         PlatformAdmin::create(['user_id' => $u->id, 'email' => $u->email]);
-        Sanctum::actingAs($u);
+        $this->platformSession($u);
 
         return $u;
     }
@@ -29,7 +29,7 @@ class PlatformSecurityTest extends TestCase
     {
 
         $this->withoutMiddleware(ThrottleRequests::class);
-        Sanctum::actingAs(User::factory()->create());
+        $this->platformSession(User::factory()->create());
 
         foreach (Route::getRoutes() as $route) {
             if (! str_starts_with($route->uri(), 'api/platform/')) {

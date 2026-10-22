@@ -18,7 +18,7 @@ class PlatformOperationsTest extends TestCase
     {
         $u = User::factory()->create(['email_verified_at' => now()]);
         PlatformAdmin::create(['user_id' => $u->id, 'email' => $u->email]);
-        Sanctum::actingAs($u);
+        $this->platformSession($u);
 
         return $u;
     }
@@ -28,7 +28,7 @@ class PlatformOperationsTest extends TestCase
         $this->getJson('/api/platform/overview')->assertUnauthorized();
         foreach (['common', 'corretor', 'imobiliaria', 'house_flipper', 'no-product', 'foreign-tenant'] as $name) {
             $u = User::factory()->create(['name' => $name, 'email_verified_at' => now()]);
-            Sanctum::actingAs($u);
+            $this->platformSession($u);
             $this->getJson('/api/platform/overview')->assertForbidden();
         }
         $u = $this->operator();

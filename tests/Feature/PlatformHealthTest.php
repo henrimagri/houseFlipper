@@ -19,7 +19,7 @@ class PlatformHealthTest extends TestCase
     {
         $u = User::factory()->create();
         PlatformAdmin::create(['user_id' => $u->id, 'email' => $u->email]);
-        Sanctum::actingAs($u);
+        $this->platformSession($u);
         config(['ai.worker.endpoint' => 'http://untrusted.test', 'ai.worker.token' => 'SECRET_WORKER_TOKEN']);
         Cache::forget('platform:health');
         Http::preventStrayRequests();
@@ -34,7 +34,7 @@ class PlatformHealthTest extends TestCase
     {
         $u = User::factory()->create();
         PlatformAdmin::create(['user_id' => $u->id, 'email' => $u->email]);
-        Sanctum::actingAs($u);
+        $this->platformSession($u);
         foreach ([10, 20, 30, 40, 100] as $ms) {
             PlatformEvent::create(['category' => 'api', 'event' => 'api.request.failed', 'tenant_id' => 9, 'route' => 'api/test', 'duration_ms' => $ms, 'status' => 500]);
         }

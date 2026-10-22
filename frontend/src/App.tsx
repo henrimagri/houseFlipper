@@ -57,6 +57,7 @@ const ImportarItbi = lazy(() => import('@/pages/ImportarItbi'));
 const AnaliseMercadoOportunidade = lazy(() => import('@/pages/AnaliseMercadoOportunidade'));
 const CentralFinanceira = lazy(() => import('@/pages/CentralFinanceira'));
 const WizardFinanceiro = lazy(() => import('@/pages/WizardFinanceiro'));
+const PlatformMfaGate = lazy(() => import('@/pages/platform/PlatformMfaGate'));
 const PlatformConsole = lazy(() => import('@/pages/platform/PlatformConsole'));
 const Onboarding = lazy(() => import('@/pages/onboarding/Onboarding'));
 const Home = lazy(() => import('@/pages/public/Home'));
@@ -119,8 +120,9 @@ export default function App() {
         <Route path="/redefinir-senha" element={<ResetPassword />} />
         <Route path="/confirmar-email" element={<VerifyEmail />} />
 
-        <Route path="/platform" element={<PrivateRoute><PlatformConsole /></PrivateRoute>} />
-        <Route path="/platform/:section" element={<PrivateRoute><PlatformConsole /></PrivateRoute>} />
+        <Route path="/platform" element={<PrivateRoute><PlatformMfaGate><PlatformConsole /></PlatformMfaGate></PrivateRoute>} />
+        <Route path="/platform/mfa" element={<PrivateRoute><PlatformMfaGate management /></PrivateRoute>} />
+        <Route path="/platform/:section" element={<PrivateRoute><PlatformMfaGate><PlatformConsole /></PlatformMfaGate></PrivateRoute>} />
 
         <Route element={<PrivateRoute><ProductLayout product="account" /></PrivateRoute>}>
           <Route path="/app/inicio" element={<Inicio />} />

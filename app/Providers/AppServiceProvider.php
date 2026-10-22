@@ -68,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('import-itbi', fn (User $user) => $user->getAllPermissions()->contains('name', 'itbi.import'));
         RateLimiter::for('visualization-edit', fn (Request $request) => Limit::perMinute(60)->by('scene-edit:'.$request->user()->id));
         RateLimiter::for('platform-admin', fn (Request $request) => Limit::perMinute(60)->by('platform-user:'.$request->user()?->id));
+        RateLimiter::for('platform-mfa', fn (Request $request) => Limit::perMinute(5)->by('platform-mfa:'.$request->user()?->id));
         RateLimiter::for('platform-action', fn (Request $request) => Limit::perMinute(10)->by('platform-action:'.$request->user()?->id));
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?: $request->ip()));
         RateLimiter::for('login', fn (Request $request) => [

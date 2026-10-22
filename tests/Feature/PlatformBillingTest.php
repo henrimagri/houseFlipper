@@ -16,7 +16,7 @@ class PlatformBillingTest extends TestCase
     {
         $u = User::factory()->create(['name' => '=HYPERLINK("bad")']);
         PlatformAdmin::create(['user_id' => $u->id, 'email' => $u->email]);
-        Sanctum::actingAs($u);
+        $this->platformSession($u);
         $this->getJson('/api/platform/billing')->assertOk()->assertJsonPath('mrr', null)->assertJsonPath('received_revenue', null);
         $this->getJson('/api/platform/webhooks')->assertOk();
         $this->getJson('/api/platform/emails')->assertOk()->assertJsonPath('delivery', 'not_configured');

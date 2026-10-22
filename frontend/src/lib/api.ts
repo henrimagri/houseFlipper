@@ -32,6 +32,9 @@ api.interceptors.response.use(
         window.location.href = '/entrar';
       }
     }
+    if (error.response?.status === 403 && error.response?.data?.code === 'platform_mfa_required') {
+      window.dispatchEvent(new Event('platform-mfa-required'));
+    }
     if (error.response?.status === 403 && error.response?.data?.code === 'email_verification_required' && window.location.pathname !== '/confirmar-email') {
       window.location.href = '/confirmar-email';
     }

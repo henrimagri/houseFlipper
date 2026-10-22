@@ -68,6 +68,10 @@ class ObservePlatformRequest
 
             $status = $response->getStatusCode();
 
+            if ($request->routeIs('platform.mfa.*') && $status >= 400 && $request->isMethod('POST')) {
+                $rec->record('security', 'admin.mfa.failed', ['outcome' => 'rejected'], $request, 'medium')->update(['status' => $status]);
+            }
+
             foreach (app(SecuritySignals::class)->inspect($request) as $rule) {
                 $rec->record('security', 'security.signal.detected', ['rule' => $rule, 'outcome' => 'observed'], $request, 'medium');
             }

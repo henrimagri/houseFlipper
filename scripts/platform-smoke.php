@@ -25,6 +25,15 @@ try {
     if (! $login->successful() || ! is_string($token = $login->json('token'))) {
         throw new RuntimeException('Local QA login failed (HTTP '.$login->status().').');
     }
+    $locked = (clone $client)->withToken($token)->get('http://127.0.0.1:8000/api/platform/overview');
+    $results[] = ['endpoint' => 'mfa_gate_before_enrolment', 'status' => $locked->status()];
+    if ($locked->status() !== 403) throw new RuntimeException('MFA gate did not block unverified session');
+    $enrol = (clone $client)->withToken($token)->post('http://127.0.0.1:8000/api/platform/mfa/enrol', ['password' => $password]);
+    if (! $enrol->successful() || ! is_string($mfaSecret = $enrol->json('secret'))) throw new RuntimeException('Local MFA enrolment failed');
+    $confirm = (clone $client)->withToken($token)->post('http://127.0.0.1:8000/api/platform/mfa/confirm', ['code' => app(\App\Services\Platform\Totp::class)->code($mfaSecret, now()->timestamp)]);
+    $results[] = ['endpoint' => 'mfa_confirm', 'status' => $confirm->status()];
+    if (! $confirm->successful()) throw new RuntimeException('Local MFA confirmation failed');
+    unset($mfaSecret, $enrol, $confirm);
     foreach (['overview', 'clients', 'trials', 'funnel', 'cohorts', 'churn', 'events', 'incidents', 'sessions', 'ips', 'health', 'performance', 'errors', 'ai', 'tools', 'rag', 'jobs', 'storage', 'queues', 'subscriptions', 'billing', 'webhooks', 'emails', 'controls', 'saas-leads'] as $endpoint) {
         $start = hrtime(true);
         $response = (clone $client)->withToken($token)->get('http://127.0.0.1:8000/api/platform/'.$endpoint, ['per_page' => 2]);

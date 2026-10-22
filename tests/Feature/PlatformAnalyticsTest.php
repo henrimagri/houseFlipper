@@ -19,7 +19,7 @@ class PlatformAnalyticsTest extends TestCase
     {
         $u = User::factory()->create(['email_verified_at' => now()]);
         PlatformAdmin::create(['user_id' => $u->id, 'email' => $u->email]);
-        Sanctum::actingAs($u);
+        $this->platformSession($u);
     }
 
     public function test_clients_filter_products_pagination_and_do_not_return_secrets(): void

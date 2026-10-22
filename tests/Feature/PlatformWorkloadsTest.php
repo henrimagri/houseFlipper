@@ -20,7 +20,7 @@ class PlatformWorkloadsTest extends TestCase
     {
         $u = User::factory()->create();
         PlatformAdmin::create(['user_id' => $u->id, 'email' => $u->email]);
-        Sanctum::actingAs($u);
+        $this->platformSession($u);
         foreach ([1, 2] as $t) {
             AiToolRun::create(['user_id' => $u->id, 'tenant_id' => $t, 'product_slug' => 'corretor', 'agent' => 'broker_assistant', 'tool' => 'retrieve_knowledge', 'status' => 'completed', 'latency_ms' => 20, 'input_hash' => str_repeat('a', 64), 'input_summary' => ['private' => 'NEVER_EXPOSE_THIS']]);
         }
@@ -34,7 +34,7 @@ class PlatformWorkloadsTest extends TestCase
     {
         $u = User::factory()->create();
         PlatformAdmin::create(['user_id' => $u->id, 'email' => $u->email]);
-        Sanctum::actingAs($u);
+        $this->platformSession($u);
         $v = PropertyVisualization::create(['tenant_id' => 8, 'user_id' => $u->id, 'subject_type' => 'propriedades', 'subject_id' => 1, 'status' => 'ready', 'level' => 'preview']);
         PropertyProcessingJob::create(['property_visualization_id' => $v->id, 'tenant_id' => 8, 'user_id' => $u->id, 'kind' => 'photogrammetry', 'status' => 'completed', 'result' => ['actual_method' => 'tsdf', 'private_path' => 'SECRET_PRIVATE_ARTIFACT', 'geometry_quality' => ['final_model_eligible' => false]]]);
         $this->getJson('/api/platform/jobs?tenant_id=8')->assertOk()->assertJsonPath('data.0.actual_method', 'tsdf')->assertJsonPath('data.0.quality.final_model_eligible', false)->assertJsonPath('data.0.quality.precision_10cm', null)->assertDontSee('SECRET_PRIVATE_ARTIFACT');

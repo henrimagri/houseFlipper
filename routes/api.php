@@ -214,6 +214,12 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
 
     Route::middleware(['platform-admin', 'throttle:platform-admin'])->prefix('platform')->group(function () {
 
+        $mfa = \App\Http\Controllers\Api\PlatformMfaController::class;
+        Route::get('/mfa/status', [$mfa, 'status'])->name('platform.mfa.status');
+        foreach (['enrol', 'confirm', 'challenge', 'recoveries', 'disable'] as $method) {
+            Route::post('/mfa/'.$method, [$mfa, $method])->middleware('throttle:platform-mfa')->name('platform.mfa.'.$method);
+        }
+
         Route::get('/overview', [PlatformOperationsController::class, 'overview']);
 
         $controller = PlatformOperationsController::class;

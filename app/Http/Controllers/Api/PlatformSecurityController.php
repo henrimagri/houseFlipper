@@ -87,6 +87,8 @@ class PlatformSecurityController extends Controller
 
         abort_unless(Hash::check($d['password'], $r->user()->password), 403, 'Reautenticação inválida.');
 
+        abort_unless(app(\App\Services\Platform\PlatformMfa::class)->verified($r, true), 403, 'Valide novamente o MFA para uma ação sensível (janela de 10 minutos).');
+
         return $d;
 
     }

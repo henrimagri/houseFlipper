@@ -24,7 +24,7 @@ class PlatformControlsTest extends TestCase
     {
         $u = User::factory()->create(['password' => 'safe-qa-password']);
         PlatformAdmin::create(['user_id' => $u->id, 'email' => $u->email]);
-        Sanctum::actingAs($u);
+        $this->platformSession($u);
 
         return $u;
     }
@@ -63,7 +63,7 @@ class PlatformControlsTest extends TestCase
             TenantProductSubscription::create(['tenant_id' => $tenant->id, 'product_slug' => $product, 'active' => true, 'status' => 'active']);
             if ($product === 'imobiliaria') {
                 app(OrganizationService::class)->ensureForTenant($user);
-            }Sanctum::actingAs($user);
+            }$this->platformSession($user);
             foreach (Route::getRoutes() as $route) {
                 if (! str_starts_with($route->uri(), 'api/platform/')) {
                     continue;
