@@ -132,7 +132,7 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
         Route::get('/proposals', [AgencyWorkspaceController::class, 'proposals']);
         Route::post('/proposals', [AgencyWorkspaceController::class, 'storeProposal']);
     });
-    Route::middleware('platform-admin')->prefix('platform')->group(function () {
+    Route::middleware(['platform-admin', 'throttle:60,1'])->prefix('platform')->group(function () {
         Route::get('/overview', [PlatformAdminController::class, 'overview']);
         Route::get('/saas-leads', [SaasLeadController::class, 'index']);
         Route::patch('/saas-leads/{lead}', [SaasLeadController::class, 'update'])->whereNumber('lead');

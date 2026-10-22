@@ -37,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request): ?string => $request->is('api/*') ? null : '/login'
         );
         $middleware->api(prepend: [ApiSecurityHeaders::class]);
+        $middleware->append(\App\Http\Middleware\ObservePlatformRequest::class);
         $middleware->api(append: [ValidateResourceIdentifiers::class]);
         $middleware->api(append: [ValidatePagination::class, 'throttle:api']);
         $middleware->alias([
