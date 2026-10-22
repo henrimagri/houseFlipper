@@ -31,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \App\Services\Platform\DomainTelemetry::boot();
         if ($caBundle = config('services.http.ca_bundle')) {
             Http::globalOptions(['verify' => $caBundle]);
         }

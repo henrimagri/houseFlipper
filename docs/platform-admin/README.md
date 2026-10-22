@@ -36,3 +36,7 @@ Security Center por eventos/rota/IP mascarado, timeline correlacionada, incident
 ## Etapa 4 — API, erros, performance e health
 
 Snapshot de serviços com timeouts/allowlist, banco/storage/fila e última checagem. Performance com percentis amostrais explicitados; erros por rota/status, pesquisa por identificadores sem conteúdo privado. `--filter Platform`: 18/18, 124 assertions, 2.315 ms. Sem histórico de uptime nem heartbeat real de fila. Texto/arquivos normalizados para UTF-8; sem nova dependência.
+
+## Etapa 5 — IA, RAG e ferramentas
+
+Agregados reais de AiToolRun por provider/modelo/tool/status/produto, tokens/custo registrado nulos quando ausentes; mensagens apenas contadas. Consulta de ferramentas exclui inputs, hashes de conteúdo e respostas. Observers criam metadados de uso de IA, transições de assinatura e jobs sem payload privado. RAG usa tool retrieve_knowledge; métricas de indexação não verificadas continuam indisponíveis. Modelo configurado não é apresentado como carregado. `--filter Platform`: 19/19, 137 assertions, 1.948 ms.
