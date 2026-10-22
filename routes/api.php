@@ -133,7 +133,10 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
         Route::post('/proposals', [AgencyWorkspaceController::class, 'storeProposal']);
     });
     Route::middleware(['platform-admin', 'throttle:60,1'])->prefix('platform')->group(function () {
-        Route::get('/overview', [PlatformAdminController::class, 'overview']);
+        Route::get('/overview', [\App\Http\Controllers\Api\PlatformOperationsController::class, 'overview']);
+        $controller=\App\Http\Controllers\Api\PlatformOperationsController::class;
+        foreach (['clients','subscriptions','trials','churn','funnel','cohorts','events'] as $method) Route::get('/'.$method, [$controller,$method]);
+        Route::get('/clients/{id}', [$controller,'client'])->whereNumber('id');
         Route::get('/saas-leads', [SaasLeadController::class, 'index']);
         Route::patch('/saas-leads/{lead}', [SaasLeadController::class, 'update'])->whereNumber('lead');
     });

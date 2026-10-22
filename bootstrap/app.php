@@ -2,7 +2,10 @@
 
 use App\Http\Middleware\ApiSecurityHeaders;
 use App\Http\Middleware\EnsureActiveAccount;
+use App\Http\Middleware\EnsurePlatformAdmin;
+use App\Http\Middleware\EnsureProductAccess;
 use App\Http\Middleware\EnsureVerifiedAccount;
+use App\Http\Middleware\ObservePlatformRequest;
 use App\Http\Middleware\ValidatePagination;
 use App\Http\Middleware\ValidateResourceIdentifiers;
 use Illuminate\Auth\Middleware\Authorize;
@@ -37,14 +40,14 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request): ?string => $request->is('api/*') ? null : '/login'
         );
         $middleware->api(prepend: [ApiSecurityHeaders::class]);
-        $middleware->append(\App\Http\Middleware\ObservePlatformRequest::class);
+        $middleware->append(ObservePlatformRequest::class);
         $middleware->api(append: [ValidateResourceIdentifiers::class]);
         $middleware->api(append: [ValidatePagination::class, 'throttle:api']);
         $middleware->alias([
             'active-account' => EnsureActiveAccount::class,
             'verified-account' => EnsureVerifiedAccount::class,
-            'product' => \App\Http\Middleware\EnsureProductAccess::class,
-            'platform-admin' => \App\Http\Middleware\EnsurePlatformAdmin::class,
+            'product' => EnsureProductAccess::class,
+            'platform-admin' => EnsurePlatformAdmin::class,
         ]);
         $middleware->prependToPriorityList([ThrottleRequests::class, SubstituteBindings::class, Authorize::class], EnsureVerifiedAccount::class);
         $middleware->prependToPriorityList(EnsureVerifiedAccount::class, EnsureActiveAccount::class);
