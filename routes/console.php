@@ -16,3 +16,6 @@ Schedule::command('data-sources:probe')
     ->everyThirtyMinutes()
     ->withoutOverlapping(10)
     ->runInBackground();
+
+Schedule::command('platform:evaluate-alerts')->everyMinute()->withoutOverlapping();
+Schedule::command('platform:prune --execute')->dailyAt('04:30')->withoutOverlapping();

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\DocumentRejectedException;
 use App\Exceptions\DocumentStorageException;
 use App\Http\Controllers\Controller;
+use App\Models\PlatformControl;
 use App\Services\Visualization\PhotoSceneAnalyzer;
 use App\Services\Visualization\PropertyVisualizationService;
 use Illuminate\Http\JsonResponse;
@@ -183,6 +184,8 @@ class PropertyVisualizationController extends Controller
 
     public function reconstructPhotogrammetry(Request $request, string $subjectType, int $id): JsonResponse
     {
+        $flag = PlatformControl::where('kind', 'flag')->where('key', 'reconstruction_enabled')->first();
+        abort_if($flag && ! ($flag->value['enabled'] ?? true), 503, 'Reconstrução temporariamente pausada pela operação. As simulações editáveis continuam disponíveis.');
         $data = $request->validate([
             'asset_ids' => ['required', 'array', 'min:8', 'max:120'],
             'asset_ids.*' => ['required', 'integer', 'distinct', 'min:1'],

@@ -5,10 +5,14 @@ namespace App\Providers;
 use App\Contracts\ItbiDatasetProviderInterface;
 use App\Models\CommercializationAuthorization;
 use App\Models\User;
+use App\Services\Platform\DomainTelemetry;
+use App\Services\Platform\EventRecorder;
 use App\Services\RealEstateData\SaoPauloItbiDatasetProvider;
 use App\Services\ResendTransportFactory;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Mail\Events\MessageSent;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
@@ -31,8 +35,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \App\Services\Platform\DomainTelemetry::boot();
-        \Illuminate\Support\Facades\Event::listen(\Illuminate\Mail\Events\MessageSent::class,function(){try{app(\App\Services\Platform\EventRecorder::class)->record('email','email.transport.accepted',['outcome'=>'sent']);}catch(\Throwable){}});
+        DomainTelemetry::boot();
+        Event::listen(MessageSent::class, function () {
+            try {
+                app(EventRecorder::class)->record('email', 'email.transport.accepted', ['outcome' => 'sent']);
+            } catch (\Throwable) {
+            }
+        });
         if ($caBundle = config('services.http.ca_bundle')) {
             Http::globalOptions(['verify' => $caBundle]);
         }
@@ -58,6 +67,8 @@ class AppServiceProvider extends ServiceProvider
         ]);
         Gate::define('import-itbi', fn (User $user) => $user->getAllPermissions()->contains('name', 'itbi.import'));
         RateLimiter::for('visualization-edit', fn (Request $request) => Limit::perMinute(60)->by('scene-edit:'.$request->user()->id));
+        RateLimiter::for('platform-admin', fn (Request $request) => Limit::perMinute(60)->by('platform-user:'.$request->user()?->id));
+        RateLimiter::for('platform-action', fn (Request $request) => Limit::perMinute(10)->by('platform-action:'.$request->user()?->id));
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute(120)->by($request->user()?->id ?: $request->ip()));
         RateLimiter::for('login', fn (Request $request) => [
             Limit::perMinute(10)->by('login-ip:'.$request->ip()),

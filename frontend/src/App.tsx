@@ -57,8 +57,7 @@ const ImportarItbi = lazy(() => import('@/pages/ImportarItbi'));
 const AnaliseMercadoOportunidade = lazy(() => import('@/pages/AnaliseMercadoOportunidade'));
 const CentralFinanceira = lazy(() => import('@/pages/CentralFinanceira'));
 const WizardFinanceiro = lazy(() => import('@/pages/WizardFinanceiro'));
-const PlatformHome = lazy(() => import('@/pages/platform/PlatformHome'));
-const SalesLeads = lazy(() => import('@/pages/platform/SalesLeads'));
+const PlatformConsole = lazy(() => import('@/pages/platform/PlatformConsole'));
 const Onboarding = lazy(() => import('@/pages/onboarding/Onboarding'));
 const Home = lazy(() => import('@/pages/public/Home'));
 const SolucoesCorretor = lazy(() => import('@/pages/public/SolucoesCorretor'));
@@ -120,6 +119,9 @@ export default function App() {
         <Route path="/redefinir-senha" element={<ResetPassword />} />
         <Route path="/confirmar-email" element={<VerifyEmail />} />
 
+        <Route path="/platform" element={<PrivateRoute><PlatformConsole /></PrivateRoute>} />
+        <Route path="/platform/:section" element={<PrivateRoute><PlatformConsole /></PrivateRoute>} />
+
         <Route element={<PrivateRoute><ProductLayout product="account" /></PrivateRoute>}>
           <Route path="/app/inicio" element={<Inicio />} />
           <Route path="/app/produtos" element={<Produtos />} />
@@ -127,8 +129,7 @@ export default function App() {
           <Route path="/app/configuracoes" element={<Configuracoes />} />
           <Route path="/app/ajuda" element={<Ajuda />} />
           <Route path="/app/onboarding/:product" element={<Onboarding />} />
-          <Route path="/platform" element={<PlatformHome />} />
-          <Route path="/platform/leads" element={<SalesLeads />} />
+
         </Route>
 
         <Route element={<PrivateRoute><ProductLayout product="corretor" /></PrivateRoute>}>

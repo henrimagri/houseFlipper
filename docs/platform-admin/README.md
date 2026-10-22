@@ -1,50 +1,42 @@
-# Central administrativa â€” execuÃ§Ã£o SOL
+# Central administrativa — SOL
 
+Implementação em `Correção-visua/proteção`, base `c2ea84a`. Entrada: `/platform`. Backend: `/api/platform`. A central reutiliza Laravel/Sanctum, assinaturas, leads comerciais, AiToolRun e PropertyProcessingJob existentes. Não é a administração de uma imobiliária e não concede direitos sobre produtos aos clientes.
 
+## Estado e execução
 
-Branch `CorreÃ§Ã£o-visua/proteÃ§Ã£o`. Base `c2ea84a`. O painel `/platform` e APIs `/api/platform` ampliam a base existente; nÃ£o sÃ£o administraÃ§Ã£o de imobiliÃ¡ria. Nenhum privilÃ©gio de tenant concede Platform Admin.
+| Etapa | Entrega | Evidência |
+|---|---|---|
+| 1 | Eventos, auditoria, autorização e retenção | `dfc2ad6`; testes iniciais 4/4, 30 assertions |
+| 2 | Clientes/perfil, trials, conversão, churn e coortes | `e22b849`; suíte Platform 12/12, 66 assertions |
+| 3 | Sinais, IPs, sessões, incidentes e ações com confirmação | `63e9c25`; Platform 16/16, 107 assertions |
+| 4 | API, erros, performance amostral e health | `0738fbf`; Platform 18/18, 124 assertions |
+| 5 | IA, RAG e ferramentas, sem conteúdo privado | `a2c0735`; Platform 19/19, 137 assertions |
+| 6 | Jobs 3D, assets registrados e filas | `a23757c`; Platform 20/20, 149 assertions |
+| 7 | Billing honesto, webhooks, e-mails e CSV | `9a512b5`; Platform 21/21, 164 assertions |
+| 8 | Interface integrada, alertas, feature flag, regressões e QA | Interface e fluxos validados; resultados e limitações em VALIDATION.md |
 
+As contagens acima são checkpoints, não somas de testes. A revisão posterior corrige problemas encontrados nas etapas anteriores. Nenhuma prontidão comercial integral foi declarada.
 
+## Operação
 
-## Etapa 1 â€” fundaÃ§Ã£o
+Conta ativa, e-mail realmente confirmado e PlatformAdmin existente (ou allowlist de implantação) são exigidos no backend antes de bindings. Nenhum papel de tenant concede acesso. Leituras administrativas são auditadas antes da consulta e falham se a auditoria estiver indisponível. Escritas administrativas ficam em transação com seu audit log. Ações de suspensão/revogação/bloqueio e controles exigem motivo, confirmação e senha atual; não operam sobre administradores da plataforma.
 
+Sanctum bearer exige token explícito; autenticação cookie stateful sem CSRF não foi habilitada. MFA ainda não configurado: evolução recomendada é TOTP/WebAuthn com recuperação, enrolment de administradores existentes e testes antes de exigir o segundo fator; não alegar proteção atual.
 
+Migration aditiva `2026_10_22_000001_create_platform_operations` cria eventos, incidentes e controles. Migration `000002` acrescenta índices para consultas reais. Nenhuma tabela comercial foi substituída. Ambiente local utiliza SQLite; compatibilidade operacional MySQL deve ser validada na implantação, sem atestado de teste MySQL neste host.
 
-Eventos estruturados com request/trace UUID prÃ³prio, rota parametrizada, status, latÃªncia e tamanhos. IP em HMAC e mÃ¡scara; corpo/query/headers/cookies nÃ£o sÃ£o coletados. Eventos API/autenticaÃ§Ã£o/acesso negado/429 e leitura administrativa. Conta ativa e e-mail efetivamente verificado exigidos inclusive para contas legadas. Papel existente `PlatformAdmin`/allowlist de implantaÃ§Ã£o preservado. Rate limit 60/min. Sanctum bearer continua exigindo token explÃ­cito; nÃ£o foi ativada autenticaÃ§Ã£o por cookie sem CSRF. MFA nÃ£o configurado: pendÃªncia explÃ­cita, sem alegar proteÃ§Ã£o existente.
+`platform:prune` é dry-run; `--execute` aplica retenção em lotes. `platform:evaluate-alerts` avalia regras habilitadas, sem bloqueio automático. Scheduler possui avaliação a cada minuto e prune diário; seu daemon não foi instalado ou presumido ativo. Não há envio externo de alertas.
 
+## Documentação
 
+- OBSERVABILITY.md: schema, fontes, saúde e limites.
+- SECURITY_CENTER.md: sinais e ações controladas.
+- ANALYTICS.md: definições de funil/coortes/uso.
+- RETENTION.md: política e limpeza.
+- VALIDATION.md: comandos, QA e pendências.
 
-RetenÃ§Ã£o configurÃ¡vel em `config/observability.php`; `platform:prune` faz dry-run, `--execute` remove em lotes. Auditoria tem mÃ­nimo de 730 dias. Falha da telemetria nÃ£o interrompe operaÃ§Ã£o cliente; gravaÃ§Ãµes administrativas explÃ­citas falham junto Ã  transaÃ§Ã£o. Instalar somente migration aditiva nova; sem apagar dados.
+O script `scripts/platform-smoke.php` executa checks HTTP exclusivamente em APP_ENV=local com operador temporário, sem aproveitar sessão privada do navegador, imprimir credenciais ou registrar corpos das respostas. O operador e tokens são removidos ao terminar; auditoria é preservada.
 
+## Limites explícitos
 
-
-Testes iniciais: `php vendor/bin/phpunit --filter PlatformOperationsTest`, 4 testes de autorizaÃ§Ã£o, redaction por nÃ£o coleta, deduplicaÃ§Ã£o/auditoria e retenÃ§Ã£o. Resultado final serÃ¡ registrado apÃ³s execuÃ§Ã£o. Infraestrutura de eventos comeÃ§a agora, nÃ£o recupera atividade histÃ³rica ausente. Etapas seguintes em execuÃ§Ã£o; nenhuma prontidÃ£o global declarada.
-
-
-
-## Etapa 2 — clientes e analytics
-
-
-
-APIs de clientes/perfil, assinaturas, trials vencidos, churn, funil e coortes implementadas. Filtros e paginação no backend. Receita/UTM/motivos ausentes continuam nulos. `php vendor/bin/phpunit --filter Platform`: 12/12, 66 assertions, 1.922 ms. Interface e QA do conjunto pendentes até etapa 8. Detalhes: ANALYTICS.md. Etapa 1: 4/4, 30 assertions, 877 ms.
-
-
-## Etapa 3 — segurança e ações administrativas
-
-Security Center por eventos/rota/IP mascarado, timeline correlacionada, incidentes, sessões Sanctum, suporte e suspensão/revogação controladas. Score não bloqueia automaticamente. Teste das rotas revelou binding antes da autorização: prioridade corrigida. Detector traversal tinha regex inválido: substituído por comparação limitada. `--filter Platform`: 16/16, 107 assertions, 2.977 ms. QA visual e regras de alerta seguem nas próximas etapas.
-
-## Etapa 4 — API, erros, performance e health
-
-Snapshot de serviços com timeouts/allowlist, banco/storage/fila e última checagem. Performance com percentis amostrais explicitados; erros por rota/status, pesquisa por identificadores sem conteúdo privado. `--filter Platform`: 18/18, 124 assertions, 2.315 ms. Sem histórico de uptime nem heartbeat real de fila. Texto/arquivos normalizados para UTF-8; sem nova dependência.
-
-## Etapa 5 — IA, RAG e ferramentas
-
-Agregados reais de AiToolRun por provider/modelo/tool/status/produto, tokens/custo registrado nulos quando ausentes; mensagens apenas contadas. Consulta de ferramentas exclui inputs, hashes de conteúdo e respostas. Observers criam metadados de uso de IA, transições de assinatura e jobs sem payload privado. RAG usa tool retrieve_knowledge; métricas de indexação não verificadas continuam indisponíveis. Modelo configurado não é apresentado como carregado. `--filter Platform`: 19/19, 137 assertions, 1.948 ms.
-
-## Etapa 6 — 3D, GPU, filas e storage
-
-Listagem paginada de PropertyProcessingJob, método real e métricas somente quando presentes, tempo entre timestamps. Sem payload bruto/paths/fotos. GPU disponível pelo health, RAM/VRAM por job ficam nulas sem telemetria apropriada. Assets registrados agrupados por tenant/kind e bytes; não equivale a inventário completo de disco. Fila e failed_jobs observáveis sem retry inseguro. Cancelamento permanece no fluxo do imóvel; central ainda não cancela jobs de outro usuário. `--filter Platform`: 20/20, 149 assertions, 2.613 ms. Fase 8 e gate preservados.
-
-## Etapa 7 — billing, webhooks, e-mails e exportação
-
-Assinaturas e status reais; MRR/ARR/receita recebida não configurados sem ledger conciliado. Webhooks exibem só provider/status/timestamps, sem payload/assinatura e sem retry. Transporte de e-mail registra aceitação sem conteúdo/destinatário; entrega/bounce não configurados. Leads comerciais continuam separados e passam a paginar/auditar mudanças. CSV limitado a 5 mil linhas, colunas permitidas, sem e-mail/tokens e com proteção contra fórmula; exportações auditadas. `--filter Platform`: 21/21, 164 assertions, 2.661 ms.
+Sem ledger conciliado, MRR/ARR/receita permanecem indisponíveis. Checkout e webhooks nativos ainda não validados; processamento HMAC legado não é comprovação de integração comercial. Entrega/bounce, UTM/visitantes consentidos, uptime histórico, heartbeat de filas, APM completo, quotas e inventário total de storage, cancelamento administrativo cross-user e métricas GPU por job não são apresentados como concluídos. Conteúdo de conversas/fotografias não está disponível na central. Reconstrução Fase 8 e gate preservados.

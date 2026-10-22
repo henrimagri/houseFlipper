@@ -74,4 +74,12 @@ class PlatformOperationsTest extends TestCase
         $this->assertSame(1, PlatformEvent::count());
         $this->assertSame('audit', PlatformEvent::first()->category);
     }
+
+    public function test_real_login_form_request_preserves_actor_in_telemetry_without_password(): void
+    {
+        $user = User::factory()->create(['password' => 'qa-only-password']);
+        $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'qa-only-password', 'device_name' => 'qa-test'])->assertOk();
+        $this->assertDatabaseHas('platform_events', ['event' => 'auth.login.success', 'user_id' => $user->id, 'status' => 200]);
+        $this->assertStringNotContainsString('qa-only-password', PlatformEvent::all()->toJson());
+    }
 }

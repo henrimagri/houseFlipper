@@ -8,12 +8,13 @@ use App\Http\Requests\Auth\RegisterRequest;
 use App\Services\Ai\ProductEntitlement;
 use App\Services\AuthService;
 use App\Services\RegistrationVerificationService;
+use App\Support\ProductContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -26,6 +27,8 @@ class AuthController extends Controller
     {
         $data = $this->authService->register($request->validated());
         $delivery = app(RegistrationVerificationService::class)->send($data['user']);
+        $request->setUserResolver(fn () => $data['user']);
+        app('request')->attributes->set('platform_authenticated_user', $data['user']);
 
         return response()->json([
             'tenant' => [
@@ -55,6 +58,9 @@ class AuthController extends Controller
         if (! $result) {
             return response()->json(['message' => 'Credenciais inválidas'], 401);
         }
+
+        $request->setUserResolver(fn () => $result['user']);
+        app('request')->attributes->set('platform_authenticated_user', $result['user']);
 
         return response()->json([
             'user' => [
@@ -142,7 +148,9 @@ class AuthController extends Controller
     {
         $data = $request->validate(['avatar' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048', 'dimensions:min_width=80,min_height=80,max_width=3000,max_height=3000']]);
         $directory = public_path('uploads/avatars');
-        if (! is_dir($directory)) mkdir($directory, 0755, true);
+        if (! is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
         $name = Str::uuid().'.'.$data['avatar']->extension();
         $data['avatar']->move($directory, $name);
 
@@ -153,7 +161,9 @@ class AuthController extends Controller
         $user->forceFill(['registration_profile' => $profile])->save();
         if (is_string($old) && preg_match('#^/uploads/avatars/[a-f0-9-]+\.(?:jpe?g|png|webp)$#i', $old)) {
             $oldPath = public_path(ltrim($old, '/'));
-            if (is_file($oldPath)) @unlink($oldPath);
+            if (is_file($oldPath)) {
+                @unlink($oldPath);
+            }
         }
 
         return response()->json(['message' => 'Foto atualizada.', 'avatar_url' => $profile['avatar_url']]);
@@ -164,7 +174,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'product' => ['required', 'string', 'max:40'],
         ]);
-        $slug = app(\App\Support\ProductContext::class)->normalize($data['product']);
+        $slug = app(ProductContext::class)->normalize($data['product']);
         abort_if(! $slug, 422, 'Produto inválido.');
         abort_unless($this->entitlement->canAccessProduct($request->user(), $slug), 403, 'Este produto não está liberado para a conta.');
         $request->user()->forceFill(['last_product_slug' => $slug])->save();

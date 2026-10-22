@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\SaasLead;
 use App\Models\SaasLeadEvent;
+use App\Services\Platform\EventRecorder;
+use App\Services\Platform\PlatformQueries;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
@@ -75,6 +78,12 @@ class SaasLeadController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = SaasLead::query()->with(['events' => fn ($events) => $events->latest()->limit(8)])->latest();
+        $filters = app(PlatformQueries::class)->filters($request);
+        $query->whereBetween('created_at', [$filters['from'], $filters['to']]);
+        if (! empty($filters['search'])) {
+            $search = addcslashes($filters['search'], '%_');
+            $query->where(fn ($q) => $q->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%')->orWhere('id', ctype_digit($search) ? $search : 0));
+        }
         if ($product = $request->string('product')->toString()) {
             $query->where('product_slug', $product);
         }
@@ -85,7 +94,7 @@ class SaasLeadController extends Controller
             $query->where('intent', $intent);
         }
 
-        return response()->json(['data' => ($page=$query->simplePaginate((int)$request->input('per_page',25)))->items(),'page'=>$page->currentPage(),'has_more'=>$page->hasMorePages()]);
+        return response()->json(['data' => ($page = $query->simplePaginate((int) $request->input('per_page', 25)))->items(), 'page' => $page->currentPage(), 'has_more' => $page->hasMorePages()]);
     }
 
     public function update(Request $request, SaasLead $lead): JsonResponse
@@ -95,20 +104,23 @@ class SaasLeadController extends Controller
             'notes' => ['nullable', 'string', 'max:4000'],
             'assigned_user_id' => ['nullable', 'integer', 'exists:platform_admins,user_id'],
         ]);
-        $from = $lead->status;
-        $lead->fill($data)->save();
-        app(\App\Services\Platform\EventRecorder::class)->audit($request,'admin.lead.updated','saas_lead',$lead->id,['status'=>$from],['status'=>$lead->status]);
-        if (($data['status'] ?? $from) !== $from || filled($data['notes'] ?? null)) {
-            SaasLeadEvent::query()->create([
-                'saas_lead_id' => $lead->id,
-                'user_id' => $request->user()->id,
-                'from_status' => $from,
-                'to_status' => $lead->status,
-                'body' => $data['notes'] ?? null,
-            ]);
-        }
 
-        return response()->json(['data' => $lead->fresh()->load('events')]);
+        return DB::transaction(function () use ($request, $lead, $data) {
+            $from = $lead->status;
+            $lead->fill($data)->save();
+            app(EventRecorder::class)->audit($request, 'admin.lead.updated', 'saas_lead', $lead->id, ['status' => $from], ['status' => $lead->status]);
+            if (($data['status'] ?? $from) !== $from || filled($data['notes'] ?? null)) {
+                SaasLeadEvent::query()->create([
+                    'saas_lead_id' => $lead->id,
+                    'user_id' => $request->user()->id,
+                    'from_status' => $from,
+                    'to_status' => $lead->status,
+                    'body' => $data['notes'] ?? null,
+                ]);
+            }
+
+            return response()->json(['data' => $lead->fresh()->load('events')]);
+        });
     }
 
     private function maybeConfirm(SaasLead $lead): bool

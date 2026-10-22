@@ -3,6 +3,7 @@
 namespace App\Services\Platform;
 
 use App\Models\PlatformEvent;
+use App\Services\Ai\ProductEntitlement;
 use Illuminate\Http\Request;
 
 class EventRecorder
@@ -13,6 +14,7 @@ class EventRecorder
     public function record(string $category, string $event, array $metadata = [], ?Request $request = null, string $severity = 'info', ?string $dedupe = null): PlatformEvent
     {
         $request ??= request();
+        $actor = $request->attributes->get('platform_authenticated_user') ?? $request->user();
         $meta = array_intersect_key($metadata, array_flip(self::KEYS));
         foreach ($meta as $key => $value) {
             if (in_array($key, ['before', 'after'])) {
@@ -25,12 +27,15 @@ class EventRecorder
         }
         $ip = (string) $request->ip();
         $mask = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? preg_replace('/\.\d+$/', '.x', $ip) : (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) ? implode(':', array_slice(explode(':', $ip), 0, 3)).'::/48' : null);
-        $product = $request->header('X-Product-Context');
-        if (! in_array($product, ['corretor', 'imobiliaria', 'house_flipper'], true)) {
-            $product = null;
+        $product = $request->attributes->get('platform_product');
+        if (! $request->attributes->has('platform_product_checked')) {
+            $candidate = $request->header('X-Product-Context');
+            $product = $actor && ! $request->is('api/platform/*') && in_array($candidate, app(ProductEntitlement::class)->productsFor($actor), true) ? $candidate : null;
+            $request->attributes->set('platform_product', $product);
+            $request->attributes->set('platform_product_checked', true);
         }
         $route = $request->route()?->uri();
-        $attributes = ['category' => $category, 'event' => $event, 'severity' => $severity, 'user_id' => $request->user()?->id, 'tenant_id' => $request->user()?->tenant_id, 'product' => $product,
+        $attributes = ['category' => $category, 'event' => $event, 'severity' => $severity, 'user_id' => $actor?->id, 'tenant_id' => $actor?->tenant_id, 'product' => $product,
             'request_id' => $request->attributes->get('platform_request_id'), 'trace_id' => $request->attributes->get('platform_request_id'),
             'ip_hash' => hash_hmac('sha256', $ip, (string) config('app.key')), 'ip_mask' => $mask,
             'route' => $route ? mb_substr($route, 0, 220) : '[unmatched]', 'method' => $request->method(), 'metadata' => $meta, 'created_at' => now()];

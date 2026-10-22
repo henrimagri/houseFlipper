@@ -1,102 +1,54 @@
 <?php
 
-
-
 use App\Http\Controllers\Api\AgencyContractController;
-
 use App\Http\Controllers\Api\AgencyDashboardController;
-
 use App\Http\Controllers\Api\AgencyWorkspaceController;
-
 use App\Http\Controllers\Api\AiConversationController;
-
 use App\Http\Controllers\Api\AIPropertySearchController;
-
 use App\Http\Controllers\Api\AuctionController;
-
 use App\Http\Controllers\Api\AuthController;
-
 use App\Http\Controllers\Api\BillingController;
-
 use App\Http\Controllers\Api\BrokerDashboardController;
-
 use App\Http\Controllers\Api\BrokerSiteController;
-
 use App\Http\Controllers\Api\CaptureController;
-
 use App\Http\Controllers\Api\CategoriaDespesaController;
-
 use App\Http\Controllers\Api\CommercialListingController;
-
 use App\Http\Controllers\Api\CrmContactController;
-
 use App\Http\Controllers\Api\DashboardController;
-
 use App\Http\Controllers\Api\DataSourceStatusController;
-
 use App\Http\Controllers\Api\DespesaController;
-
 use App\Http\Controllers\Api\DocumentoController;
-
 use App\Http\Controllers\Api\EmailVerificationController;
-
 use App\Http\Controllers\Api\EventoCalendarioController;
-
 use App\Http\Controllers\Api\FinancialLedgerController;
-
 use App\Http\Controllers\Api\FlipperDashboardController;
-
 use App\Http\Controllers\Api\FornecedorController;
-
 use App\Http\Controllers\Api\InvestmentAnalysisController;
-
 use App\Http\Controllers\Api\ItbiImportController;
-
 use App\Http\Controllers\Api\MapListingsController;
-
 use App\Http\Controllers\Api\NotificationCenterController;
-
 use App\Http\Controllers\Api\OnboardingController;
-
 use App\Http\Controllers\Api\OpportunityController;
-
 use App\Http\Controllers\Api\PasswordResetController;
-
 use App\Http\Controllers\Api\PersonalBoardTaskController;
-
-use App\Http\Controllers\Api\PlatformAdminController;
-
+use App\Http\Controllers\Api\PlatformOperationsController;
+use App\Http\Controllers\Api\PlatformSecurityController;
+use App\Http\Controllers\Api\PlatformWorkloadsController;
 use App\Http\Controllers\Api\PostalCodeController;
-
 use App\Http\Controllers\Api\ProjetoController;
-
 use App\Http\Controllers\Api\PropertyMarketAnalysisController;
-
 use App\Http\Controllers\Api\PropertyVisualizationController;
-
 use App\Http\Controllers\Api\PropriedadeController;
-
 use App\Http\Controllers\Api\PublicAgencyController;
-
 use App\Http\Controllers\Api\PublicBrokerController;
-
 use App\Http\Controllers\Api\PublicCatalogController;
-
 use App\Http\Controllers\Api\SaasLeadController;
-
 use App\Http\Controllers\Api\TarefaController;
-
 use App\Http\Controllers\Api\VendaController;
-
 use App\Services\Ai\ProductEntitlement;
-
 use App\Services\NeighborhoodContextService;
-
 use Illuminate\Http\Request;
-
 use Illuminate\Support\Facades\Route;
-
-
 
 Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:register');
 
@@ -111,8 +63,6 @@ Route::get('/auth/postal-code/{postalCode}', PostalCodeController::class)->where
 Route::get('/auth/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
 
     ->middleware(['signed:relative', 'throttle:6,1'])->name('verification.verify');
-
-
 
 Route::get('/public/brokers/{slug}', [PublicBrokerController::class, 'show'])->middleware('throttle:60,1');
 
@@ -129,8 +79,6 @@ Route::get('/public/catalog', PublicCatalogController::class)->middleware('throt
 Route::post('/public/saas-leads', [SaasLeadController::class, 'store'])->middleware('throttle:saas-leads');
 
 Route::post('/billing/webhooks/{provider}', [BillingController::class, 'webhook'])->middleware('throttle:billing-webhook');
-
-
 
 Route::middleware(['auth:sanctum', 'active-account'])->group(function () {
 
@@ -161,8 +109,6 @@ Route::middleware(['auth:sanctum', 'active-account'])->group(function () {
     Route::put('/onboarding/{product}', [OnboardingController::class, 'update']);
 
 });
-
-
 
 Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group(function () {
 
@@ -266,33 +212,38 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
 
     });
 
-    Route::middleware(['platform-admin', 'throttle:60,1'])->prefix('platform')->group(function () {
+    Route::middleware(['platform-admin', 'throttle:platform-admin'])->prefix('platform')->group(function () {
 
-        Route::get('/overview', [\App\Http\Controllers\Api\PlatformOperationsController::class, 'overview']);
+        Route::get('/overview', [PlatformOperationsController::class, 'overview']);
 
-        $controller=\App\Http\Controllers\Api\PlatformOperationsController::class;
+        $controller = PlatformOperationsController::class;
 
-        foreach (['clients','subscriptions','trials','churn','funnel','cohorts','events','health','performance','errors','search'] as $method) Route::get('/'.$method, [$controller,$method]);
+        foreach (['clients', 'subscriptions', 'trials', 'churn', 'funnel', 'cohorts', 'events', 'health', 'performance', 'errors', 'search'] as $method) {
+            Route::get('/'.$method, [$controller, $method]);
+        }
 
-        Route::get('/clients/{id}', [$controller,'client'])->whereNumber('id');
+        Route::get('/clients/{id}', [$controller, 'client'])->whereNumber('id');
 
-        $workloads=\App\Http\Controllers\Api\PlatformWorkloadsController::class;
-        foreach(['ai','tools','rag','jobs','storage','queues','billing','webhooks','emails','export']as$method) Route::get('/'.$method,[$workloads,$method]);
-        $security=\App\Http\Controllers\Api\PlatformSecurityController::class;
+        $workloads = PlatformWorkloadsController::class;
+        foreach (['ai', 'tools', 'rag', 'jobs', 'storage', 'queues', 'billing', 'webhooks', 'emails', 'export', 'features'] as $method) {
+            Route::get('/'.$method, [$workloads, $method]);
+        }
+        $security = PlatformSecurityController::class;
 
-        foreach(['incidents','sessions','ips'] as $method) Route::get('/'.$method,[$security,$method]);
+        foreach (['incidents', 'sessions', 'ips', 'controls'] as $method) {
+            Route::get('/'.$method, [$security, $method]);
+        }
 
-        Route::get('/events/{id}',[$security,'event'])->whereNumber('id');
+        Route::get('/events/{id}', [$security, 'event'])->whereNumber('id');
 
-        Route::post('/incidents',[$security,'storeIncident']);
+        Route::post('/incidents', [$security, 'storeIncident']);
 
-        Route::patch('/incidents/{id}',[$security,'updateIncident'])->whereNumber('id');
+        Route::patch('/incidents/{id}', [$security, 'updateIncident'])->whereNumber('id');
 
-        Route::post('/actions',[$security,'action'])->middleware('throttle:10,1');
+        Route::post('/actions', [$security, 'action'])->middleware('throttle:platform-action');
+        Route::put('/controls', [$security, 'saveControl'])->middleware('throttle:platform-action');
 
-        Route::post('/clients/{id}/notes',[$security,'support'])->whereNumber('id');
-
-
+        Route::post('/clients/{id}/notes', [$security, 'support'])->whereNumber('id');
 
         Route::get('/saas-leads', [SaasLeadController::class, 'index']);
 
@@ -382,8 +333,6 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
 
         ]);
 
-
-
         return response()->json($service->analyze($data['selected']));
 
     })->middleware('throttle:market-data');
@@ -397,8 +346,6 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
     Route::match(['put', 'patch'], '/eventos-calendario/{id}', [EventoCalendarioController::class, 'update']);
 
     Route::delete('/eventos-calendario/{id}', [EventoCalendarioController::class, 'destroy']);
-
-
 
     Route::middleware('product:house_flipper')->group(function () {
 
@@ -456,13 +403,9 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
 
         Route::apiResource('vendas', VendaController::class);
 
-
-
         Route::get('/propriedades/{id}/roi', [VendaController::class, 'roi']);
 
     });
-
-
 
     Route::middleware('product:corretor,imobiliaria')->group(function () {
 
@@ -524,8 +467,6 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
 
     Route::post('/maps/searches', [MapListingsController::class, 'saveSearch']);
 
-
-
     Route::patch('/opportunities/{opportunity}/favorite', [OpportunityController::class, 'favorite']);
 
     Route::patch('/opportunities/{opportunity}/archive', [OpportunityController::class, 'archive']);
@@ -581,4 +522,3 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
     });
 
 });
-

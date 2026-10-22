@@ -1,0 +1,173 @@
+{
+  "passed": true,
+  "checked_at": "2026-10-22T22:46:39+00:00",
+  "browser_qa": "reported_separately_in_VALIDATION.md",
+  "checks": [
+    {
+      "endpoint": "overview",
+      "status": 200,
+      "ms": 288.2,
+      "json": true
+    },
+    {
+      "endpoint": "clients",
+      "status": 200,
+      "ms": 265.7,
+      "json": true
+    },
+    {
+      "endpoint": "trials",
+      "status": 200,
+      "ms": 266.8,
+      "json": true
+    },
+    {
+      "endpoint": "funnel",
+      "status": 200,
+      "ms": 266.7,
+      "json": true
+    },
+    {
+      "endpoint": "cohorts",
+      "status": 200,
+      "ms": 273,
+      "json": true
+    },
+    {
+      "endpoint": "churn",
+      "status": 200,
+      "ms": 269.6,
+      "json": true
+    },
+    {
+      "endpoint": "events",
+      "status": 200,
+      "ms": 265.8,
+      "json": true
+    },
+    {
+      "endpoint": "incidents",
+      "status": 200,
+      "ms": 267,
+      "json": true
+    },
+    {
+      "endpoint": "sessions",
+      "status": 200,
+      "ms": 270.6,
+      "json": true
+    },
+    {
+      "endpoint": "ips",
+      "status": 200,
+      "ms": 271.2,
+      "json": true
+    },
+    {
+      "endpoint": "health",
+      "status": 200,
+      "ms": 2479.1,
+      "json": true
+    },
+    {
+      "endpoint": "performance",
+      "status": 200,
+      "ms": 354.8,
+      "json": true
+    },
+    {
+      "endpoint": "errors",
+      "status": 200,
+      "ms": 275.8,
+      "json": true
+    },
+    {
+      "endpoint": "ai",
+      "status": 200,
+      "ms": 276.4,
+      "json": true
+    },
+    {
+      "endpoint": "tools",
+      "status": 200,
+      "ms": 272.2,
+      "json": true
+    },
+    {
+      "endpoint": "rag",
+      "status": 200,
+      "ms": 272.9,
+      "json": true
+    },
+    {
+      "endpoint": "jobs",
+      "status": 200,
+      "ms": 272.2,
+      "json": true
+    },
+    {
+      "endpoint": "storage",
+      "status": 200,
+      "ms": 279.6,
+      "json": true
+    },
+    {
+      "endpoint": "queues",
+      "status": 200,
+      "ms": 268.8,
+      "json": true
+    },
+    {
+      "endpoint": "subscriptions",
+      "status": 200,
+      "ms": 271.9,
+      "json": true
+    },
+    {
+      "endpoint": "billing",
+      "status": 200,
+      "ms": 269.8,
+      "json": true
+    },
+    {
+      "endpoint": "webhooks",
+      "status": 200,
+      "ms": 272.8,
+      "json": true
+    },
+    {
+      "endpoint": "emails",
+      "status": 200,
+      "ms": 269.1,
+      "json": true
+    },
+    {
+      "endpoint": "controls",
+      "status": 200,
+      "ms": 267,
+      "json": true
+    },
+    {
+      "endpoint": "saas-leads",
+      "status": 200,
+      "ms": 270.1,
+      "json": true
+    },
+    {
+      "endpoint": "client_360",
+      "status": 200
+    },
+    {
+      "endpoint": "incident_create",
+      "status": 201
+    },
+    {
+      "endpoint": "incident_close",
+      "status": 200
+    },
+    {
+      "endpoint": "logout",
+      "status": 200
+    }
+  ]
+}

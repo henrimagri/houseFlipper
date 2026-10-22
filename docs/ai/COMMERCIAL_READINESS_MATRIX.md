@@ -152,3 +152,17 @@ Referências públicas consultadas: [criar ambiente](https://www.simulador3d.com
 Detalhes e capturas: [MILESTONE4_PHOTO_REFINEMENT.md](MILESTONE4_PHOTO_REFINEMENT.md). Não substitui pendências das outras linhas nem atesta qualidade comercial geral.
 
 Incremento P1 executado após a pintura: [MILESTONE4_PARAMETRIC_EDITOR.md](MILESTONE4_PARAMETRIC_EDITOR.md). Corrigidos posicionamento inicial fora do piso, campo de dimensão que não revertia após 422 e destaque antigo reaplicado após carregar GLBs. Testes Laravel 108/108, frontend 44/44 e QA real. Vãos definidos pelo usuário não são medições extraídas das fotos. Padrões PBR são procedurais originais, não fototexturas. Fase 8 preservada.
+
+## SOL — central administrativa, 22/10/2026
+
+| Capacidade | Estado | Evidência e limite |
+|---|---|---|
+| Autorização da plataforma | Implementado e testado | Backend exige operador ativo, verificado e PlatformAdmin; administrador de tenant e assinante dos três produtos não obtêm acesso |
+| Observabilidade e auditoria | Implementado e testado; operação parcial | Requests UUID e metadados sem corpos/credenciais; leituras auditadas antes da consulta, ações transacionais; retenção configurável, daemon do scheduler pendente |
+| Clientes, trials e conversão | Implementado e testado; analytics parcial | Perfil 360, filtros, coortes observadas e classificação sem inventar uso anterior; UTM, visitantes consentidos, receita e motivos históricos indisponíveis |
+| Security Center | Implementado e testado; proteção parcial | Sinais heurísticos, sessões, IP mascarado/HMAC, incidentes, ações confirmadas, alertas deduplicados; MFA não configurado, sem promessa de detecção completa |
+| Infraestrutura, IA e 3D | Implementado e testado; telemetria parcial | Health, percentis amostrais, ferramentas, jobs e assets registrados; sem heartbeat, APM, quotas ou RAM/VRAM por job |
+| Receita, webhooks e e-mails | Parcial | Sem ledger conciliado e integração comercial validada, valores não medidos permanecem nulos; transporte aceito não equivale a entrega |
+| Interface administrativa | Parcialmente validada no navegador | Capturas reais e limites em [VALIDATION.md](../platform-admin/VALIDATION.md); timeout recuperável observado, lentidão transitória sem causa conclusiva; fluxos retomados, sem homologação de performance |
+
+Documentação e checkpoints: [central SOL](../platform-admin/README.md). Esta etapa não torna a plataforma integralmente pronta para comercialização nem altera a qualidade da reconstrução ativa.
