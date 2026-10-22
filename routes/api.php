@@ -277,7 +277,7 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
         Route::get('/clients/{id}', [$controller,'client'])->whereNumber('id');
 
         $workloads=\App\Http\Controllers\Api\PlatformWorkloadsController::class;
-        foreach(['ai','tools','rag']as$method) Route::get('/'.$method,[$workloads,$method]);
+        foreach(['ai','tools','rag','jobs','storage','queues']as$method) Route::get('/'.$method,[$workloads,$method]);
         $security=\App\Http\Controllers\Api\PlatformSecurityController::class;
 
         foreach(['incidents','sessions','ips'] as $method) Route::get('/'.$method,[$security,$method]);

@@ -14,4 +14,13 @@ class PlatformWorkloadsTest extends TestCase {
   $this->getJson('/api/platform/rag?tenant_id=1')->assertOk()->assertJsonPath('queries',1);
   $this->assertSame(2,PlatformEvent::where('event','ai.tool.completed')->count());
  }
+
+ public function test_job_listing_does_not_expose_result_artifact_paths_or_fabricate_metrics():void{
+  $u=User::factory()->create();PlatformAdmin::create(['user_id'=>$u->id,'email'=>$u->email]);Sanctum::actingAs($u);
+  $v=\App\Models\PropertyVisualization::create(['tenant_id'=>8,'user_id'=>$u->id,'subject_type'=>'propriedades','subject_id'=>1,'status'=>'ready','level'=>'preview']);
+  \App\Models\PropertyProcessingJob::create(['property_visualization_id'=>$v->id,'tenant_id'=>8,'user_id'=>$u->id,'kind'=>'photogrammetry','status'=>'completed','result'=>['actual_method'=>'tsdf','private_path'=>'SECRET_PRIVATE_ARTIFACT','geometry_quality'=>['final_model_eligible'=>false]]]);
+  $this->getJson('/api/platform/jobs?tenant_id=8')->assertOk()->assertJsonPath('data.0.actual_method','tsdf')->assertJsonPath('data.0.quality.final_model_eligible',false)->assertJsonPath('data.0.quality.precision_10cm',null)->assertDontSee('SECRET_PRIVATE_ARTIFACT');
+  $this->getJson('/api/platform/jobs?product=corretor')->assertOk()->assertJsonCount(0,'data');
+  $this->getJson('/api/platform/storage')->assertOk();$this->getJson('/api/platform/queues')->assertOk();
+ }
 }
