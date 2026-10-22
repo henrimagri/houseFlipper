@@ -32,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         \App\Services\Platform\DomainTelemetry::boot();
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Mail\Events\MessageSent::class,function(){try{app(\App\Services\Platform\EventRecorder::class)->record('email','email.transport.accepted',['outcome'=>'sent']);}catch(\Throwable){}});
         if ($caBundle = config('services.http.ca_bundle')) {
             Http::globalOptions(['verify' => $caBundle]);
         }

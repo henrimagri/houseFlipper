@@ -44,3 +44,7 @@ Agregados reais de AiToolRun por provider/modelo/tool/status/produto, tokens/cus
 ## Etapa 6 — 3D, GPU, filas e storage
 
 Listagem paginada de PropertyProcessingJob, método real e métricas somente quando presentes, tempo entre timestamps. Sem payload bruto/paths/fotos. GPU disponível pelo health, RAM/VRAM por job ficam nulas sem telemetria apropriada. Assets registrados agrupados por tenant/kind e bytes; não equivale a inventário completo de disco. Fila e failed_jobs observáveis sem retry inseguro. Cancelamento permanece no fluxo do imóvel; central ainda não cancela jobs de outro usuário. `--filter Platform`: 20/20, 149 assertions, 2.613 ms. Fase 8 e gate preservados.
+
+## Etapa 7 — billing, webhooks, e-mails e exportação
+
+Assinaturas e status reais; MRR/ARR/receita recebida não configurados sem ledger conciliado. Webhooks exibem só provider/status/timestamps, sem payload/assinatura e sem retry. Transporte de e-mail registra aceitação sem conteúdo/destinatário; entrega/bounce não configurados. Leads comerciais continuam separados e passam a paginar/auditar mudanças. CSV limitado a 5 mil linhas, colunas permitidas, sem e-mail/tokens e com proteção contra fórmula; exportações auditadas. `--filter Platform`: 21/21, 164 assertions, 2.661 ms.

@@ -85,7 +85,7 @@ class SaasLeadController extends Controller
             $query->where('intent', $intent);
         }
 
-        return response()->json(['data' => $query->limit(200)->get()]);
+        return response()->json(['data' => ($page=$query->simplePaginate((int)$request->input('per_page',25)))->items(),'page'=>$page->currentPage(),'has_more'=>$page->hasMorePages()]);
     }
 
     public function update(Request $request, SaasLead $lead): JsonResponse
@@ -93,10 +93,11 @@ class SaasLeadController extends Controller
         $data = $request->validate([
             'status' => ['sometimes', Rule::in(self::STATUSES)],
             'notes' => ['nullable', 'string', 'max:4000'],
-            'assigned_user_id' => ['nullable', 'integer'],
+            'assigned_user_id' => ['nullable', 'integer', 'exists:platform_admins,user_id'],
         ]);
         $from = $lead->status;
         $lead->fill($data)->save();
+        app(\App\Services\Platform\EventRecorder::class)->audit($request,'admin.lead.updated','saas_lead',$lead->id,['status'=>$from],['status'=>$lead->status]);
         if (($data['status'] ?? $from) !== $from || filled($data['notes'] ?? null)) {
             SaasLeadEvent::query()->create([
                 'saas_lead_id' => $lead->id,
