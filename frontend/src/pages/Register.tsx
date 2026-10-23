@@ -8,6 +8,7 @@ import { ProductSlug } from '@/lib/products';
 import PublicSeo from '@/components/public/PublicSeo';
 import { digits, formatCep, formatPhone } from '@/lib/brFields';
 import StatefulButton from '@/ui/StatefulButton';
+import { readAnalyticsSession } from '@/components/public/AnalyticsConsent';
 import AuthShell from '@/components/public/AuthShell';
 
 const products: { slug: ProductSlug; label: string; hint: string }[] = [
@@ -71,6 +72,7 @@ export default function Register() {
         ...extra,
         consent: true,
         device_name: deviceName(),
+        analytics_session: readAnalyticsSession(),
       });
       setAuthToken(data.token);
       navigate('/confirmar-email', { replace: true, state: { delivery: data.verification_delivery, product } });

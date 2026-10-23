@@ -590,3 +590,14 @@ Pint final: 57 arquivos PHP inspecionados; apenas o router auxiliar precisou de 
 ## 22/10/2026 — SOL Fase 2, CI e homologação isolada
 
 Marco operacional publicado como 6d7c91b. Preparados três jobs de CI sem deploy (PHP/Pint, MySQL 8 isolado, frontend/TypeScript/Vite), permissões mínimas e sem credenciais de produção. Cinco contratos MySQL incluem JSON/datas/índices/paginação/transações, IDs case-sensitive e quotas idempotentes isoladas. Na execução local final, os cinco foram ignorados deliberadamente; não equivalem a cinco aprovações. O opt-in anterior teve três erros por conexão recusada, antes das migrations; servidor/Docker não instalados. Benchmark exclusivamente SQLite em memória com fixtures sintéticas, sem carga na base local. Resultados e limitações em platform-admin/MYSQL_VALIDATION.md. A execução remota será consultada depois da publicação, se houver acesso disponível.
+
+
+## 22/10/2026 — SOL Fase 2, interface e bundle
+
+Interface integrada a APM, heartbeats, quotas, inventário, prontidão, administradores, privacidade, exports e origem consentida. Perfil com financeiro, revisão humana de sinais e incidentes com notas/atribuição/eventos. Dashboard mostra checklist vindo do servidor e não interpreta um único dia observado como ausência de dados. Flags críticas exibem responsável/ambiente. Nenhum segredo MFA ou senha é persistido no frontend.
+
+Frontend final: 55/55, saída 0, 52.989,7725 ms. TypeScript retornou 0 na etapa tsc -b do pipeline; Vite com heap experimental de 768 MiB falhou por OOM, depois Vite com limite local de 1536 MiB aprovou, saída 0, 3.412 módulos, 13m48s. Sem alteração global do Node/Windows e sem dependências novas. A duração local não é SLA nem aprovação de performance.
+
+Manifesto auditado: PlatformConsole 47.773 bytes/15.316 gzip; imports estáticos administrativos sem Three/MapCanvas/GLTF, entrada comum sem import imediato de admin. Warning de chunks grandes 3D/mapa continua visível. Não há baseline anterior comparável para afirmar redução. Evidência em evidence/platform-admin/phase2-bundle-audit.json. QA visual bloqueado pelo navegador local desabilitado; nenhum screenshot novo foi inventado.
+
+Publicação parcial: backend e contratos em 6d7c91b/25a3860 publicados; workflow recusado por escopo OAuth workflow ausente, SSH sem chave autorizada e conector403. Nenhuma permissão foi ampliada. O arquivo permanece local; testes MySQL reais/CI remota não foram aprovados.

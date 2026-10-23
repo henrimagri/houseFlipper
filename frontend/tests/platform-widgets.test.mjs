@@ -11,7 +11,7 @@ const folder = await mkdtemp(join(tmpdir(), 'platform-widgets-'));
 let render;
 try {
   const compiled = await build({
-    stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import {DataTable,Fields,Controls} from './src/pages/platform/PlatformWidgets'; export function render(kind,props){return renderToStaticMarkup(React.createElement({DataTable,Fields,Controls}[kind],props));}`,
+    stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import {DataTable,Fields,Controls,ResolveIncident,Overview} from './src/pages/platform/PlatformWidgets'; import {WorkflowCreate,PrivacyUpdate,SignalReview} from './src/pages/platform/PlatformWorkflowForms'; export function render(kind,props){return renderToStaticMarkup(React.createElement({DataTable,Fields,Controls,ResolveIncident,Overview,WorkflowCreate,PrivacyUpdate,SignalReview}[kind],props));}`,
       resolveDir: resolve('.'), sourcefile: 'platform-render.tsx', loader: 'tsx' },
     bundle: true, platform: 'node', format: 'cjs', write: false,
     plugins: [{ name: 'api-unit-boundary', setup(builder) {
@@ -51,4 +51,35 @@ test('missing account state stays unknown rather than implying an inactive accou
   const html = render('DataTable', { rows: [{ id: 1 }], columns: ['ativo_flg'] });
   assert.ok(html.includes('Não medido'));
   assert.ok(!html.includes('>Não<'));
+});
+
+test('async export form explains ownership, expiration and required worker',()=>{
+ const html=render('WorkflowCreate',{section:'exports',onDone(){},onAction(){}});
+ for(const text of ['fila privada','24 horas','somente ao administrador solicitante','platform-ops'])assert.ok(html.includes(text));
+ assert.ok(!html.includes('password'));
+});
+test('privacy and security review forms expose explicit human workflows',()=>{
+ const privacy=render('WorkflowCreate',{section:'privacy',onDone(){},onAction(){}});
+ assert.ok(privacy.includes('não exclui dados automaticamente'));
+ const review=render('SignalReview',{id:1,onDone(){}});
+ assert.ok(review.includes('Falso positivo'));assert.ok(review.includes('Não treina modelos'));
+});
+test('incident form supports bounded notes, linked events and assignment',()=>{
+ const html=render('ResolveIncident',{id:1,onDone(){}});
+ for(const label of ['Nota do incidente','Eventos vinculados','Responsável pelo incidente','Prioridade do incidente'])assert.ok(html.includes(label));
+ assert.match(html,/maxlength="1000"/i);
+});
+
+test('critical flags expose owner and environment without bypassing confirmation',()=>{
+ const html=render('Controls',{data:{data:[],available_flags:['reconstruction_enabled'],flag_catalog:[{key:'reconstruction_enabled',critical:true,owner:'platform_operations',environment:'testing',default:true,description:'Permite novos jobs'}]},onSave(){}});
+ for(const text of ['Flag crítica','platform_operations','testing','Pausar'])assert.ok(html.includes(text));
+});
+
+test('overview uses server readiness and preserves a measured zero score',()=>{
+ const html=render('Overview',{data:{readiness:{score:0,blocking_checks:10},activity_series:[],security:[]}});
+ assert.ok(html.includes('0%'));assert.ok(html.includes('10 bloqueios'));assert.ok(html.includes('/platform/readiness'));
+});
+test('one observed day is identified as insufficient rather than no observations',()=>{
+ const html=render('Overview',{data:{activity_series:[{day:'2026-10-22',total:1}],security:[]}});
+ assert.ok(html.includes('Poucos dados no período'));assert.ok(!html.includes('Sem observações no período'));
 });

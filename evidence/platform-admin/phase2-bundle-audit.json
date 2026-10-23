@@ -1,0 +1,76 @@
+{
+  "checked_at": "2026-10-23T01:25:48.863Z",
+  "method": "Vite manifest static imports only; dynamic imports counted separately, JS bytes before transfer caching; not browser network QA",
+  "admin_entry": "src/pages/platform/PlatformConsole.tsx",
+  "app_entry": "index.html",
+  "admin_static": [
+    {
+      "key": "src/pages/platform/PlatformConsole.tsx",
+      "file": "assets/PlatformConsole-CH1DfadO.js",
+      "bytes": 47773,
+      "gzip_bytes": 15316
+    },
+    {
+      "key": "index.html",
+      "file": "assets/index-C9Z2kWJl.js",
+      "bytes": 335249,
+      "gzip_bytes": 106864
+    },
+    {
+      "key": "_shield-check-C9gvc07m.js",
+      "file": "assets/shield-check-C9gvc07m.js",
+      "bytes": 488,
+      "gzip_bytes": 353
+    },
+    {
+      "key": "_generateCategoricalChart-DYOiDjLB.js",
+      "file": "assets/generateCategoricalChart-DYOiDjLB.js",
+      "bytes": 377725,
+      "gzip_bytes": 104537
+    },
+    {
+      "key": "_clsx-B-dksMZM.js",
+      "file": "assets/clsx-B-dksMZM.js",
+      "bytes": 374,
+      "gzip_bytes": 238
+    },
+    {
+      "key": "_LineChart-D1qsi7th.js",
+      "file": "assets/LineChart-D1qsi7th.js",
+      "bytes": 17896,
+      "gzip_bytes": 5860
+    },
+    {
+      "key": "_BarChart-CgFN2Aq6.js",
+      "file": "assets/BarChart-CgFN2Aq6.js",
+      "bytes": 318,
+      "gzip_bytes": 230
+    },
+    {
+      "key": "_refresh-cw-DoVYlXng.js",
+      "file": "assets/refresh-cw-DoVYlXng.js",
+      "bytes": 489,
+      "gzip_bytes": 326
+    },
+    {
+      "key": "_download-Cq7TNPLA.js",
+      "file": "assets/download-Cq7TNPLA.js",
+      "bytes": 431,
+      "gzip_bytes": 322
+    }
+  ],
+  "app_static": [
+    {
+      "key": "index.html",
+      "file": "assets/index-C9Z2kWJl.js",
+      "bytes": 335249,
+      "gzip_bytes": 106864
+    }
+  ],
+  "admin_heavy_dependency_keys": [],
+  "app_eager_admin_keys": [],
+  "build_modules": 3412,
+  "build_reported_time": "13m48s",
+  "heap_limit_mib": 1536,
+  "previous_comparable_bundle_baseline": null
+}
