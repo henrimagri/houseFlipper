@@ -1,3 +1,4 @@
+import { ChartNoAxesCombined } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts';
 
 
@@ -8,7 +9,7 @@ export default function PerformanceChart({ data }: { data: { mes: string; invest
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-5 shadow-xs">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">Movimentação mensal</h3>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100"><ChartNoAxesCombined aria-hidden="true" />Movimentação mensal</h3>
           <span className="text-xs text-gray-500 dark:text-slate-400">(Últimos 6 meses)</span>
         </div>
 
@@ -23,7 +24,7 @@ export default function PerformanceChart({ data }: { data: { mes: string; invest
             <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
             <Line type="monotone" dataKey="investimento" name="Investimento" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
             <Line type="monotone" dataKey="faturamento" name="Faturamento" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
-            <Line type="monotone" dataKey="lucro" name="Saldo por competência" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="lucro" name="Saldo por competência" stroke="var(--fc-accent)" strokeWidth={2} dot={{ r: 3 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>

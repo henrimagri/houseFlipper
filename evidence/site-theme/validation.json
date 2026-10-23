@@ -1,0 +1,193 @@
+{
+  "date": "2026-10-23",
+  "scope": "Shared FlipControl visual system and Mosaic-inspired independent dashboards",
+  "browser": "Codex in-app browser, real screenshots",
+  "private_product_data": "Disposable isolated SQLite synthetic QA fixture; removed after QA",
+  "production_platform_captures": "Kept ignored in storage/app/private/site-theme-qa; not published",
+  "tests": {
+    "frontend": {
+      "passed": 65,
+      "failed": 0,
+      "duration_ms": 649.813
+    },
+    "php": {
+      "total": 205,
+      "passed": 200,
+      "skipped_mysql": 5,
+      "assertions": 1600,
+      "duration_ms": 15303
+    },
+    "typescript_vite": {
+      "exit_code": 0,
+      "duration_seconds": 9.47
+    }
+  },
+  "screenshots": [
+    {
+      "file": "account-mobile.png",
+      "dimensions": [
+        375,
+        812
+      ],
+      "sha256": "2b50999d9616bf7e877ae6c01368276f0efa9acfd5d4f7c98a30c966ef0ed6e9"
+    },
+    {
+      "file": "contact-light-desktop.png",
+      "dimensions": [
+        1425,
+        990
+      ],
+      "sha256": "3a8cefaaf37bd0f2e628aae8c7434e26f2e877b788d01b1a156510b769ce256d"
+    },
+    {
+      "file": "corretor-dark-desktop.png",
+      "dimensions": [
+        1425,
+        990
+      ],
+      "sha256": "a90eace27b696d04f5821bcb1d70a9eac31606289f91cc9c4e69909d9bdf6e50"
+    },
+    {
+      "file": "crm-dark-collapsed.png",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "sha256": "2623a3fde41a6e460b1bfefd00d272acb51556f46142a390389257860ee5785e"
+    },
+    {
+      "file": "features-light-mobile.png",
+      "dimensions": [
+        375,
+        812
+      ],
+      "sha256": "373c48cbcf30abdf73e5a24436ae3ca7eb9bd8891c7c60418152a6b6356084c8"
+    },
+    {
+      "file": "flipper-light-desktop.png",
+      "dimensions": [
+        1425,
+        990
+      ],
+      "sha256": "7d6a245262d32268edcfe6069c1e903a20f0702bb36a221ac31ab9a7e6b5e819"
+    },
+    {
+      "file": "flipper-tablet.png",
+      "dimensions": [
+        753,
+        1004
+      ],
+      "sha256": "f6f8b9552279ff328cb418da612cd4480b8144497e338e17892bade30b359ec0"
+    },
+    {
+      "file": "home-light-mobile.png",
+      "dimensions": [
+        375,
+        812
+      ],
+      "sha256": "aed56cc775d261b3be58293c592faf16b25450e1380cf78568bf47646e142b19"
+    },
+    {
+      "file": "imobiliaria-dark-desktop.png",
+      "dimensions": [
+        1425,
+        990
+      ],
+      "sha256": "7581ed23c48cf8f9d32ed5e6ab26515d932b3140dd8dd2118037655c36c1b6c8"
+    },
+    {
+      "file": "imobiliaria-light-desktop.png",
+      "dimensions": [
+        1425,
+        990
+      ],
+      "sha256": "ae0dc9fb19ab662a8001a14abcf5e42e7ce5cdf7314e4f7c886effc713e7cdf7"
+    },
+    {
+      "file": "imobiliaria-light-narrow.png",
+      "dimensions": [
+        531,
+        860
+      ],
+      "sha256": "e7ef4471d4eec5f939e12074b30aad5e55fe62b6bf1f345c1a4bf3e1a420f6a7"
+    },
+    {
+      "file": "login-dark-desktop.png",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "sha256": "70bd56e8d45d479cd9ce014aa4fdea04c77fe154a5aff330c449586227e32538"
+    },
+    {
+      "file": "login-light-desktop.png",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "sha256": "e3959b3a2157f5aa32bdc7f5f1222f6aa3c66ce5de716b53ebe295c0a7cc56ef"
+    },
+    {
+      "file": "menu-mobile.png",
+      "dimensions": [
+        390,
+        844
+      ],
+      "sha256": "7e42922d6d93ddeadc576a449434821e78248fbd33c6a103810992470ae0c181"
+    },
+    {
+      "file": "mfa-light-mobile.png",
+      "dimensions": [
+        390,
+        844
+      ],
+      "sha256": "04201ca03d0debb3a6c1b05b927ed82c90c6c878921d87e2424422651b448842"
+    },
+    {
+      "file": "pricing-light-desktop.png",
+      "dimensions": [
+        1425,
+        891
+      ],
+      "sha256": "6a4167c2677eaf0c53c57109bf6fea6e233306f59d1b03d81368a4331014a2e7"
+    },
+    {
+      "file": "register-dark-desktop.png",
+      "dimensions": [
+        1440,
+        1000
+      ],
+      "sha256": "24ef2bf5d82a37ca613b2ffa1f6578277752e5c8750987fca40afa82f108d3a1"
+    },
+    {
+      "file": "register-dark-mobile.png",
+      "dimensions": [
+        375,
+        812
+      ],
+      "sha256": "b1ed8125e7c0106b5c10117db8e07b31da3fad3e833bebce3a49e0dfb306509c"
+    },
+    {
+      "file": "register-light-mobile.png",
+      "dimensions": [
+        375,
+        812
+      ],
+      "sha256": "53ca74ff8accd488a589b487f6a9e96b1a4db152cdf35ee91fb9786c328f59d7"
+    },
+    {
+      "file": "reset-invalid-mobile.png",
+      "dimensions": [
+        390,
+        844
+      ],
+      "sha256": "a00a2ba04ce122a5483d018970f603642e483090dac0622e7f47ec9a1522d895"
+    }
+  ],
+  "limitations": [
+    "Representative visual QA, not all combinations of routes/themes/viewports",
+    "No real email, payment, final account creation or password change",
+    "No new 3D reconstruction or canvas visual QA",
+    "Existing Three.js and map chunk warnings remain"
+  ]
+}

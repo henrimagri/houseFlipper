@@ -81,7 +81,7 @@ export default function CrmKanban() {
             >
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xs uppercase tracking-wide text-gray-500">{LABELS[stage]}</h2>
-                <span className="text-[11px] rounded-full bg-white border px-2">{column.length}</span>
+                <span className="text-[11px] rounded-full bg-white text-slate-700 dark:bg-slate-800 dark:text-slate-200 border px-2">{column.length}</span>
               </div>
               {column.map((deal) => (
                 <article

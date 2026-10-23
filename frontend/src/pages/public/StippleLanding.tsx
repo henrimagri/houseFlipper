@@ -1,10 +1,8 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Building2, Check, ChevronDown, CircleDot, Hammer, Hexagon, Home as HomeIcon, Menu, Moon, MousePointer2, RotateCcw, Sun, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Building2, Check, ChevronDown, CircleDot, Hammer, Hexagon, Home as HomeIcon, MousePointer2, RotateCcw } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
-import { getAuthToken } from '@/lib/authToken';
-import { useSession } from '@/lib/session';
-import AnalyticsConsent from '@/components/public/AnalyticsConsent';
+import SiteSurface from '@/components/public/SiteSurface';
 import StippleOrb from '@/components/public/StippleOrb';
 import './stipple-landing.css';
 
@@ -13,7 +11,6 @@ const products = [
   { title: 'Imobiliária', icon: Building2, description: 'Contexto para a equipe. Clareza para a gestão.', role: 'O próximo passo de cada negócio', image: 'imobiliaria-building', alt: 'Edifício residencial com varandas e jardins, imagem ilustrativa gerada por IA', to: '/solucoes/imobiliaria', points: ['Atendimentos conectados ao funil', 'Equipes e filiais com permissões próprias', 'Histórico para dar continuidade às conversas'] },
   { title: 'House Flipper', icon: Hammer, description: 'Enxergue o projeto antes de transformar o imóvel.', role: 'Da análise à transformação', image: 'flipper-renovation', alt: 'Apartamento em reforma com amostras de materiais, imagem ilustrativa gerada por IA', to: '/solucoes/house-flipper', points: ['Oportunidades e análise de viabilidade', 'Projetos, obras e acompanhamento de custos', 'Simulações visuais e editor de ambientes'] },
 ];
-const nav = [{ href: '#produtos', label: 'Soluções' }, { href: '#como-funciona', label: 'Como funciona' }, { href: '#duvidas', label: 'Dúvidas' }];
 const brl = (value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
 function Begin({ children = 'Começar agora' }: { children?: string }) {
@@ -110,51 +107,9 @@ function Questions() {
 }
 
 export default function StippleLanding() {
-  const root = useRef<HTMLDivElement>(null), content = useRef<HTMLDivElement>(null), menuRoot = useRef<HTMLDivElement>(null), menuButton = useRef<HTMLButtonElement>(null);
-  const { mode, setMode } = useTheme();
-  const [systemDark, setSystemDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
-  const dark = mode === 'dark' || (mode === 'system' && systemDark);
-  const [menu, setMenu] = useState(false), [stuck, setStuck] = useState(false);
-  const session = useSession();
-  const accountHref = session.requiresEmailVerification ? '/confirmar-email' : session.products.length ? '/app/inicio' : '/app/produtos';
-  useEffect(() => {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const update = () => setSystemDark(media.matches);
-    media.addEventListener('change', update);
-    const scroll = () => setStuck(window.scrollY > 12);
-    scroll(); window.addEventListener('scroll', scroll, { passive: true });
-    const observer = new IntersectionObserver(entries => entries.forEach(entry => {
-      entry.target.toggleAttribute('data-in', entry.isIntersecting);
-      if (entry.isIntersecting && !entry.target.classList.contains('landing-vig')) observer.unobserve(entry.target);
-    }), { threshold: .10 });
-    root.current?.querySelectorAll('.landing-rv,.landing-vig').forEach(element => { element.setAttribute('data-armed', ''); observer.observe(element); });
-    const motionObserver = new IntersectionObserver(entries => entries.forEach(entry => entry.target.toggleAttribute('data-live', entry.isIntersecting)), { threshold: .05 });
-    root.current?.querySelectorAll('.landing-path').forEach(element => motionObserver.observe(element));
-    root.current?.setAttribute('data-ready', '');
-    return () => { media.removeEventListener('change', update); window.removeEventListener('scroll', scroll); observer.disconnect(); motionObserver.disconnect(); };
-  }, []);
-  useEffect(() => {
-    if (!menu) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden'; content.current?.setAttribute('inert', '');
-    menuRoot.current?.querySelector<HTMLButtonElement>('button')?.focus();
-    const key = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMenu(false);
-      if (event.key !== 'Tab') return;
-      const elements = Array.from(menuRoot.current?.querySelectorAll<HTMLElement>('a,button') ?? []);
-      const first = elements[0], last = elements[elements.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
-    };
-    const resize = () => { if (window.innerWidth > 960) setMenu(false); };
-    document.addEventListener('keydown', key); window.addEventListener('resize', resize);
-    return () => { document.body.style.overflow = previousOverflow; content.current?.removeAttribute('inert'); document.removeEventListener('keydown', key); window.removeEventListener('resize', resize); menuButton.current?.focus(); };
-  }, [menu]);
-  const themeButton = <button type="button" className="landing-icon-btn" aria-label={dark ? 'Ativar tema claro' : 'Ativar tema escuro'} onClick={() => setMode(dark ? 'light' : 'dark')}>{dark ? <Sun size={17} /> : <Moon size={17} />}</button>;
-
-  return <div ref={root} className="landing-root" data-theme={dark ? 'dark' : 'light'} style={{ '--landing-h': '100svh', '--landing-accent': '#1aa59a', '--landing-button': '#123b3a', '--landing-on-button': '#ffffff', '--landing-mint': '#d2efe9', '--landing-cream': '#efeccd', '--landing-sky': '#d3e6f3', '--landing-mono': 'ui-monospace, "SF Mono", Menlo, Consolas, monospace', fontFamily: 'Inter, "Inter Tight", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif' } as CSSProperties}>
-    <div ref={content}><a className="landing-skip" href="#inicio-conteudo">Pular para o conteúdo</a>
-      <header className="landing-nav" data-stuck={stuck ? '' : undefined}><div className="landing-wrap"><Link className="landing-brand" to="/" aria-label="FlipControl, início"><Hexagon size={23} strokeWidth={1.6} />FlipControl</Link><nav className="landing-links" aria-label="Navegação principal">{nav.map(item => <a href={item.href} key={item.href}>{item.label}</a>)}</nav><div className="landing-navr">{themeButton}<Link className="landing-login" to={getAuthToken() ? accountHref : '/entrar'}>{getAuthToken() ? 'Minha conta' : 'Entrar'}</Link><Link className="landing-btn landing-pill" to="/cadastro">Começar agora <ArrowUpRight size={14} /></Link><button ref={menuButton} className="landing-icon-btn landing-burger" type="button" aria-label="Abrir menu" aria-expanded={menu} aria-controls="landing-mobile-menu" onClick={() => setMenu(true)}><Menu size={20} /></button></div></div></header>
+  const { resolvedTheme } = useTheme();
+  const dark = resolvedTheme === 'dark';
+  return <SiteSurface home>
       <main id="inicio-conteudo">
         <section className="landing-hero" aria-labelledby="landing-heading"><div className="landing-wrap landing-hero-grid"><div className="landing-hero-copy"><h1 className="landing-h1" id="landing-heading"><span className="landing-muted">Veja o potencial.</span><span>Faça acontecer.</span></h1><p className="landing-hero-text">Imóveis, pessoas e projetos no mesmo contexto. Conheça uma nova forma de trabalhar com o mercado imobiliário.</p><div className="landing-hero-cta"><Begin /><a className="landing-link" href="#produtos">Explore as soluções <ArrowDown size={14} /></a></div><div className="landing-faces landing-hero-proof"><span className="landing-role-icons" aria-hidden="true">{products.map(({ title, icon: Icon }) => <i key={title}><Icon size={13} /></i>)}</span><span>Para quem move o mercado.</span></div></div><StippleOrb dark={dark} /></div><div className="landing-wrap landing-backers"><span className="landing-mono">Uma plataforma. Seu jeito de trabalhar.</span><ul>{products.map(({ title, icon: Icon, to }) => <li key={title}><Link to={to}><Icon size={17} />{title}</Link></li>)}</ul></div></section>
         <section className="landing-sec landing-thesis"><div className="landing-wrap landing-thesis-grid"><div className="landing-rv"><h2>Boas oportunidades precisam de visão. <span className="landing-muted">Bons resultados começam com uma operação organizada.</span></h2><Link className="landing-btn" to="/comparar-produtos">Encontre seu produto <ArrowUpRight size={15} /></Link></div><div className="landing-rv" data-d="1"><ConnectedFlow /></div></div></section>
@@ -162,8 +117,5 @@ export default function StippleLanding() {
         <section className="landing-sec landing-cta" onPointerMove={event => { const bounds = event.currentTarget.getBoundingClientRect(); event.currentTarget.style.setProperty('--mx', `${event.clientX - bounds.left}px`); event.currentTarget.style.setProperty('--my', `${event.clientY - bounds.top}px`); event.currentTarget.style.setProperty('--glow', '1'); }} onPointerLeave={event => event.currentTarget.style.setProperty('--glow', '0')}><div className="landing-wrap landing-rv"><h2>O próximo imóvel.<br /><span className="landing-muted">A próxima conversa.</span><br />Uma nova possibilidade.</h2><Begin children="Comece pelo seu próximo passo" /></div></section>
         <Questions />
       </main>
-      <footer className="landing-sec landing-foot"><p className="landing-foot-tag landing-rv">FlipControl. Clareza para enxergar.<br /><span className="landing-muted">Controle para transformar.</span></p><StippleOrb dark={dark} horizon /><div className="landing-wrap landing-foot-row"><div className="landing-foot-cols"><div><h4>Explore</h4><ul><li><a href="#produtos">Soluções</a></li><li><a href="#como-funciona">Como funciona</a></li><li><Link to="/precos">Planos</Link></li><li><Link to="/contato">Contato</Link></li></ul></div><div><h4>Saiba mais</h4><ul><li><Link to="/privacidade">Privacidade</Link></li><li><Link to="/termos">Termos de uso</Link></li><li><Link to="/ajuda">Ajuda</Link></li></ul></div></div><div className="landing-foot-r"><p>Uma conta, produtos independentes.<br />Dados e permissões conforme a assinatura.</p><p>© {new Date().getFullYear()} FlipControl.</p></div></div></footer><AnalyticsConsent appearance="landing" />
-    </div>
-    {menu && <div id="landing-mobile-menu" className="landing-sheet" role="dialog" aria-modal="true" aria-label="Menu de navegação" ref={menuRoot}><div className="landing-sheet-top"><span className="landing-brand"><Hexagon size={23} />FlipControl</span><button className="landing-icon-btn" type="button" aria-label="Fechar menu" onClick={() => setMenu(false)}><X size={20} /></button></div><ul>{nav.map(item => <li key={item.href}><a href={item.href} onClick={() => setMenu(false)}>{item.label}<ArrowUpRight size={20} /></a></li>)}<li><Link to="/precos">Planos<ArrowUpRight size={20} /></Link></li><li><Link to={getAuthToken() ? accountHref : '/entrar'}>{getAuthToken() ? 'Minha conta' : 'Entrar'}<ArrowUpRight size={20} /></Link></li></ul><Begin /></div>}
-  </div>;
+  </SiteSurface>;
 }

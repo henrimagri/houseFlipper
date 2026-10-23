@@ -1,3 +1,5 @@
+import { Building2, Hammer, House, LayoutGrid } from 'lucide-react';
+import PageHeader from '@/ui/PageHeader';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '@/lib/api';
@@ -40,16 +42,16 @@ export default function Produtos() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold">Catálogo</h1>
-      <p className="text-sm text-gray-500">Teste de 7 dias por produto. Pagamentos exigem e-mail confirmado e um provedor configurado.</p>
+      <PageHeader icon={LayoutGrid} title="Catálogo" subtitle="Teste de 7 dias por produto. Pagamentos exigem e-mail confirmado e um provedor configurado." />
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       <div className="grid md:grid-cols-3 gap-4">
         {catalog.map((item) => {
           const slug = item.slug as ProductSlug;
           const entitled = products.includes(slug);
+          const ProductIcon = {corretor:House,imobiliaria:Building2,house_flipper:Hammer}[slug];
           return (
             <article key={slug} className="rounded-xl border bg-white dark:bg-slate-900 p-5 space-y-3">
-              <h2 className="font-semibold">{item.label}</h2>
+              <h2 className="flex items-center gap-2 font-semibold"><ProductIcon className="size-5 text-primary-500" aria-hidden="true" />{item.label}</h2>
               <p className="text-sm text-gray-500">{item.description}</p>
               {item.plans.map((plan) => (
                 <div key={plan.slug} className="text-sm flex justify-between gap-2">

@@ -13,13 +13,14 @@ function apply(mode: ThemeMode, systemDark: boolean) {
 }
 export function applyInitialTheme() { apply(savedMode(), window.matchMedia('(prefers-color-scheme: dark)').matches); }
 
-const ThemeContext = createContext<{ mode: ThemeMode; setMode: (mode: ThemeMode) => void }>({ mode: 'system', setMode: () => {} });
+const ThemeContext = createContext<{ mode: ThemeMode; resolvedTheme: 'light' | 'dark'; setMode: (mode: ThemeMode) => void }>({ mode: 'system', resolvedTheme: 'light', setMode: () => {} });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<ThemeMode>(savedMode);
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia('(prefers-color-scheme: dark)').matches);
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const update = () => apply(mode, media.matches);
+    const update = () => { apply(mode, media.matches); setSystemDark(media.matches); };
     update();
     media.addEventListener('change', update);
     try { localStorage.setItem(key, mode); } catch { /* The current tab still applies the selection. */ }
@@ -30,7 +31,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     window.addEventListener('storage', update);
     return () => window.removeEventListener('storage', update);
   }, []);
-  return <ThemeContext.Provider value={{ mode, setMode }}>{children}</ThemeContext.Provider>;
+  const resolvedTheme = mode === 'dark' || (mode === 'system' && systemDark) ? 'dark' : 'light';
+  return <ThemeContext.Provider value={{ mode, resolvedTheme, setMode }}>{children}</ThemeContext.Provider>;
 }
 
 export const useTheme = () => useContext(ThemeContext);

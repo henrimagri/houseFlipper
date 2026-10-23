@@ -1,3 +1,4 @@
+import { Hammer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PublicSeo from '@/components/public/PublicSeo';
 import PricingCards from '@/components/public/PricingCards';
@@ -13,7 +14,7 @@ export default function SolucoesHouseFlipper() {
       <section className="grid gap-8 lg:grid-cols-2 lg:items-center">
         <div>
           <p className="eyebrow">Produto House Flipper</p>
-          <h1 className="premium-heading text-4xl sm:text-5xl">Encontre oportunidades, planeje reformas e analise seus investimentos imobiliários.</h1>
+          <h1 className="premium-heading text-4xl sm:text-5xl"><Hammer className="fc-public-heading-icon" aria-hidden="true" />Encontre oportunidades, planeje reformas e analise seus investimentos imobiliários.</h1>
           <p className="premium-copy text-lg">Uma plataforma desenvolvida para investidores que desejam organizar análises, projetos e custos de imóveis.</p>
           <div className="mt-6 flex gap-3">
             <Link to="/precos?produto=house_flipper" className="premium-button">Ver planos</Link>

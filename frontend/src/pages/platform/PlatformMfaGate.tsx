@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import api from '@/lib/api';
+import ThemeSelector from '@/components/ThemeSelector';
 import { useSession } from '@/lib/session';
 
 const field='mt-2 w-full rounded-lg border border-slate-600 bg-slate-950 p-3 text-white';
@@ -34,7 +35,7 @@ export default function PlatformMfaGate({children,management=false}:{children?:R
   if(response.data.recovery_codes)setCodes(response.data.recovery_codes);
   await load(true);setAction('challenge');
  }catch(e:any){setError(e.code==='ECONNABORTED'?'Tempo esgotado. Verifique o estado antes de repetir.':e.response?.data?.message??'Não foi possível validar.');}finally{setPassword('');setBusy(false);}}
- return <main className="min-h-screen bg-slate-950 p-5 text-slate-100 sm:p-12"><section className="mx-auto max-w-xl space-y-5 rounded-2xl border border-slate-700 bg-slate-900 p-6"><p className="text-xs uppercase tracking-widest text-cyan-300">FlipControl · acesso administrativo</p><h1 className="text-2xl font-semibold">{!status?'Verifique o acesso administrativo':management?'Segurança do segundo fator':status.enrolled?'Confirme seu segundo fator':'Cadastre seu autenticador'}</h1>
+ return <main className="fc-security-access relative min-h-screen bg-slate-950 p-5 text-slate-100 sm:p-12"><div className="mb-5 flex justify-end"><ThemeSelector compact /></div><section className="mx-auto max-w-xl space-y-5 rounded-2xl border border-slate-700 bg-slate-900 p-6"><p className="text-xs uppercase tracking-widest text-cyan-300">FlipControl · acesso administrativo</p><h1 className="text-2xl font-semibold">{!status?'Verifique o acesso administrativo':management?'Segurança do segundo fator':status.enrolled?'Confirme seu segundo fator':'Cadastre seu autenticador'}</h1>
  <p className="text-sm text-slate-300">O segundo fator protege somente a central da plataforma. Use um autenticador TOTP; cada código vale por 30 segundos. A sessão administrativa dura até 8 horas e ações sensíveis exigem validação nos últimos 10 minutos.</p>
  {error&&<p role="alert" className="text-rose-300">{error}</p>}
  {!status?<button className={button} disabled={checking} onClick={()=>void load()}>{checking?'Verificando acesso…':'Verificar acesso'}</button>:codes.length?<><h2 className="font-semibold">Guarde os códigos de recuperação</h2><p className="text-sm text-amber-200">Exibidos somente agora. Cada código pode ser usado uma vez. Guarde em local seguro; não envie ao suporte.</p><ul className="grid gap-2 font-mono sm:grid-cols-2">{codes.map(c=><li key={c}>{c}</li>)}</ul><button className={button} onClick={()=>{setCodes([]);void load();}}>Guardei os códigos</button></>:<form onSubmit={submit} className="space-y-4">

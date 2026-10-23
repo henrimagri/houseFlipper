@@ -6,6 +6,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { ThemeProvider, applyInitialTheme } from './components/ThemeProvider';
 import { SessionProvider } from '@/lib/session';
 import './index.css';
+import './styles/flipcontrol-theme.css';
 
 applyInitialTheme();
 ReactDOM.createRoot(document.getElementById('root')!).render(

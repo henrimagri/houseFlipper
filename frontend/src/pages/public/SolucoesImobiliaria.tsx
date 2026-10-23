@@ -1,3 +1,4 @@
+import { Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PublicSeo from '@/components/public/PublicSeo';
 import PricingCards from '@/components/public/PricingCards';
@@ -22,7 +23,7 @@ export default function SolucoesImobiliaria() {
       <PublicSeo title="Imobiliária" description="Centralize imóveis, corretores, atendimentos e negociações em um sistema organizado para sua equipe." path="/solucoes/imobiliaria" />
       <section>
         <p className="eyebrow">Produto Imobiliária</p>
-        <h1 className="premium-heading text-4xl sm:text-5xl">Toda a operação da sua imobiliária em uma única plataforma.</h1>
+        <h1 className="premium-heading text-4xl sm:text-5xl"><Building2 className="fc-public-heading-icon" aria-hidden="true" />Toda a operação da sua imobiliária em uma única plataforma.</h1>
         <p className="premium-copy text-lg">Centralize imóveis, corretores, atendimentos e negociações em um sistema organizado para sua equipe.</p>
         <div className="mt-6 flex gap-3">
           <a href="#demonstracao" className="premium-button">Solicitar uma demonstração</a>

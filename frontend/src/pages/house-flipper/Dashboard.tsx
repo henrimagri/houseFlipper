@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calculator, Home, PieChart, TrendingUp } from 'lucide-react';
+import { Calculator, House, PieChart, TrendingUp, FolderKanban } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '@/lib/api';
 import KpiCard from '@/components/dashboard/KpiCard';
@@ -28,23 +28,21 @@ export default function FlipperDashboard() {
   const estimated = data.estimated ?? {};
   const realized = data.realized ?? {};
   return (
-    <div className="space-y-5">
-      <PageHeader title="Análise de investimentos" subtitle={data.disclaimer} />
-      <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-4">
-        <KpiCard titulo="Oportunidades analisadas" valor={String(k.opportunities ?? 0)} rodape={`${k.favorites ?? 0} favoritas`} Icon={Home} iconBg="bg-violet-100" iconColor="text-violet-700" />
-        <KpiCard titulo="Projetos ativos" valor={String(k.active_projects ?? 0)} rodape={`${k.completed_projects ?? 0} concluídos`} Icon={Calculator} iconBg="bg-indigo-100" iconColor="text-indigo-700" />
-        <KpiCard titulo="Investimento projetado" valor={money((estimated.acquisition ?? 0) + (estimated.renovation_budget ?? 0))} Icon={TrendingUp} iconBg="bg-sky-100" iconColor="text-sky-700" />
-        <KpiCard titulo="Lucro estimado" valor={money(estimated.projected_profit ?? 0)} rodape="Premissas cadastradas" Icon={TrendingUp} iconBg="bg-emerald-100" iconColor="text-emerald-700" />
-        <KpiCard titulo="ROI médio projetado" valor={`${(estimated.projected_roi_pct ?? 0).toLocaleString('pt-BR')}%`} rodape={`Realizado ${money(realized.profit ?? 0)}`} Icon={PieChart} iconBg="bg-orange-100" iconColor="text-orange-700" />
+    <div className="fc-dashboard space-y-6">
+      <PageHeader title="Análise de investimentos" icon={TrendingUp} subtitle={data.disclaimer} />
+      <div className="fc-dashboard-metrics">
+        <KpiCard titulo="Projetos ativos" valor={String(k.active_projects ?? 0)} Icon={FolderKanban} iconBg="bg-primary-50" iconColor="text-primary-600" details={[{label:'Projetos concluídos',value:String(k.completed_projects ?? 0)},{label:'Oportunidades analisadas',value:String(k.opportunities ?? 0)},{label:'Favoritas',value:String(k.favorites ?? 0)}]} />
+        <KpiCard titulo="Investimento projetado" valor={money((estimated.acquisition ?? 0) + (estimated.renovation_budget ?? 0))} Icon={Calculator} iconBg="bg-primary-50" iconColor="text-primary-600" details={[{label:'Lucro estimado',value:money(estimated.projected_profit ?? 0)}]} rodape="Premissas cadastradas" />
+        <KpiCard titulo="ROI médio projetado" valor={`${(estimated.projected_roi_pct ?? 0).toLocaleString('pt-BR')}%`} Icon={PieChart} iconBg="bg-primary-50" iconColor="text-primary-600" details={[{label:'Lucro realizado',value:money(realized.profit ?? 0)}]} rodape="Projeção não é rentabilidade garantida" />
       </div>
-      <div className="grid xl:grid-cols-3 gap-5">
-        <div className="xl:col-span-2"><DashboardMap product="house_flipper" mode="opportunities" href="/app/house-flipper/mapa" /></div>
+      <div className="grid lg:grid-cols-2 gap-6">
+        <PerformanceChart data={data.performance ?? []} />
         <ResumoFinanceiro data={data.composition ?? []} />
       </div>
-      <PerformanceChart data={data.performance ?? []} />
+      <DashboardMap product="house_flipper" mode="opportunities" href="/app/house-flipper/mapa" />
       <div className="grid xl:grid-cols-3 gap-4">
         <section className="xl:col-span-2 bg-white dark:bg-slate-900 border rounded-2xl p-4">
-          <h2 className="font-semibold mb-3">Oportunidades recentes</h2>
+          <h2 className="font-semibold mb-3"><House />Oportunidades recentes</h2>
           {(data.recent_opportunities ?? []).map((row: any) => (
             <Link key={row.id} to="/app/house-flipper/oportunidades" className="flex justify-between py-2 border-t first:border-0 text-sm">
               <span>{row.title} · {row.city || '—'}</span>
@@ -54,7 +52,7 @@ export default function FlipperDashboard() {
           {!data.recent_opportunities?.length && <p className="text-sm text-gray-500">Nenhuma oportunidade salva.</p>}
         </section>
         <section className="bg-white dark:bg-slate-900 border rounded-2xl p-4 space-y-3">
-          <h2 className="font-semibold">Projeto em destaque</h2>
+          <h2 className="font-semibold"><FolderKanban />Projeto em destaque</h2>
           {(data.projects ?? [])[0] ? (
             <>
               <p className="font-medium">{data.projects[0].nome}</p>

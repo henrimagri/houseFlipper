@@ -85,7 +85,7 @@ export default function ProductLayout({ product }: { product: ProductSlug | 'acc
     : (navigation[product] ?? []).map(item => ({ label: item.label, path: item.path, section: subtitle }));
 
   return (
-    <div className="app-canvas flex min-h-dvh w-full overflow-x-hidden" data-product={product}>
+    <div className="fc-workspace app-canvas flex min-h-dvh w-full overflow-x-hidden" data-product={product}>
       {menuOpen && <button aria-label="Fechar menu" onClick={() => setMenuOpen(false)} className="fixed inset-0 bg-black/40 z-40 lg:hidden" />}
       <div className={`${menuOpen ? 'block' : 'hidden'} fixed inset-y-0 left-0 z-50 lg:block`}>
         <ProductSidebar product={product} collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} onNavigate={() => setMenuOpen(false)} />
@@ -95,13 +95,13 @@ export default function ProductLayout({ product }: { product: ProductSlug | 'acc
           <button aria-expanded={menuOpen} aria-label="Abrir menu" onClick={() => setMenuOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-slate-100">
             <Menu className="h-5 w-5" />
           </button>
-          <AppSearchInput className="hidden max-w-xl flex-1 md:flex" value={search} onChange={setSearch} onSubmit={() => { if (product !== 'account') window.location.assign(searchTarget); }} placeholder="Pesquisar imóveis, clientes ou endereços" shortcut="⌘ K" />
+          <AppSearchInput className="hidden min-w-0 max-w-xl flex-1 md:flex" value={search} onChange={setSearch} onSubmit={() => { if (product !== 'account') window.location.assign(searchTarget); }} placeholder="Pesquisar imóveis, clientes ou endereços" shortcut="⌘ K" />
           <button type="button" onClick={() => setCommandsOpen(true)} className="hidden rounded-lg border px-2 py-1 text-[11px] font-semibold text-slate-500 xl:block" title="Abrir comandos">Ctrl K</button>
           <div className="hidden xl:flex items-center gap-1 text-xs text-slate-500 rounded-lg border px-2 py-1">
             <MapPin className="h-3.5 w-3.5" />
             {locationLabel || 'Localização não informada'}
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <p className="hidden lg:block text-xs text-slate-400">{crumbs[0]?.label || subtitle}</p>
             {product !== 'account' && (
               <button type="button" className="p-2 rounded-lg hover:bg-slate-100" title="Rever tutorial" onClick={() => setTourForce(true)}>

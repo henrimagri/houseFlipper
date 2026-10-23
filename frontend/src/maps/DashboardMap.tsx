@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { MapPinned, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '@/lib/api';
 import MapCanvas, { MapPoint } from '@/maps/MapCanvas';
@@ -21,10 +22,10 @@ export default function DashboardMap({ product, mode = 'properties', href }: { p
     <section className="bg-white dark:bg-slate-900 border rounded-2xl overflow-hidden shadow-sm">
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <div>
-          <h2 className="font-semibold">Mapa</h2>
+          <h2 className="flex items-center gap-2 font-semibold"><MapPinned className="size-4 text-primary-500" aria-hidden="true" />Mapa</h2>
           <p className="text-xs text-slate-500">{result?.available === false ? result.reason : `${points.length} pontos da conta`}</p>
         </div>
-        <Link to={href} className="text-sm text-sky-700 font-medium">Abrir mapa</Link>
+        <Link to={href} className="text-sm text-sky-700 font-medium">Abrir mapa <ArrowUpRight className="inline size-4" aria-hidden="true" /></Link>
       </div>
       <MapCanvas
         styleUrl={styleUrl}

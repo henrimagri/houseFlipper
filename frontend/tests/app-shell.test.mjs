@@ -101,7 +101,7 @@ test('public features and pricing use the premium catalog with a seven-day trial
 
 test('unverified accounts remain on email confirmation before account routes', async () => {
   const [app, session, layout, register, verify, products] = await Promise.all([
-    read('src/App.tsx'), read('src/lib/session.tsx'), read('src/components/public/PublicLayout.tsx'),
+    read('src/App.tsx'), read('src/lib/session.tsx'), read('src/components/public/SiteSurface.tsx'),
     read('src/pages/Register.tsx'), read('src/pages/VerifyEmail.tsx'), read('src/pages/account/Produtos.tsx'),
   ]);
   assert.match(session, /requiresEmailVerification/);

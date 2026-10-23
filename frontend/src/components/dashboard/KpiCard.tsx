@@ -6,6 +6,7 @@ interface KpiCardProps {
   rodape?: string;
   rodapeColor?: string;
   hint?: string;
+  details?: { label: string; value: string }[];
   Icon: LucideIcon;
   iconBg: string;
   iconColor: string;
@@ -17,12 +18,13 @@ export default function KpiCard({
   rodape,
   rodapeColor = 'text-gray-500 dark:text-slate-400',
   hint,
+  details,
   Icon,
   iconBg,
   iconColor,
 }: KpiCardProps) {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-5 shadow-xs" title={hint}>
+    <div className="fc-kpi-card bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 p-5 shadow-xs" title={hint}>
       <div className="flex items-start justify-between">
         <span className="text-xs font-medium text-gray-500 dark:text-slate-400">{titulo}</span>
         <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${iconBg}`}>
@@ -30,6 +32,7 @@ export default function KpiCard({
         </div>
       </div>
       <div className="mt-3 text-2xl font-bold text-gray-900 dark:text-slate-100">{valor}</div>
+      {details && <dl className="fc-kpi-details">{details.map(item => <div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd></div>)}</dl>}
       {rodape && <div className={`mt-2 text-xs ${rodapeColor}`}>{rodape}</div>}
     </div>
   );

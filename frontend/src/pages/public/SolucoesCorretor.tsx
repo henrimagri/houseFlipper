@@ -1,3 +1,4 @@
+import { House } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PublicSeo from '@/components/public/PublicSeo';
 import PricingCards from '@/components/public/PricingCards';
@@ -13,7 +14,7 @@ export default function SolucoesCorretor() {
       <section className="grid gap-10 lg:grid-cols-2 lg:items-center">
         <div>
           <p className="eyebrow">Produto Corretor</p>
-          <h1 className="premium-heading text-4xl sm:text-5xl">Encontre, capte e divulgue imóveis com muito mais organização.</h1>
+          <h1 className="premium-heading text-4xl sm:text-5xl"><House className="fc-public-heading-icon" aria-hidden="true" />Encontre, capte e divulgue imóveis com muito mais organização.</h1>
           <p className="premium-copy text-lg">Uma solução para corretores que desejam transformar oportunidades imobiliárias em uma carteira comercial organizada.</p>
           <div className="mt-6 flex gap-3">
             <Link to="/precos?produto=corretor" className="premium-button">Ver planos</Link>

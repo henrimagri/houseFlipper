@@ -9,9 +9,9 @@ import { FEATURE_LABELS, usePublicCatalog } from '@/lib/publicCatalog';
 import type { ProductSlug } from '@/lib/products';
 
 const productStyle: Record<ProductSlug, { icon: LucideIcon; gradient: string; glow: string }> = {
-  corretor: { icon: HomeIcon, gradient: 'from-violet-500 to-fuchsia-500', glow: 'bg-violet-500/10' },
-  imobiliaria: { icon: Building2, gradient: 'from-cyan-500 to-blue-600', glow: 'bg-cyan-500/10' },
-  house_flipper: { icon: Hammer, gradient: 'from-amber-400 to-orange-600', glow: 'bg-amber-500/10' },
+  corretor: { icon: HomeIcon, gradient: 'from-primary-700 to-primary-900', glow: 'bg-primary-500/5' },
+  imobiliaria: { icon: Building2, gradient: 'from-primary-700 to-primary-900', glow: 'bg-primary-500/5' },
+  house_flipper: { icon: Hammer, gradient: 'from-primary-700 to-primary-900', glow: 'bg-primary-500/5' },
 };
 
 function featureIcon(feature: string): LucideIcon {

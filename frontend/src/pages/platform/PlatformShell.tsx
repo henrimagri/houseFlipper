@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import ThemeSelector from '@/components/ThemeSelector';
 import { Activity, ArrowLeft, BarChart3, Building2, ChevronLeft, ChevronRight, CreditCard, Database, FileText, LayoutDashboard, Menu, Search, Settings2, ShieldCheck, Sparkles, Users, X, RefreshCw } from 'lucide-react';
 
 export type PlatformNavigationGroup = { label: string; items: string[][] };
@@ -52,7 +53,7 @@ export default function PlatformShell({ groups, section, title, name, search, on
     <div className="sol-workspace" ref={workspace}>
       <header className="sol-topbar"><button type="button" ref={menuButton} className="sol-menu-toggle sol-button" aria-label="Abrir navegação administrativa" aria-expanded={mobile} onClick={() => setMobile(true)}><Menu size={19} /></button><div className="sol-breadcrumb"><span>{group?.label ?? 'CENTRAL'}</span><ChevronRight size={12} /><strong>{title}</strong></div>
         <form onSubmit={onSearch} className="sol-global-search"><label><span className="sr-only">Busca global administrativa</span><Search size={15} /><input ref={searchField} value={search} maxLength={180} onChange={event => onSearchChange(event.target.value)} placeholder="Buscar ID, e-mail, tenant, request ou job…" /><kbd>Ctrl K</kbd></label><button className="sol-button" disabled={!search.trim()}>Buscar</button></form>
-        <button type="button" className="sol-button sol-refresh" onClick={onRefresh} disabled={loading} aria-label="Atualizar"><RefreshCw size={15} /><span>Atualizar</span></button><span className="sol-environment" title="Endereço da interface atual">{['127.0.0.1', 'localhost', '[::1]'].includes(hostname) ? 'Local' : hostname}</span><div className="sol-operator" title={name + ' · Platform Admin'}><span className="sol-avatar">{name.split(' ').filter(Boolean).slice(0, 2).map(part => part[0]).join('') || 'PA'}</span><span>{name || 'Administrador'}<small>Platform Admin</small></span></div>
+        <button type="button" className="sol-button sol-refresh" onClick={onRefresh} disabled={loading} aria-label="Atualizar"><RefreshCw size={15} /><span>Atualizar</span></button><span className="sol-environment" title="Endereço da interface atual">{['127.0.0.1', 'localhost', '[::1]'].includes(hostname) ? 'Local' : hostname}</span><ThemeSelector compact /><div className="sol-operator" title={name + ' · Platform Admin'}><span className="sol-avatar">{name.split(' ').filter(Boolean).slice(0, 2).map(part => part[0]).join('') || 'PA'}</span><span>{name || 'Administrador'}<small>Platform Admin</small></span></div>
       </header>
       <main className="sol-main"><div className="sol-received" aria-live="off">{loading ? 'Consultando registros…' : seconds == null ? 'Aguardando consulta' : seconds < 60 ? `Consulta recebida há ${seconds}s` : `Consulta recebida há ${Math.floor(seconds / 60)} min`}</div>{children}</main>
     </div>

@@ -1,3 +1,4 @@
+import { Columns3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PublicSeo from '@/components/public/PublicSeo';
 import { COMPARISON_ROWS, usePublicCatalog } from '@/lib/publicCatalog';
@@ -10,7 +11,7 @@ export default function CompararProdutos() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
       <PublicSeo title="Comparar produtos" description="Compare Corretor, Imobiliária e House Flipper a partir do catálogo oficial de funcionalidades." path="/comparar-produtos" />
-      <h1 className="text-3xl font-bold">Qual produto combina com o seu trabalho?</h1>
+      <h1 className="text-3xl font-bold"><Columns3 className="fc-public-heading-icon" aria-hidden="true" />Qual produto combina com o seu trabalho?</h1>
       <p className="mt-3 text-slate-600">A tabela usa as funcionalidades cadastradas no backend. Não é uma segunda lista de permissões.</p>
       {error && <p className="mt-4 text-sm text-red-700">{error}</p>}
       <div className="mt-8 overflow-x-auto rounded-2xl border bg-white">

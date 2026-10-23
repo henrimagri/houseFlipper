@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, Hexagon } from 'lucide-react';
 import { PRODUCT_META, ProductSlug } from '@/lib/products';
 import { useSession } from '@/lib/session';
 import { navIcon } from '@/lib/navIcons';
@@ -37,9 +37,9 @@ export default function ProductSidebar({
   const sub = product === 'account' ? null : catalog.find((item) => item.slug === product)?.subscription;
 
   return (
-    <aside className={`flex h-dvh max-w-[calc(100vw-1rem)] flex-col overflow-hidden bg-[var(--app-sidebar)] text-slate-200 shadow-2xl shadow-slate-950/20 transition-[width] duration-300 ${collapsed ? 'w-[76px]' : 'w-72'}`}>
+    <aside className={`fc-sidebar flex h-dvh max-w-[calc(100vw-1rem)] flex-col overflow-hidden bg-[var(--app-sidebar)] text-slate-200 transition-[width] duration-300 ${collapsed ? 'w-[76px]' : 'w-72'}`}>
       <div className="flex items-center gap-3 px-4 h-16 border-b border-white/10">
-        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary-500 to-cyan-400 text-white grid place-items-center font-black shrink-0 shadow-lg shadow-primary-950/30">HF</div>
+        <Link to="/app/inicio" className="fc-sidebar-brand" aria-label="FlipControl, início da conta"><Hexagon size={22} strokeWidth={1.6} /></Link>
         {!collapsed && (
           <div className="min-w-0">
             <p className="font-semibold text-white truncate">{meta.label}</p>
@@ -59,12 +59,11 @@ export default function ProductSidebar({
                   <Link
                     key={item.path}
                     to={item.path}
+                    aria-current={active ? 'page' : undefined}
                     data-tour={item.path}
                     title={collapsed ? item.label : undefined}
                     onClick={onNavigate}
-                    className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                      active ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-lg shadow-primary-950/25' : 'text-slate-300 hover:bg-white/8 hover:text-white'
-                    }`}
+                    className="fc-sidebar-link relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition"
                   >
                     <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
                     {!collapsed && <span className="truncate">{item.label}</span>}
@@ -81,7 +80,7 @@ export default function ProductSidebar({
             {sub.status === 'trial' || sub.status === 'trialing' ? 'Assinatura em teste' : sub.active ? 'Assinatura ativa' : `Status: ${sub.status}`}
           </p>
         )}
-        <button type="button" onClick={onToggle} className="hidden lg:flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-400 hover:bg-white/10">
+        <button type="button" aria-label={collapsed ? 'Expandir menu lateral' : 'Recolher'} aria-expanded={!collapsed} onClick={onToggle} className="hidden lg:flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-400 hover:bg-white/10">
           {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
           {!collapsed && 'Recolher'}
         </button>
