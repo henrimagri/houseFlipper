@@ -15,7 +15,7 @@ export default function PlatformMfaGate({children,management=false}:{children?:R
  useEffect(()=>{if(!session.loading&&session.isPlatformAdmin)void load();const required=()=>{setStatus(null);void load();};window.addEventListener('platform-mfa-required',required);return()=>window.removeEventListener('platform-mfa-required',required);},[session.loading,session.isPlatformAdmin]);
  if(session.loading)return <p role="status">Validando acesso…</p>;
  if(!session.isPlatformAdmin)return <Navigate to="/app/inicio" replace/>;
- if(status?.verified&&!management&&!codes.length)return <>{children}</>;
+ if(status?.verified&&!management&&!codes.length)return <>{status.local_qa_exemption&&<p role="status" className="border-b border-amber-400/20 bg-slate-950 px-4 py-2 text-xs text-amber-200 lg:pl-72">QA local · MFA dispensado temporariamente apenas para esta conta.</p>}{children}</>;
  async function submit(e:FormEvent){e.preventDefault();if(busy)return;setBusy(true);setError('');try{
   const method=!status?.enrolled?(secret?'confirm':'enrol'):action;
   const response=await api.post('/platform/mfa/'+method,{...(method==='enrol'||['disable','recoveries'].includes(method)?{password}:{}),...(method!=='enrol'?{code}:{})},{timeout:15000});

@@ -6,6 +6,8 @@ use App\Models\PlatformAdmin;
 use App\Models\PlatformEvent;
 use App\Models\PlatformMfaCredential;
 use App\Models\User;
+use App\Services\Platform\EventRecorder;
+use App\Services\Platform\PlatformMfa;
 use App\Services\Platform\Totp;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -18,9 +20,12 @@ class PlatformMfaTest extends TestCase
     private function login(bool $admin = true): User
     {
         $u = User::factory()->create(['password' => 'qa-password']);
-        if ($admin) PlatformAdmin::create(['user_id' => $u->id, 'email' => $u->email]);
+        if ($admin) {
+            PlatformAdmin::create(['user_id' => $u->id, 'email' => $u->email]);
+        }
         Sanctum::actingAs($u);
         $u->withAccessToken($u->createToken('mfa-test')->accessToken);
+
         return $u;
     }
 
@@ -28,6 +33,7 @@ class PlatformMfaTest extends TestCase
     {
         $secret = $this->postJson('/api/platform/mfa/enrol', ['password' => 'qa-password'])->assertOk()->assertHeader('Cache-Control', 'no-store, private')->json('secret');
         $result = $this->postJson('/api/platform/mfa/confirm', ['code' => app(Totp::class)->code($secret, now()->timestamp)])->assertOk();
+
         return [$secret, $result->json('recovery_codes')];
     }
 
@@ -51,7 +57,9 @@ class PlatformMfaTest extends TestCase
         $this->assertStringNotContainsString($secret, \DB::table('platform_mfa_credentials')->where('user_id', $u->id)->value('secret'));
         $this->assertStringNotContainsString($codes[0], PlatformMfaCredential::first()->getRawOriginal('recovery_hashes'));
         $stored = PlatformEvent::all()->toJson();
-        foreach ([$secret, $codes[0]] as $value) $this->assertStringNotContainsString($value, $stored);
+        foreach ([$secret, $codes[0]] as $value) {
+            $this->assertStringNotContainsString($value, $stored);
+        }
     }
 
     public function test_invalid_expired_replayed_codes_and_one_use_recovery(): void
@@ -91,7 +99,7 @@ class PlatformMfaTest extends TestCase
         $u = $this->login();
         [$secret, $codes] = $this->enrol();
         $this->travel(11)->minutes();
-        $this->postJson('/api/platform/actions', ['action' => 'ip_block', 'target' => str_repeat('a',64), 'password' => 'qa-password', 'confirmed' => true, 'reason' => 'qa_validation'])->assertForbidden();
+        $this->postJson('/api/platform/actions', ['action' => 'ip_block', 'target' => str_repeat('a', 64), 'password' => 'qa-password', 'confirmed' => true, 'reason' => 'qa_validation'])->assertForbidden();
         $code = app(Totp::class)->code($secret, now()->timestamp);
         $new = $this->postJson('/api/platform/mfa/recoveries', ['password' => 'qa-password', 'code' => $code])->assertOk()->json('recovery_codes');
         $this->postJson('/api/platform/mfa/challenge', ['code' => $codes[0]])->assertUnprocessable();
@@ -104,8 +112,8 @@ class PlatformMfaTest extends TestCase
     public function test_non_admin_and_mock_or_foreign_token_cannot_gain_mfa_access(): void
     {
         $u = $this->login(false);
-        foreach (['status','enrol','confirm','challenge','recoveries','disable'] as $action) {
-            $this->json($action==='status'?'GET':'POST', '/api/platform/mfa/'.$action)->assertForbidden();
+        foreach (['status', 'enrol', 'confirm', 'challenge', 'recoveries', 'disable'] as $action) {
+            $this->json($action === 'status' ? 'GET' : 'POST', '/api/platform/mfa/'.$action)->assertForbidden();
         }
         PlatformAdmin::create(['user_id' => $u->id, 'email' => $u->email]);
         $other = User::factory()->create();
@@ -127,9 +135,60 @@ class PlatformMfaTest extends TestCase
     {
         $u = $this->login();
         $secret = $this->postJson('/api/platform/mfa/enrol', ['password' => 'qa-password'])->assertOk()->json('secret');
-        $this->partialMock(\App\Services\Platform\EventRecorder::class, fn ($m) => $m->shouldReceive('audit')->andThrow(new \RuntimeException('audit unavailable')));
+        $this->partialMock(EventRecorder::class, fn ($m) => $m->shouldReceive('audit')->andThrow(new \RuntimeException('audit unavailable')));
         $this->postJson('/api/platform/mfa/confirm', ['code' => app(Totp::class)->code($secret, now()->timestamp)])->assertStatus(500);
         $this->assertNull(PlatformMfaCredential::first()->confirmed_at);
         $this->assertNull($u->currentAccessToken()->fresh()->platform_mfa_at);
+    }
+
+    private function configureLocalQaException(User $user): void
+    {
+        $this->app->instance('env', 'local');
+        config(['platform.local_qa_mfa' => ['user_id' => $user->id, 'email_sha256' => hash('sha256', $user->email), 'expires_at' => now()->addHour()->toIso8601String()]]);
+    }
+
+    public function test_local_qa_exception_allows_only_designated_operator_and_still_requires_password(): void
+    {
+        $u = $this->login();
+        $this->configureLocalQaException($u);
+        $this->getJson('/api/platform/mfa/status')->assertOk()->assertJsonPath('enrolled', false)->assertJsonPath('verified', true)->assertJsonPath('local_qa_exemption', true);
+        $this->getJson('/api/platform/overview')->assertOk();
+        $this->assertDatabaseCount('platform_mfa_credentials', 0);
+        $this->postJson('/api/platform/actions', ['action' => 'ip_block', 'target' => str_repeat('a', 64), 'password' => 'wrong', 'confirmed' => true, 'reason' => 'qa_validation'])->assertForbidden();
+        $this->login();
+        $this->getJson('/api/platform/overview')->assertForbidden()->assertJsonPath('code', 'platform_mfa_required');
+    }
+
+    public function test_local_qa_exception_fails_closed_outside_local_sqlite_and_after_expiry(): void
+    {
+        $u = $this->login();
+        $this->configureLocalQaException($u);
+        $this->app->instance('env', 'production');
+        $this->getJson('/api/platform/overview')->assertForbidden();
+        $this->app->instance('env', 'local');
+        // Inspect the configured driver without opening a MySQL connection.
+        config(['database.connections.sqlite.driver' => 'mysql']);
+        $this->assertFalse(app(PlatformMfa::class)->usesLocalQaExemption(request()->setUserResolver(fn () => $u)));
+        config(['database.connections.sqlite.driver' => 'sqlite']);
+        $this->travel(2)->hours();
+        $this->getJson('/api/platform/overview')->assertForbidden();
+    }
+
+    public function test_local_qa_exception_requires_fingerprint_verified_email_role_and_own_token(): void
+    {
+        $u = $this->login();
+        $this->configureLocalQaException($u);
+        config(['platform.local_qa_mfa.email_sha256' => '']);
+        $this->getJson('/api/platform/overview')->assertForbidden();
+        $this->configureLocalQaException($u);
+        $u->forceFill(['email_verified_at' => null])->save();
+        $this->getJson('/api/platform/overview')->assertForbidden();
+        $u->forceFill(['email_verified_at' => now()])->save();
+        PlatformAdmin::where('user_id', $u->id)->delete();
+        $this->getJson('/api/platform/overview')->assertForbidden();
+        PlatformAdmin::create(['user_id' => $u->id, 'email' => $u->email]);
+        $other = User::factory()->create();
+        $u->withAccessToken($other->createToken('foreign')->accessToken);
+        $this->getJson('/api/platform/mfa/status')->assertForbidden();
     }
 }
