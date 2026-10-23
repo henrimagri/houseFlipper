@@ -71,3 +71,68 @@ Login normal pelo formulário aprovado; preferência de lembrar e-mail desmarcad
 O proprietário pediu remover essa exigência para a conta temporária neste PC. Implementada exceção por identidade exata (ID+fingerprint), local/SQLite e expiração obrigatória; configurada por24h no `.env` ignorado. Backend mantém login, token próprio, conta ativa/verificada, papel administrativo, senha/confirmar/auditar ações. Demais contas/produção não são dispensadas. Detalhes e reversão em `MFA.md`.
 
 Após reload, a Visão Geral real abriu sem cadastro TOTP e com banner explícito de QA local. Captura `evidence/platform-admin/local-qa-mfa-exemption-access.jpg`, sem segredos ou dados pessoais. Durante a verificação o proprietário navegou na sua aba; a evidência foi obtida em aba separada, encerrada depois. Viewport temporário restaurado. Isso comprova o acesso e a renderização observada, mas não conclui o gate completo de cinco resoluções, a sidebar recolhível nem o redesign das demais páginas.
+
+
+## 23/10/2026 — Continuação do redesign: shell e módulos reais
+
+O gate inicial foi executado na Visão Geral autenticada em 1920×1080, 1440×900, 1280×800, 768×1024 e 390×844. As capturas overview-gate-* registram o estado anterior ao novo shell nesta execução, não um mockup nem o estado anterior de outro commit. O acesso usa exclusivamente o operador temporário local autorizado, com a dispensa de MFA já documentada; nenhuma conta existente recebeu dispensa.
+
+### Alterações implementadas
+
+- Shell único para todos os destinos administrativos existentes. Sidebar com ícones, grupos Operação/Segurança/Tecnologia/IA e Simulador/Financeiro/Sistema, 232 px expandida e 72 px recolhida. Preferência local persistida e confirmada após recarga. Navegação e conteúdo possuem rolagem independente. Nenhum destino GPU/configuração inexistente foi criado.
+- Topbar com breadcrumb, busca real, Ctrl+K, atualização, hostname da interface e operador real. O indicador de tempo mede recebimento da consulta, não atualidade da fonte ou presença online.
+- Filtros compactos, datas legíveis, atalhos inclusivos Hoje/7/30/90 dias e filtros avançados em disclosure. Aplicar/Limpar e paginação permanecem no servidor. Cada resposta fica vinculada à seção, filtros e página que a originaram; uma composição nova não recebe o payload da consulta anterior.
+- Primitives sem Recharts, tabela semântica com rolagem interna, badges HTTP/severidade/saúde, skeletons e estados vazios compartilhados. Tema aplicado também aos formulários e ações existentes, não somente à Visão Geral.
+- Perfil 360 em drawer, cabeçalho real e contagens explicitamente limitadas aos arrays disponíveis; nove abas preservadas, incluindo Financeiro/Suporte. Home/End e Escape exercitados no navegador.
+- Funil usa somente as etapas e valores devolvidos pelo servidor. Ausência de visitantes/checkout pago continua Não medido. Segurança e jobs resumem somente a página carregada, sem apresentar as contagens como totais do período.
+- IA possui métricas reais de conversas/mensagens, metadados de ferramentas e configuração identificada como configuração. Jobs mostram método efetivo, duração e progresso somente quando válidos; não inventam VRAM, fotos ou aprovação geométrica. Não houve job ativo do operador para QA de progresso em execução.
+- Health distingue online, offline, timeout, desabilitado e não configurado. Billing sem evidência financeira apresenta estado vazio explícito; MRR/ARR globais continuam não medidos. Prontidão conserva os critérios e pesos do servidor, sem certificação falsa.
+- Drawer de incidentes e busca compactados. O QA encontrou que o formulário inicializava investigating mesmo em falso positivo; agora preserva status/resolução do registro aberto. Nenhum incidente existente foi atualizado durante essa verificação.
+- O QA também registrou security.map is not a function durante recarga. O contrato PHP inspecionado devolve listas; a origem exata daquele payload não foi isolada. O componente agora distingue lista ausente/malformada de lista vazia, informa indisponibilidade e conserva os outros cards. Regressão cobre listas malformadas; a recarga normal voltou a funcionar. Não se alega ter corrigido uma origem de dados ainda não demonstrada.
+- Leituras concorrentes de status MFA são coalescidas no componente; invalidação e alterações exigem leitura nova e descartam respostas antigas. Mantidos timeout, autenticação, autorização e contratos de confirmação. Esse ajuste não é apresentado como solução geral para a lentidão local.
+- Gráfico da Visão Geral continua isolado em import dinâmico. Desativada a animação inicial da área para renderização imediata dos dados e captura estável em aba em segundo plano. Microinterações e skeleton respeitam redução de movimento.
+
+### Evidências de navegador
+
+Arquivos em evidence/platform-admin/. Todas as imagens são capturas reais de 23/10/2026; métricas podem variar entre consultas e incluem fixtures locais de QA. Clientes/perfil/requests foram restritos ao operador 30; não há senhas, TOTP, recuperação, tokens ou conteúdo de conversas nas imagens.
+
+| Caso | Evidência / observação |
+| --- | --- |
+| Visão Geral, cinco tamanhos | central-overview-{1920,1440,1280,768,390}.jpg; largura do documento igual ao viewport. Em 1280 px, corrigida a regra sobrescrita e confirmadas duas colunas. |
+| Recarga da Visão Geral | central-overview-reloaded.jpg; consulta normal após falha de outro módulo. |
+| Sidebar | central-sidebar-collapsed.jpg; 72 px medidos e preferência preservada após recarga. |
+| Clientes / perfil | central-clients-qa.jpg e central-profile-qa.jpg; filtro do operador e navegação de abas por teclado. |
+| Trials / conversão | central-trials-qa.jpg e central-funnel-qa.jpg; estado vazio legítimo e checkout indisponível, respectivamente. |
+| Segurança / incidente | central-security-qa.jpg e central-incident-qa.jpg; fixture informativa já existente, somente leitura. |
+| Requests | central-requests-qa.jpg; paginação 1→2 confirmada, metadados do operador, sem payload privado. |
+| IA / jobs | central-ai-qa.jpg e central-jobs-qa.jpg; metadados e ausência de jobs no escopo de QA. |
+| Health / billing / prontidão | central-health-qa.jpg, central-billing-qa.jpg e central-readiness-qa.jpg. Timeouts e bloqueios reais não foram ocultados. |
+| Busca global | central-search-qa.jpg; busca por ID30 devolveu o operador real, demais grupos vazios. |
+| Mobile | central-mobile-menu.jpg e central-mobile-table-qa.jpg; drawer de 260 px, fundo inert, Escape/foco de retorno e fechamento ao navegar. Tabela: viewport390, contêiner350, conteúdo971, scroll interno605; documento390. |
+| Erro de consulta | central-timeout-state-1440.jpg, estado real que permite tentar novamente. |
+
+Em 390 px, a captura fullPage apresentou erro/imagem vazia na ferramenta. As imagens mobile aprovadas são capturas do viewport efetivamente inspecionadas; a imagem vazia foi substituída, não usada como evidência. Capturas desktop foram conferidas nas dimensões esperadas. Os screenshots de módulos registram o QA progressivo; o estado após recarga demonstra a composição final da Visão Geral.
+
+### Verificação integrada
+
+- npm test: 65/65, zero falhas/skips, 467,884 ms no último comando integrado.
+- npm run build: TypeScript e Vite aprovados, 3.418 módulos, 10,14 s, exit 0. Heap limitado somente no comando a1536 MiB. Warnings preexistentes de chunks Three.js/MapCanvas acima de500 kB permanecem; avisos de useLayoutEffect vêm do harness SSR com MemoryRouter, não de uma aplicação SSR entregue.
+- git diff --check: exit0; avisos de normalização CRLF/LF não são erro de whitespace.
+- Nenhum PHP/contrato/backend foi alterado neste marco; a suíte PHP não foi reexecutada como se fosse uma validação nova desta entrega.
+- Testes adicionais cobrem períodos inclusivos/leap day, estados ausentes versus zero, HTTP/health, resumos paginados, progresso inválido, funil, destinos/rota ativa, preservação do incidente e listas inválidas da Visão Geral.
+
+### Bundle: medição estática, não benchmark de rede
+
+Artefato central-redesign-bundle-audit.json, a partir do manifesto Vite final, comparado a visual-overview-bundle-audit.json (04df906). Entrada própria: 63.847→57.185 bytes. Grafo estático JS da Central, incluindo dependências compartilhadas: 786.221→397.677 bytes. Overview é entrada dinâmica; nenhuma chave estática Three/GLTF/MapCanvas/globo/generateCategoricalChart foi encontrada. CSS administrativo:17.689 bytes /4.121 gzip.
+
+O grafo completo da Visão Geral, ao carregar os gráficos, é maior que o grafo inicial sem gráficos (cerca de802 kB). Portanto, não se afirma redução de metade no download total da Visão Geral nem melhora de tempo de resposta da API. A melhoria demonstrada é adiar os gráficos nos módulos que não os utilizam. O manifesto pode nomear a entrada dinâmica como _PlatformConsole-<hash>.js; a auditoria identifica a entrada por nome/isDynamicEntry, sem presumir uma chave estável pelo caminho fonte.
+
+### Limites e continuidade
+
+O QA exercitou os14 grupos de telas pedidos e a navegação descrita, não todas as combinações de dados/ações destrutivas. Tooltip por hover, exportação de dados privados, todos os fatores MFA e alterações operacionais reais não receberam uma aprovação manual nova. Contratos e confirmações foram preservados; não foram simulados pagamentos, incidentes críticos, jobs ou métricas para preencher telas.
+
+A máquina apresentou timeouts de15s, especialmente durante pressão de recursos; causa geral não isolada. Health observou Laravel/banco online, FastAPI/Qdrant em timeout e fila offline; Ollama esteve online na consulta inicial e em timeout na captura posterior; isso é snapshot, não certificação de uptime. Ledger/checkout real, MySQL, MFA dos operadores definitivos, backups e densificação CUDA continuam com as pendências anteriores.
+
+Operador temporário e arquivo privado de lifecycle permanecem ignorados durante o QA em andamento; a dispensa tem expiração obrigatória e deve ser removida junto com a fixture ao encerrar o QA. Não houve inclusão de .env, credenciais, dataset, pesos ou GLB no marco. O workflow local preexistente .github/workflows/platform-ci.yml permanece fora do commit.
+
+Próximo trabalho autorizado: iniciar o produto Imobiliária por inventário do CRM existente e uma fatia vertical, sem duplicar entidades nem reabrir a ponte automática ChatGPT↔Codex. O novo prompt não foi confundido com conclusão do ERP/WhatsApp/financeiro.

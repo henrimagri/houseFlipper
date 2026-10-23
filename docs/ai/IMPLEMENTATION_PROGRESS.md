@@ -640,3 +640,16 @@ Pedido posterior explícito do proprietário: remover o MFA para essa conta no P
 Verificação: foco MFA11/11,88assertions; PHP completo186testes/181aprovados/5skipsMySQL,1.522assertions,13.423ms; frontend58/58,503,6093ms; tsc/Vite aprovados,3.414módulos,10,88s. Pint aplicado aos arquivos PHP tocados e --test aprovado; nova rodada PHP após estilo registrada separadamente. Screenshot real `evidence/platform-admin/local-qa-mfa-exemption-access.jpg` mostra a central aberta com banner. Aba de QA separada encerrada e viewport restaurado. Ainda não equivale ao QA visual integral ou redesign concluído. `.env`, impressão do e-mail, senha, lifecycle privado e scripts locais não preparados para commit. Limpeza do operador/exceção permanece obrigatória ao terminar o QA. Próximo pedido recebido: expansão Imobiliária; começar por inventário real e marcos, sem duplicar entidades.
 
 Rechecagem final após Pint:186testes,181aprovados,5skipsMySQL,1.522assertions,12.870ms, saída0. Nenhuma alteração de produção após esta rodada.
+
+
+## 23/10/2026 — Central SOL: shell compartilhado, módulos e QA real
+
+Implementado e testado neste marco: sidebar232/72 persistente/mobile, topbar/busca/CtrlK, filtros compactos com períodos inclusivos, tema compartilhado de tabelas/formulários/badges, Perfil360 e drawers, funil/segurança/IA/jobs/health/billing honestos. Respostas são vinculadas à seção/filtros/página de origem. Corrigida a edição de incidente que inicializava um status diferente do registro. Listas inválidas da Visão Geral agora falham de forma parcial e explícita; origem do payload fora do contrato observado no QA ainda não isolada.
+
+QA real nas cinco larguras e nos14 grupos solicitados; navegação por teclado, sidebar após recarga, filtros, busca por fixture30, paginação, drawer mobile e rolagem interna de tabela observados. Capturas reais e limites detalhados em docs/platform-admin/VISUAL_REDESIGN.md e evidence/platform-admin/central-*.jpg; nenhuma imagem sintética, senha, TOTP ou token publicado.
+
+Verificação integrada final: npm test65/65 (467,884ms), npm run build com TypeScript/Vite (3.418 módulos/10,14s/exit0), git diff --check aprovado. Backend/PHP não alterado neste marco. Grafo estático da Central786.221→397.677bytes, gráficos em entrada dinâmica; isso não representa redução equivalente no total da Visão Geral nem benchmark de rede. Artefato: central-redesign-bundle-audit.json.
+
+Parcial/pendente: timeouts locais intermitentes, serviços e operação reais reportados como indisponíveis, QA de job ativo/tooltip e ações sensíveis não executadas manualmente nesta entrega, limpeza do operador temporário ao terminar o QA. Mantidos bloqueios anteriores de MySQL, billing/provedor real, MFA definitivo, backups e CUDA. Sem alterações nos três produtos/IA/3D nem no workflow preexistente não versionado.
+
+Na sequência autorizada vem o prompt Imobiliária completo. Inventário inicial confirma CrmContact/CommercialListing/CrmDeal/CrmTicket/organizações/filiais existentes. Próxima fatia: corrigir referências e conversão de atendimento para oportunidade com isolamento e idempotência, antes de automações e integrações externas. ERP/WhatsApp/marketing não são declarados concluídos por este checkpoint.

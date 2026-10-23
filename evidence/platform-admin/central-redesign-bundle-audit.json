@@ -1,0 +1,209 @@
+{
+  "checked_at": "2026-10-23T10:08:56.046Z",
+  "method": "Vite manifest static graph, shared application dependencies included; not network transfer or runtime timing",
+  "baseline": "04df906 / visual-overview-bundle-audit.json",
+  "before_entry_bytes": 63847,
+  "before_static_js_bytes": 786221,
+  "entry": "_PlatformConsole-D9pO4c1D.js",
+  "static_js": [
+    {
+      "key": "_PlatformConsole-D9pO4c1D.js",
+      "file": "assets/PlatformConsole-D9pO4c1D.js",
+      "bytes": 57185,
+      "gzip_bytes": 18541
+    },
+    {
+      "key": "index.html",
+      "file": "assets/index-htlLt1pE.js",
+      "bytes": 335510,
+      "gzip_bytes": 107011
+    },
+    {
+      "key": "_shield-check-CybVwc0j.js",
+      "file": "assets/shield-check-CybVwc0j.js",
+      "bytes": 488,
+      "gzip_bytes": 351
+    },
+    {
+      "key": "_settings-2-BzdynqzT.js",
+      "file": "assets/settings-2-BzdynqzT.js",
+      "bytes": 421,
+      "gzip_bytes": 295
+    },
+    {
+      "key": "_database-DJ2TYIol.js",
+      "file": "assets/database-DJ2TYIol.js",
+      "bytes": 412,
+      "gzip_bytes": 302
+    },
+    {
+      "key": "_chart-column-BXtjoQ56.js",
+      "file": "assets/chart-column-BXtjoQ56.js",
+      "bytes": 419,
+      "gzip_bytes": 294
+    },
+    {
+      "key": "_refresh-cw-DFXX1a2q.js",
+      "file": "assets/refresh-cw-DFXX1a2q.js",
+      "bytes": 489,
+      "gzip_bytes": 324
+    },
+    {
+      "key": "_sliders-horizontal-BwrCBCd-.js",
+      "file": "assets/sliders-horizontal-BwrCBCd-.js",
+      "bytes": 753,
+      "gzip_bytes": 366
+    },
+    {
+      "key": "_circle-check-fDebQKJQ.js",
+      "file": "assets/circle-check-fDebQKJQ.js",
+      "bytes": 346,
+      "gzip_bytes": 270
+    },
+    {
+      "key": "_clock-3-DIdlRlvp.js",
+      "file": "assets/clock-3-DIdlRlvp.js",
+      "bytes": 355,
+      "gzip_bytes": 275
+    },
+    {
+      "key": "_shield-alert-B1KrhZTT.js",
+      "file": "assets/shield-alert-B1KrhZTT.js",
+      "bytes": 521,
+      "gzip_bytes": 361
+    },
+    {
+      "key": "_message-square-CtyMuD3m.js",
+      "file": "assets/message-square-CtyMuD3m.js",
+      "bytes": 347,
+      "gzip_bytes": 267
+    },
+    {
+      "key": "_download-dK01r2at.js",
+      "file": "assets/download-dK01r2at.js",
+      "bytes": 431,
+      "gzip_bytes": 319
+    }
+  ],
+  "static_js_bytes": 397677,
+  "overview_dynamic_js": [
+    {
+      "key": "src/pages/platform/PlatformOverview.tsx",
+      "file": "assets/PlatformOverview-Rk3nV1xQ.js",
+      "bytes": 19396,
+      "gzip_bytes": 7247
+    },
+    {
+      "key": "index.html",
+      "file": "assets/index-htlLt1pE.js",
+      "bytes": 335510,
+      "gzip_bytes": 107011
+    },
+    {
+      "key": "_PlatformConsole-D9pO4c1D.js",
+      "file": "assets/PlatformConsole-D9pO4c1D.js",
+      "bytes": 57185,
+      "gzip_bytes": 18541
+    },
+    {
+      "key": "_shield-check-CybVwc0j.js",
+      "file": "assets/shield-check-CybVwc0j.js",
+      "bytes": 488,
+      "gzip_bytes": 351
+    },
+    {
+      "key": "_settings-2-BzdynqzT.js",
+      "file": "assets/settings-2-BzdynqzT.js",
+      "bytes": 421,
+      "gzip_bytes": 295
+    },
+    {
+      "key": "_database-DJ2TYIol.js",
+      "file": "assets/database-DJ2TYIol.js",
+      "bytes": 412,
+      "gzip_bytes": 302
+    },
+    {
+      "key": "_chart-column-BXtjoQ56.js",
+      "file": "assets/chart-column-BXtjoQ56.js",
+      "bytes": 419,
+      "gzip_bytes": 294
+    },
+    {
+      "key": "_refresh-cw-DFXX1a2q.js",
+      "file": "assets/refresh-cw-DFXX1a2q.js",
+      "bytes": 489,
+      "gzip_bytes": 324
+    },
+    {
+      "key": "_sliders-horizontal-BwrCBCd-.js",
+      "file": "assets/sliders-horizontal-BwrCBCd-.js",
+      "bytes": 753,
+      "gzip_bytes": 366
+    },
+    {
+      "key": "_circle-check-fDebQKJQ.js",
+      "file": "assets/circle-check-fDebQKJQ.js",
+      "bytes": 346,
+      "gzip_bytes": 270
+    },
+    {
+      "key": "_clock-3-DIdlRlvp.js",
+      "file": "assets/clock-3-DIdlRlvp.js",
+      "bytes": 355,
+      "gzip_bytes": 275
+    },
+    {
+      "key": "_shield-alert-B1KrhZTT.js",
+      "file": "assets/shield-alert-B1KrhZTT.js",
+      "bytes": 521,
+      "gzip_bytes": 361
+    },
+    {
+      "key": "_message-square-CtyMuD3m.js",
+      "file": "assets/message-square-CtyMuD3m.js",
+      "bytes": 347,
+      "gzip_bytes": 267
+    },
+    {
+      "key": "_download-dK01r2at.js",
+      "file": "assets/download-dK01r2at.js",
+      "bytes": 431,
+      "gzip_bytes": 319
+    },
+    {
+      "key": "_generateCategoricalChart-Dyfr0D9h.js",
+      "file": "assets/generateCategoricalChart-Dyfr0D9h.js",
+      "bytes": 377741,
+      "gzip_bytes": 104543
+    },
+    {
+      "key": "_clsx-B-dksMZM.js",
+      "file": "assets/clsx-B-dksMZM.js",
+      "bytes": 374,
+      "gzip_bytes": 238
+    },
+    {
+      "key": "_CartesianGrid-D0aqNTAo.js",
+      "file": "assets/CartesianGrid-D0aqNTAo.js",
+      "bytes": 6783,
+      "gzip_bytes": 2365
+    },
+    {
+      "key": "_circle-dollar-sign-DnVTbmHK.js",
+      "file": "assets/circle-dollar-sign-DnVTbmHK.js",
+      "bytes": 415,
+      "gzip_bytes": 304
+    }
+  ],
+  "overview_dynamic_graph_bytes": 802386,
+  "css": [
+    {
+      "file": "assets/PlatformConsole-DpefXBEU.css",
+      "bytes": 17689,
+      "gzip_bytes": 4121
+    }
+  ],
+  "unexpected_heavy_static_keys": [],
+  "overview_is_dynamic": true
+}

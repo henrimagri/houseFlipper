@@ -8,10 +8,10 @@ import { createRequire } from 'node:module';
 
 // Render actual React components. API is a stub: these tests make no HTTP calls.
 const folder = await mkdtemp(join(tmpdir(), 'platform-widgets-'));
-let render;
+let render, presetPeriod;
 try {
   const compiled = await build({
-    stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import {DataTable,Fields,Controls,ResolveIncident,Overview} from './src/pages/platform/PlatformWidgets'; import {WorkflowCreate,PrivacyUpdate,SignalReview} from './src/pages/platform/PlatformWorkflowForms'; export function render(kind,props){return renderToStaticMarkup(React.createElement({DataTable,Fields,Controls,ResolveIncident,Overview,WorkflowCreate,PrivacyUpdate,SignalReview}[kind],props));}`,
+    stdin: { contents: `import React from 'react'; import {renderToStaticMarkup} from 'react-dom/server'; import {DataTable,Fields,Controls,ResolveIncident} from './src/pages/platform/PlatformWidgets'; import Overview from './src/pages/platform/PlatformOverview'; import {MemoryRouter} from 'react-router-dom'; import PlatformShell from './src/pages/platform/PlatformShell'; import PlatformFilterBar,{presetPeriod} from './src/pages/platform/PlatformFilterBar'; export {presetPeriod}; import {StatusBadge,ClientProfile} from './src/pages/platform/PlatformWidgets'; import {PageSummary,JobsPanel,FunnelPanel,HealthGrid} from './src/pages/platform/PlatformModulePanels'; import {WorkflowCreate,PrivacyUpdate,SignalReview} from './src/pages/platform/PlatformWorkflowForms'; export function render(kind,props){return renderToStaticMarkup(React.createElement(MemoryRouter,null,React.createElement({PlatformShell,PlatformFilterBar,StatusBadge,ClientProfile,PageSummary,JobsPanel,FunnelPanel,HealthGrid,DataTable,Fields,Controls,ResolveIncident,Overview,WorkflowCreate,PrivacyUpdate,SignalReview}[kind],props)));}`,
       resolveDir: resolve('.'), sourcefile: 'platform-render.tsx', loader: 'tsx' },
     bundle: true, platform: 'node', format: 'cjs', write: false,
     plugins: [{ name: 'api-unit-boundary', setup(builder) {
@@ -21,7 +21,7 @@ try {
   });
   const file = join(folder, 'render.cjs');
   await writeFile(file, compiled.outputFiles[0].contents);
-  ({ render } = createRequire(import.meta.url)(file));
+  ({ render, presetPeriod } = createRequire(import.meta.url)(file));
 } finally { const target=resolve(folder); assert.ok(target.startsWith(resolve(tmpdir())+sep) && basename(target).startsWith('platform-widgets-')); await rm(target, { recursive: true, force: true }); }
 
 test('admin table escapes hostile strings and omits event metadata from the summary', () => {
@@ -102,4 +102,34 @@ test('overview leaves absent subscription and signal datasets unknown', () => {
  assert.ok(html.includes('Consulta indisponível.'));
  assert.ok(!html.includes('Nenhuma assinatura neste escopo.'));
  assert.ok(!html.includes('0 sinais no período'));
+});
+
+const baseFilters={from:'',to:'',product:'imobiliaria',tenant_id:'7',user_id:'30',status:'failed',severity:'',search:'',plan:''};
+test('period shortcuts use inclusive calendar days across month and leap boundaries and preserve scope',()=>{
+ const actual=presetPeriod(baseFilters,7,new Date(2024,2,1,12));
+ assert.equal(actual.from,'2024-02-24');assert.equal(actual.to,'2024-03-01');assert.equal(actual.tenant_id,'7');assert.equal(actual.product,'imobiliaria');assert.equal(actual.status,'failed');assert.equal(baseFilters.from,'');
+ assert.equal(presetPeriod(baseFilters,1,new Date(2026,0,1)).from,'2026-01-01');
+});
+test('unknown service states and HTTP failures are explicit',()=>{
+ assert.match(render('StatusBadge',{value:502}),/HTTP 502/);assert.match(render('StatusBadge',{value:'not_configured'}),/Não configurado/);assert.match(render('StatusBadge',{value:null}),/Não medido/);
+ const html=render('HealthGrid',{services:{qdrant:{status:'offline'},queue:{status:'not_configured'}}});assert.match(html,/Offline/);assert.match(html,/Não configurado/);
+});
+test('paged summaries identify their denominator and jobs reject invalid progress',()=>{
+ const html=render('PageSummary',{rows:[{status:'failed'}],field:'status',values:['failed','queued']});assert.match(html,/não são totais do período/);assert.match(html,/>0</);
+ const jobs=render('JobsPanel',{rows:[{id:1,status:'failed',progress:120,actual_method:null}],onOpen(){}});assert.ok(!jobs.includes('<progress'));assert.match(jobs,/Progresso não medido/);assert.match(jobs,/GPU indisponíveis/);
+});
+test('unmeasured funnel stage never becomes a paid conversion count',()=>{
+ const html=render('FunnelPanel',{data:{stages:[{stage:'Cadastro',value:0},{stage:'Pago',value:null}]}});assert.match(html,/>0</);assert.match(html,/Não medido/);assert.match(html,/não representa zero/);
+});
+test('shell retains every supplied destination and identifies active route',()=>{
+ const html=render('PlatformShell',{groups:[{label:'OPERAÇÃO',items:[['overview','Visão geral'],['clients','Clientes']]}],section:'clients',title:'Clientes',name:'Operador QA',search:'',onSearchChange(){},onSearch(){},onRefresh(){},loading:false,receivedAt:null});
+ assert.match(html,/href="\/platform\/clients"/);assert.match(html,/aria-current="page"/);assert.match(html,/Recolher sidebar/);assert.match(html,/Aguardando consulta/);assert.ok(!html.includes('há 0s'));
+});
+
+test('incident editor preserves a resolved status and resolution when opening the current record',()=>{
+ const html=render('ResolveIncident',{id:3,current:{status:'false_positive',resolution:'Validação local concluída'},onDone(){}});assert.match(html,/<option selected="">false_positive<\/option>/);assert.match(html,/Validação local concluída/);assert.ok(!html.includes('<option selected="">investigating</option>'));
+});
+
+test('malformed overview lists fail independently and never become measured zero',()=>{
+ const html=render('Overview',{data:{users:{total:4},security:{low:3},subscriptions:{},activity_series:{}}});assert.match(html,/Dados de segurança indisponíveis nesta consulta/);assert.match(html,/Consulta indisponível/);assert.match(html,/Atividade indisponível/);assert.ok(!html.includes('0 sinais no período'));assert.ok(!html.includes('Nenhuma assinatura neste escopo'));assert.match(html,/>4</);
 });
