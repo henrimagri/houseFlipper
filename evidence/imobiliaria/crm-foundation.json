@@ -1,0 +1,15 @@
+{
+  "checkpoint": "2026-10-23-crm-integrity",
+  "branch": "Correção-visua/proteção",
+  "scope": "existing agency CRM services",
+  "database": "isolated sqlite :memory:",
+  "initial_baseline": { "tests": 3, "assertions": 21, "passed": 3 },
+  "initial_regressions": { "tests": 10, "passed": 1, "failed": 9, "errors": 0 },
+  "final_php": { "tests": 205, "passed": 200, "skipped": 5, "assertions": 1600, "duration_ms": 20876, "exit_code": 0 },
+  "new_inbox_scenarios": 19,
+  "mysql_concurrency_validated": false,
+  "browser_inbox_validated": false,
+  "external_messages_sent": false,
+  "local_database_migrated": false,
+  "new_dependencies": []
+}

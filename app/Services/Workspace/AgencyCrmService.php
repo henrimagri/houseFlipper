@@ -4,15 +4,17 @@ namespace App\Services\Workspace;
 
 use App\Enums\DealStage;
 use App\Enums\TicketStatus;
+use App\Models\CommercialListing;
 use App\Models\CrmContact;
 use App\Models\CrmDeal;
 use App\Models\CrmProposal;
 use App\Models\CrmTicket;
 use App\Models\OrganizationMembership;
-use App\Models\CommercialListing;
+use App\Models\Scopes\TenantScope;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class AgencyCrmService
@@ -22,7 +24,8 @@ class AgencyCrmService
     public function scopedDeals(User $user): Builder
     {
         $membership = $this->organizations->requireMembership($user);
-        $query = CrmDeal::query()->where('organization_id', $membership->organization_id);
+        $query = CrmDeal::withoutGlobalScope(TenantScope::class)
+            ->where('tenant_id', $user->tenant_id)->where('organization_id', $membership->organization_id);
         $branch = $this->organizations->visibleBranchId($membership);
         if ($branch) {
             $query->where('branch_id', $branch);
@@ -34,7 +37,8 @@ class AgencyCrmService
     public function scopedTickets(User $user): Builder
     {
         $membership = $this->organizations->requireMembership($user);
-        $query = CrmTicket::query()->where('organization_id', $membership->organization_id);
+        $query = CrmTicket::withoutGlobalScope(TenantScope::class)
+            ->where('tenant_id', $user->tenant_id)->where('organization_id', $membership->organization_id);
         $branch = $this->organizations->visibleBranchId($membership);
         if ($branch) {
             $query->where('branch_id', $branch);
@@ -46,38 +50,43 @@ class AgencyCrmService
     public function createDeal(User $user, array $data): CrmDeal
     {
         $membership = $this->organizations->requireMembership($user);
-        $this->organizations->assertBranchAccess($membership, isset($data['branch_id']) ? (int) $data['branch_id'] : null);
+        $branchId = $data['branch_id'] ?? $membership->branch_id;
+        $this->organizations->assertBranchAccess($membership, $branchId ? (int) $branchId : null);
         $this->validateReferences($user, $membership, $data);
-        $deal = CrmDeal::query()->create([
-            'tenant_id' => $user->tenant_id,
-            'organization_id' => $membership->organization_id,
-            'branch_id' => $data['branch_id'] ?? $membership->branch_id,
-            'user_id' => $user->id,
-            'assigned_user_id' => $data['assigned_user_id'] ?? $user->id,
-            'crm_contact_id' => $data['crm_contact_id'] ?? null,
-            'commercial_listing_id' => $data['commercial_listing_id'] ?? null,
-            'title' => $data['title'],
-            'stage' => DealStage::Novo,
-            'estimated_value_cents' => $data['estimated_value_cents'] ?? null,
-            'priority' => $data['priority'] ?? 'normal',
-            'lock_version' => 1,
-            'last_interaction_at' => now(),
-        ]);
-        $deal->activities()->create([
-            'tenant_id' => $user->tenant_id,
-            'user_id' => $user->id,
-            'kind' => 'created',
-            'to_stage' => DealStage::Novo->value,
-            'body' => 'Negócio criado',
-        ]);
 
-        return $deal;
+        return DB::transaction(function () use ($user, $membership, $data, $branchId) {
+            $deal = CrmDeal::query()->create([
+                'tenant_id' => $user->tenant_id,
+                'organization_id' => $membership->organization_id,
+                'branch_id' => $branchId,
+                'user_id' => $user->id,
+                'assigned_user_id' => $data['assigned_user_id'] ?? $user->id,
+                'crm_contact_id' => $data['crm_contact_id'] ?? null,
+                'commercial_listing_id' => $data['commercial_listing_id'] ?? null,
+                'title' => $data['title'],
+                'stage' => DealStage::Novo,
+                'estimated_value_cents' => $data['estimated_value_cents'] ?? null,
+                'priority' => $data['priority'] ?? 'normal',
+                'lock_version' => 1,
+                'last_interaction_at' => now(),
+            ]);
+            $deal->activities()->create([
+                'tenant_id' => $user->tenant_id,
+                'user_id' => $user->id,
+                'kind' => 'created',
+                'to_stage' => DealStage::Novo->value,
+                'body' => 'Negócio criado',
+            ]);
+
+            return $deal;
+        }, 3);
     }
 
     public function updateDeal(User $user, CrmDeal $deal, array $data): CrmDeal
     {
         $membership = $this->assertDeal($user, $deal);
-        $this->organizations->assertBranchAccess($membership, isset($data['branch_id']) ? (int) $data['branch_id'] : $deal->branch_id);
+        $branchId = array_key_exists('branch_id', $data) ? $data['branch_id'] : $deal->branch_id;
+        $this->organizations->assertBranchAccess($membership, $branchId ? (int) $branchId : null);
         $this->validateReferences($user, $membership, $data);
         $deal->fill(collect($data)->only([
             'title', 'crm_contact_id', 'commercial_listing_id', 'assigned_user_id',
@@ -139,20 +148,21 @@ class AgencyCrmService
     public function createTicket(User $user, array $data): CrmTicket
     {
         $membership = $this->organizations->requireMembership($user);
-        $this->organizations->assertBranchAccess($membership, isset($data['branch_id']) ? (int) $data['branch_id'] : null);
+        $branchId = $data['branch_id'] ?? $membership->branch_id;
+        $this->organizations->assertBranchAccess($membership, $branchId ? (int) $branchId : null);
         $this->validateReferences($user, $membership, $data);
 
         return CrmTicket::query()->create([
             'tenant_id' => $user->tenant_id,
             'organization_id' => $membership->organization_id,
-            'branch_id' => $data['branch_id'] ?? $membership->branch_id,
+            'branch_id' => $branchId,
             'user_id' => $user->id,
             'assigned_user_id' => $data['assigned_user_id'] ?? $user->id,
             'crm_contact_id' => $data['crm_contact_id'] ?? null,
             'commercial_listing_id' => $data['commercial_listing_id'] ?? null,
             'subject' => $data['subject'],
             'status' => TicketStatus::Novo,
-            'priority' => in_array($data['priority'] ?? 'normal', ['baixa', 'normal', 'alta'], true) ? $data['priority'] : 'normal',
+            'priority' => in_array($data['priority'] ?? null, ['baixa', 'normal', 'alta'], true) ? $data['priority'] : 'normal',
             'channel' => $data['channel'] ?? 'internal',
             'return_at' => $data['return_at'] ?? null,
         ]);
@@ -161,7 +171,7 @@ class AgencyCrmService
     public function addMessage(User $user, CrmTicket $ticket, string $body, string $kind = 'message'): CrmTicket
     {
         $this->assertTicket($user, $ticket);
-        $channel = $ticket->channel;
+        $channel = $kind === 'note' ? 'internal' : $ticket->channel;
         $delivery = ['status' => 'recorded'];
         if ($channel === 'whatsapp') {
             $delivery = ['status' => 'not_wired', 'reason' => 'WhatsApp Business Platform não configurada.'];
@@ -185,17 +195,31 @@ class AgencyCrmService
     public function convertTicket(User $user, CrmTicket $ticket): CrmDeal
     {
         $this->assertTicket($user, $ticket);
-        $deal = $this->createDeal($user, [
-            'title' => $ticket->subject,
-            'branch_id' => $ticket->branch_id,
-            'assigned_user_id' => $ticket->assigned_user_id,
-            'crm_contact_id' => $ticket->crm_contact_id,
-            'commercial_listing_id' => $ticket->commercial_listing_id,
-        ]);
-        $ticket->crm_deal_id = $deal->id;
-        $ticket->save();
 
-        return $deal;
+        return DB::transaction(function () use ($user, $ticket) {
+            // Reload under lock: a stale route-bound model must not create another deal.
+            $fresh = $this->scopedTickets($user)->whereKey($ticket->id)->lockForUpdate()->firstOrFail();
+            $this->assertTicket($user, $fresh);
+            if ($fresh->crm_deal_id) {
+                $existing = $this->scopedDeals($user)->whereKey($fresh->crm_deal_id)->first();
+                abort_unless($existing, 409, 'O negócio vinculado não está disponível. Revise o atendimento antes de converter novamente.');
+                $this->assertDeal($user, $existing);
+
+                return $existing;
+            }
+            $deal = $this->createDeal($user, [
+                'title' => $fresh->subject,
+                'branch_id' => $fresh->branch_id,
+                'assigned_user_id' => $fresh->assigned_user_id,
+                'crm_contact_id' => $fresh->crm_contact_id,
+                'commercial_listing_id' => $fresh->commercial_listing_id,
+                'priority' => $fresh->priority,
+            ]);
+            $fresh->crm_deal_id = $deal->id;
+            $fresh->save();
+
+            return $deal;
+        }, 3);
     }
 
     public function createProposal(User $user, array $data): CrmProposal
@@ -235,7 +259,7 @@ class AgencyCrmService
     public function assertDeal(User $user, CrmDeal $deal): OrganizationMembership
     {
         $membership = $this->organizations->requireMembership($user);
-        abort_if((int) $deal->organization_id !== (int) $membership->organization_id, 404);
+        abort_if((int) $deal->tenant_id !== (int) $user->tenant_id || (int) $deal->organization_id !== (int) $membership->organization_id, 404);
         $this->organizations->assertBranchAccess($membership, $deal->branch_id ? (int) $deal->branch_id : null);
 
         return $membership;
@@ -244,7 +268,7 @@ class AgencyCrmService
     public function assertTicket(User $user, CrmTicket $ticket): OrganizationMembership
     {
         $membership = $this->organizations->requireMembership($user);
-        abort_if((int) $ticket->organization_id !== (int) $membership->organization_id, 404);
+        abort_if((int) $ticket->tenant_id !== (int) $user->tenant_id || (int) $ticket->organization_id !== (int) $membership->organization_id, 404);
         $this->organizations->assertBranchAccess($membership, $ticket->branch_id ? (int) $ticket->branch_id : null);
 
         return $membership;
@@ -252,25 +276,29 @@ class AgencyCrmService
 
     public function validateReferences(User $user, OrganizationMembership $membership, array $data): void
     {
-        if (! empty($data['assigned_user_id']) && ! OrganizationMembership::query()
+        $branch = $this->organizations->visibleBranchId($membership);
+        if (! empty($data['assigned_user_id']) && ! OrganizationMembership::withoutGlobalScope(TenantScope::class)
+            ->where('tenant_id', $user->tenant_id)
             ->where('organization_id', $membership->organization_id)
             ->where('user_id', $data['assigned_user_id'])
+            ->when($branch, fn ($query) => $query->where('branch_id', $branch))
+            ->whereHas('user', fn ($query) => $query->where('tenant_id', $user->tenant_id)->where('ativo_flg', true)->where('deletado_flg', false))
             ->where('status', 'active')->exists()) {
             throw ValidationException::withMessages(['assigned_user_id' => 'Responsável não pertence à imobiliária.']);
         }
-        if (! empty($data['crm_contact_id']) && ! CrmContact::withoutGlobalScopes()
-            ->where('tenant_id', $user->tenant_id)
-            ->whereKey($data['crm_contact_id'])
-            ->where(fn ($query) => $query->whereNull('organization_id')->orWhere('organization_id', $membership->organization_id))
-            ->exists()) {
-            throw ValidationException::withMessages(['crm_contact_id' => 'Cliente não pertence à conta.']);
-        }
-        if (! empty($data['commercial_listing_id']) && ! CommercialListing::withoutGlobalScopes()
-            ->where('tenant_id', $user->tenant_id)
-            ->whereKey($data['commercial_listing_id'])
-            ->where(fn ($query) => $query->whereNull('organization_id')->orWhere('organization_id', $membership->organization_id))
-            ->exists()) {
-            throw ValidationException::withMessages(['commercial_listing_id' => 'Imóvel não pertence à conta.']);
+        foreach (['crm_contact_id' => CrmContact::class, 'commercial_listing_id' => CommercialListing::class] as $field => $model) {
+            if (empty($data[$field])) {
+                continue;
+            }
+            // Remove only tenant scope; archived listings must remain unavailable.
+            $record = $model::withoutGlobalScope(TenantScope::class)
+                ->where('tenant_id', $user->tenant_id)
+                ->whereKey($data[$field])
+                ->where(fn ($query) => $query->whereNull('organization_id')->orWhere('organization_id', $membership->organization_id))
+                ->first();
+            if (! $record || ($branch && $record->branch_id && (int) $record->branch_id !== $branch) || ! Gate::forUser($user)->allows('view', $record)) {
+                throw ValidationException::withMessages([$field => 'Registro não disponível para este usuário e imobiliária.']);
+            }
         }
     }
 }
