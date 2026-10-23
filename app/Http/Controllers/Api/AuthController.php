@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
@@ -101,6 +102,20 @@ class AuthController extends Controller
             ] : null,
             ...$this->entitlement->sessionPayload($user),
         ]);
+    }
+
+    public function updateLocation(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'city' => ['required', 'string', 'max:120'],
+            'state' => ['required', Rule::in(['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'])],
+        ]);
+        $user = $request->user();
+        $profile = is_array($user->registration_profile) ? $user->registration_profile : [];
+        $profile['location'] = ['city' => trim($data['city']), 'state' => $data['state']];
+        $user->forceFill(['registration_profile' => $profile])->save();
+
+        return response()->json(['message' => 'Localização de trabalho atualizada.', 'location' => $profile['location']]);
     }
 
     public function updateProfile(Request $request): JsonResponse

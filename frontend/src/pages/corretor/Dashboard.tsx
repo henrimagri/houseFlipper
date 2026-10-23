@@ -1,3 +1,4 @@
+import DashboardInsights from '@/components/dashboard/DashboardInsights';
 import { useEffect, useState } from 'react';
 import { CalendarDays, FolderKanban, House, MessageSquare, ShieldCheck, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -87,6 +88,7 @@ export default function CorretorDashboard() {
           <Link to="/app/corretor/meu-site" className="mt-3 inline-block text-sm font-medium text-sky-700">Divulgar no site <ArrowUpRight className="inline size-4" /></Link>
         </section>
       </div>
+      <DashboardInsights product="corretor" data={data} />
     </div>
   );
 }

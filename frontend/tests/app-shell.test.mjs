@@ -120,7 +120,9 @@ test('application shell stays fixed, shows the registered location, and keeps up
     read('../app/Http/Controllers/Api/DataSourceStatusController.php'), read('../app/Services/NeighborhoodContextService.php'), read('../config/services.php'),
   ]);
   assert.match(layout, /fixed inset-y-0 left-0 z-50/);
-  assert.match(layout, /locationLabel \|\| 'Localização não informada'/);
+  assert.match(layout, /<AccountLocation \/>/);
+  const location = await read('src/components/AccountLocation.tsx');
+  assert.match(location, /locationLabel \|\| 'Definir localização'/);
   assert.match(sidebar, /h-dvh/);
   assert.match(sidebar, /overscroll-contain/);
   assert.match(session, /registration_profile\?\.address/);

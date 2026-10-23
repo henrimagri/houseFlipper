@@ -1,38 +1,19 @@
-import { Building2, Hammer, House, LayoutGrid, ArrowUpRight } from 'lucide-react';
-import PageHeader from '@/ui/PageHeader';
+import { Building2, Hammer, House, ArrowUpRight, Check, ShieldCheck, Sparkles, Layers3, CreditCard, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { PRODUCT_META, ProductSlug } from '@/lib/products';
+import { PRODUCT_META, type ProductSlug } from '@/lib/products';
 import { useSession } from '@/lib/session';
+import { FEATURE_LABELS, usePublicCatalog } from '@/lib/publicCatalog';
 
+const highlightedFeatures: Record<ProductSlug,string[]> = {corretor:['capture','commercial_wallet','broker_site','crm_contacts'],imobiliaria:['crm_pipeline','crm_inbox','teams','branches'],house_flipper:['investment_wallet','financial_simulator','renovation_simulation','visualization_3d']};
+const statusLabels: Record<string,string> = {active:'Ativo',trial:'Em teste',trialing:'Em teste',cancelled:'Cancelado',past_due:'Pagamento pendente',expired:'Expirado'};
 export default function Inicio() {
-  const { catalog, products, name } = useSession();
-  return (
-    <div className="space-y-6">
-      <PageHeader icon={LayoutGrid} title={`Olá, ${name.split(' ')[0] || 'conta'}`} subtitle="Uma conta, três sistemas. Só entra o que estiver contratado." />
-      {products.length === 0 && (
-        <div className="rounded-xl border bg-white dark:bg-slate-900 p-6">
-          <p className="font-medium">Nenhum produto liberado.</p>
-          <p className="text-sm text-gray-500 mt-1">Abra o catálogo para iniciar um teste de 7 dias. A contratação paga segue por confirmação comercial.</p>
-          <Link to="/app/produtos" className="inline-block mt-4 px-4 py-2 rounded-lg bg-primary-600 text-white text-sm">Ver produtos</Link>
-        </div>
-      )}
-      <div className="grid md:grid-cols-3 gap-4">
-        {catalog.map((item) => {
-          const slug = item.slug as ProductSlug;
-          const entitled = products.includes(slug);
-          const ProductIcon = {corretor:House,imobiliaria:Building2,house_flipper:Hammer}[slug];
-          return (
-            <div key={slug} className="rounded-xl border bg-white dark:bg-slate-900 p-5 space-y-3">
-              <h2 className="flex items-center gap-2 font-semibold"><ProductIcon className="size-5 text-primary-500" aria-hidden="true" />{item.label}</h2>
-              <p className="text-sm text-gray-500">{item.description}</p>
-              <p className="text-xs uppercase text-gray-400">{entitled ? item.subscription?.status : 'não contratado'}</p>
-              <Link to={entitled ? PRODUCT_META[slug].path : '/app/produtos'} className="inline-block text-sm font-medium text-primary-700">
-                {entitled ? 'Abrir sistema' : 'Contratar'} <ArrowUpRight className="inline size-4" aria-hidden="true" />
-              </Link>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+  const { catalog, products, name, locationLabel } = useSession();
+  const { catalog: publicCatalog } = usePublicCatalog();
+  return <div className="fc-account-home space-y-7">
+    <section className="fc-welcome" aria-labelledby="account-welcome"><div><p className="fc-eyebrow flex items-center gap-2"><Sparkles size={14} aria-hidden="true"/>Seu próximo passo começa aqui</p><h1 id="account-welcome">Boas-vindas{name ? `, ${name.split(' ')[0]}` : ' ao FlipControl'}.</h1><p>Um lugar para conduzir sua operação imobiliária. Escolha o produto que combina com o seu trabalho e organize seu dia com clareza.</p><div className="fc-welcome-actions"><a href="#seus-produtos" className="fc-button inline-flex items-center gap-2 px-4 py-2.5 text-sm">{products.length?'Acessar meus produtos':'Escolher meu primeiro produto'}<ArrowUpRight size={16}/></a><Link to="/app/assinaturas" className="inline-flex items-center gap-2 text-sm"><CreditCard size={16}/>Planos e assinaturas</Link></div></div><div className="fc-welcome-art" aria-hidden="true"><span/><span/><span/><House size={45} strokeWidth={1}/></div></section>
+    <div className="fc-account-summary"><span><Layers3 size={17}/><strong>{products.length}</strong> {products.length===1?'produto liberado':'produtos liberados'}</span><span><ShieldCheck size={17}/>Assinaturas independentes</span><span><MapPin size={17}/>{locationLabel || 'Defina sua cidade no cabeçalho'}</span></div>
+    <section id="seus-produtos" className="scroll-mt-24"><div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><p className="fc-eyebrow">Sua operação</p><h2 className="mt-1 text-xl font-semibold">{products.length?'Continue de onde você está':'Encontre o produto para você'}</h2></div><Link className="text-sm text-primary-600" to="/comparar-produtos">Comparar recursos <ArrowUpRight className="inline size-4"/></Link></div>
+      <div className="grid gap-5 lg:grid-cols-3">{catalog.map(item=>{const slug=item.slug as ProductSlug;const entitled=products.includes(slug);const Icon={corretor:House,imobiliaria:Building2,house_flipper:Hammer}[slug];const info=publicCatalog?.products.find(row=>row.slug===slug);const plan=item.plans.find(row=>row.price>0&&['month','monthly'].includes(row.billing_interval))??item.plans.find(row=>row.price>0);return <article key={slug} className="fc-account-product" data-entitled={entitled}><div className="flex items-center justify-between gap-2"><span className="fc-page-icon"><Icon size={23}/></span><span className="fc-product-status">{entitled?statusLabels[item.subscription?.status??'active']??'Liberado':'Disponível para contratar'}</span></div><h3>{item.label}</h3><p className="fc-account-description">{item.description}</p><div className="fc-account-price">{entitled?<><strong>Seu espaço está pronto</strong><span>Acesse os recursos da sua assinatura.</span></>:plan?<><strong>{(plan.price/100).toLocaleString('pt-BR',{style:'currency',currency:plan.currency||'BRL'})}<small> / mês</small></strong><span>Valor mensal. Consulte descontos e condições nos planos.</span></>:<><strong>Conheça os planos</strong><span>Veja os valores e condições disponíveis.</span></>}</div><ul>{highlightedFeatures[slug].filter(feature=>info?.features.includes(feature)).map(feature=><li key={feature}><Check size={15}/>{FEATURE_LABELS[feature]??feature.replace(/_/g,' ')}</li>)}</ul>{!entitled&&info&&<p className="text-xs app-muted">Teste gratuito de {info.trial_days} dias, sujeito à elegibilidade da conta.</p>}<Link className={entitled?'fc-button fc-account-product-cta':'fc-account-product-cta border'} to={entitled?PRODUCT_META[slug].path:`/app/produtos?produto=${slug}`}>{entitled?'Abrir '+item.label:'Ver planos e começar'}<ArrowUpRight size={17}/></Link><Link to={`/solucoes/${slug==='house_flipper'?'house-flipper':slug}`} className="mt-3 text-center text-xs app-muted">Conhecer o produto</Link></article>;})}</div>
+    </section><aside className="fc-account-help"><ShieldCheck size={21}/><div><strong>Você escolhe o que faz parte da sua conta.</strong><p>Um produto não ativa os demais. Testes e contratações passam pelas validações da sua conta; pagamentos dependem de um provedor configurado.</p></div><Link to="/app/ajuda">Preciso de ajuda <ArrowUpRight size={15}/></Link></aside>
+  </div>;
 }

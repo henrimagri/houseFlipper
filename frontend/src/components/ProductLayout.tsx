@@ -1,7 +1,8 @@
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Accessibility, Bell, ChevronDown, CreditCard, HelpCircle, History, LifeBuoy, LogOut, MapPin, Menu, Palette, Settings, UserRound } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Accessibility, Bell, ChevronDown, CreditCard, HelpCircle, History, LifeBuoy, LogOut, Menu, Palette, Settings, UserRound } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ProductSidebar from './ProductSidebar';
+import AccountLocation from './AccountLocation';
 import ProductTour from './ProductTour';
 import { PRODUCT_META, ProductSlug } from '@/lib/products';
 import { useSession } from '@/lib/session';
@@ -13,7 +14,7 @@ import AppSearchInput from '@/ui/AppSearchInput';
 import CommandPalette from '@/ui/CommandPalette';
 
 export default function ProductLayout({ product }: { product: ProductSlug | 'account' }) {
-  const { loading, error, products, name, navigation, email, avatarUrl, locationLabel } = useSession();
+  const { loading, error, products, name, navigation, email, avatarUrl } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar_collapsed') === '1');
   const [notes, setNotes] = useState<{ id: string; title: string; body: string; href: string }[]>([]);
@@ -85,31 +86,28 @@ export default function ProductLayout({ product }: { product: ProductSlug | 'acc
     : (navigation[product] ?? []).map(item => ({ label: item.label, path: item.path, section: subtitle }));
 
   return (
-    <div className="fc-workspace app-canvas flex min-h-dvh w-full overflow-x-hidden" data-product={product}>
+    <div className="fc-workspace app-canvas flex min-h-dvh w-full overflow-x-clip" data-product={product}>
       {menuOpen && <button aria-label="Fechar menu" onClick={() => setMenuOpen(false)} className="fixed inset-0 bg-black/40 z-40 lg:hidden" />}
       <div className={`${menuOpen ? 'block' : 'hidden'} fixed inset-y-0 left-0 z-50 lg:block`}>
-        <ProductSidebar product={product} collapsed={collapsed} onToggle={() => setCollapsed((value) => !value)} onNavigate={() => setMenuOpen(false)} />
+        <ProductSidebar product={product} collapsed={collapsed} onNavigate={() => setMenuOpen(false)} />
       </div>
       <div className={`flex min-w-0 flex-1 flex-col transition-[margin] duration-300 ${collapsed ? 'lg:ml-[76px]' : 'lg:ml-72'}`}>
         <header className="app-surface sticky top-0 z-20 flex h-16 items-center gap-3 border-b px-4 backdrop-blur sm:px-6">
-          <button aria-expanded={menuOpen} aria-label="Abrir menu" onClick={() => setMenuOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-slate-100">
+          <button aria-expanded={menuOpen} aria-label="Abrir menu" onClick={() => setMenuOpen(true)} className="fc-topbar-icon lg:hidden">
             <Menu className="h-5 w-5" />
           </button>
+          <button type="button" className="fc-topbar-icon hidden lg:flex" aria-label={collapsed ? 'Expandir menu lateral' : 'Recolher'} aria-expanded={!collapsed} title={collapsed ? 'Expandir navegação' : 'Recolher navegação'} onClick={()=>setCollapsed(value=>!value)}>{collapsed?<PanelLeftOpen size={19}/>:<PanelLeftClose size={19}/>}</button>
           <AppSearchInput className="hidden min-w-0 max-w-xl flex-1 md:flex" value={search} onChange={setSearch} onSubmit={() => { if (product !== 'account') window.location.assign(searchTarget); }} placeholder="Pesquisar imóveis, clientes ou endereços" shortcut="⌘ K" />
-          <button type="button" onClick={() => setCommandsOpen(true)} className="hidden rounded-lg border px-2 py-1 text-[11px] font-semibold text-slate-500 xl:block" title="Abrir comandos">Ctrl K</button>
-          <div className="hidden xl:flex items-center gap-1 text-xs text-slate-500 rounded-lg border px-2 py-1">
-            <MapPin className="h-3.5 w-3.5" />
-            {locationLabel || 'Localização não informada'}
-          </div>
+          <AccountLocation />
           <div className="ml-auto flex shrink-0 items-center gap-2">
-            <p className="hidden lg:block text-xs text-slate-400">{crumbs[0]?.label || subtitle}</p>
+            <p className="fc-topbar-crumb hidden 2xl:block text-xs text-slate-400">{crumbs[0]?.label || subtitle}</p>
             {product !== 'account' && (
-              <button type="button" className="p-2 rounded-lg hover:bg-slate-100" title="Rever tutorial" onClick={() => setTourForce(true)}>
+              <button type="button" className="fc-topbar-icon hidden sm:flex" aria-label="Rever tutorial" title="Rever tutorial" onClick={() => setTourForce(true)}>
                 <HelpCircle className="h-5 w-5" />
               </button>
             )}
             <div className="relative">
-              <button type="button" aria-label="Notificações" onClick={() => setOpenNotes((value) => !value)} className="relative p-2 rounded-lg hover:bg-slate-100">
+              <button type="button" aria-label="Notificações" onClick={() => setOpenNotes((value) => !value)} className="fc-topbar-icon relative">
                 <Bell className="w-5 h-5" />
                 {notes.length > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-sky-600" />}
               </button>
@@ -146,6 +144,7 @@ export default function ProductLayout({ product }: { product: ProductSlug | 'acc
                   <p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Meus sistemas</p>
                   <ProductSwitcher embedded activeProduct={product} onSelect={() => setProfileOpen(false)} />
                   <div className="mt-2 border-t pt-2">
+                    {product !== 'account' && <button role="menuitem" type="button" onClick={()=>{setProfileOpen(false);setTourForce(true);}} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm"><HelpCircle className="h-4 w-4" />Rever tutorial</button>}
                     <Link role="menuitem" to="/app/assinaturas" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"><CreditCard className="h-4 w-4" /> Planos e assinaturas</Link>
                     <Link role="menuitem" to="/app/assinaturas#historico" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"><History className="h-4 w-4" /> Histórico</Link>
                     <Link role="menuitem" to="/app/ajuda" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"><LifeBuoy className="h-4 w-4" /> Ajuda</Link>

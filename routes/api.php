@@ -104,6 +104,8 @@ Route::middleware(['auth:sanctum', 'active-account'])->group(function () {
 
     Route::patch('/auth/profile', [AuthController::class, 'updateProfile']);
 
+    Route::put('/auth/location', [AuthController::class, 'updateLocation'])->middleware('throttle:30,1');
+
     Route::post('/auth/avatar', [AuthController::class, 'updateAvatar'])->middleware('throttle:10,1');
 
     Route::put('/auth/password', [AuthController::class, 'updatePassword'])->middleware('throttle:6,1');

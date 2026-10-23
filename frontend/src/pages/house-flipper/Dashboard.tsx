@@ -1,3 +1,4 @@
+import DashboardInsights from '@/components/dashboard/DashboardInsights';
 import { useEffect, useState } from 'react';
 import { Calculator, House, PieChart, TrendingUp, FolderKanban } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -69,6 +70,7 @@ export default function FlipperDashboard() {
         </section>
       </div>
       <div className="xl:col-span-2">{(data.projects ?? []).length ? <ProjetosTable projetos={data.projects} /> : null}</div>
+      <DashboardInsights product="house_flipper" data={data} />
     </div>
   );
 }

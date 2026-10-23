@@ -1,0 +1,65 @@
+{
+  "scope": "Disposable local QA database; synthetic ordinary user; no real billing/email, private accounts or credentials captured",
+  "screenshots": [
+    {
+      "file": "agency-insights-dark.png",
+      "bytes": 65752,
+      "sha256": "526934c1dd65ecdc1832426d95d9214dcb9d23bc334bd24b06b780bf71c40763"
+    },
+    {
+      "file": "corretor-insights-dark.png",
+      "bytes": 72518,
+      "sha256": "b172065fb8c8cc53685466918f359af881d9e0324aadc174ed9eafa428a46940"
+    },
+    {
+      "file": "flipper-header-dark.png",
+      "bytes": 63293,
+      "sha256": "c064b1de22d6761cf577197899db8a5df2936a74c616195a64787f616785264e"
+    },
+    {
+      "file": "flipper-insights-dark.png",
+      "bytes": 96637,
+      "sha256": "f5f6b29c008668ea1c71511ca3f1eaa5759ae771da91544098d62b5e8463a820"
+    },
+    {
+      "file": "location-cep-dark.png",
+      "bytes": 69860,
+      "sha256": "952debeb15d39f9cbc44ec7ec8b91e05b2c8b8858037d370aac2c75020f6adb4"
+    },
+    {
+      "file": "purchase-options-light.png",
+      "bytes": 93758,
+      "sha256": "5acedb007aa7627b72bf6b8c316be3f4b335a6cd77d1a76038f7179cac08d8f0"
+    },
+    {
+      "file": "register-icons-dark.png",
+      "bytes": 69121,
+      "sha256": "d9f5500d083ffb02c02ac87b445a0c875992d1f35cf6cecc139438e0c9325315"
+    },
+    {
+      "file": "register-required-dark.png",
+      "bytes": 72997,
+      "sha256": "c426882c72aa372c5d439066068b9373d620c7635685254ab99f65e29b82084f"
+    },
+    {
+      "file": "register-required-mobile-light.png",
+      "bytes": 27762,
+      "sha256": "00e82dbe93d3aee6c6701a485bc79add2b5d8acb849b35769877b186cec75ae8"
+    },
+    {
+      "file": "welcome-dark.png",
+      "bytes": 63356,
+      "sha256": "001cfdc50f825960b9d75f95081cbe0b11109183441dd66528a4ce25e140d19c"
+    },
+    {
+      "file": "welcome-light.png",
+      "bytes": 65315,
+      "sha256": "7b8ea1812f7a72d5e7bd0f35ba5b58e03be87e066f86b34c79d7ecea924ff15a"
+    },
+    {
+      "file": "welcome-mobile-light.png",
+      "bytes": 34082,
+      "sha256": "92e64bc94e4d3e216ea61c716923939e8f8aca3d19ebf1e1df0db043005d46da"
+    }
+  ]
+}

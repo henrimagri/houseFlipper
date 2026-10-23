@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronsLeft, ChevronsRight, Hexagon } from 'lucide-react';
+import { Hexagon } from 'lucide-react';
 import { PRODUCT_META, ProductSlug } from '@/lib/products';
 import { useSession } from '@/lib/session';
 import { navIcon } from '@/lib/navIcons';
@@ -17,16 +17,14 @@ type NavItem = { label: string; path: string; feature?: string | null; group?: s
 export default function ProductSidebar({
   product,
   collapsed,
-  onToggle,
   onNavigate,
 }: {
   product: ProductSlug | 'account';
   collapsed: boolean;
-  onToggle: () => void;
   onNavigate: () => void;
 }) {
   const { pathname } = useLocation();
-  const { catalog, name, navigation } = useSession();
+  const { name, navigation } = useSession();
   const items: NavItem[] = product === 'account' ? ACCOUNT_NAV : (navigation[product] ?? []);
   const groups = items.reduce<Record<string, NavItem[]>>((acc, item) => {
     const key = item.group || 'Módulos';
@@ -34,7 +32,6 @@ export default function ProductSidebar({
     return acc;
   }, {});
   const meta = product === 'account' ? { label: 'Conta' } : PRODUCT_META[product];
-  const sub = product === 'account' ? null : catalog.find((item) => item.slug === product)?.subscription;
 
   return (
     <aside className={`fc-sidebar flex h-dvh max-w-[calc(100vw-1rem)] flex-col overflow-hidden bg-[var(--app-sidebar)] text-slate-200 transition-[width] duration-300 ${collapsed ? 'w-[76px]' : 'w-72'}`}>
@@ -74,17 +71,6 @@ export default function ProductSidebar({
           </div>
         ))}
       </nav>
-      <div className="shrink-0 space-y-2 border-t border-white/10 bg-[var(--app-sidebar)] p-3">
-        {!collapsed && sub && (
-          <p className="text-[11px] text-slate-400 px-1">
-            {sub.status === 'trial' || sub.status === 'trialing' ? 'Assinatura em teste' : sub.active ? 'Assinatura ativa' : `Status: ${sub.status}`}
-          </p>
-        )}
-        <button type="button" aria-label={collapsed ? 'Expandir menu lateral' : 'Recolher'} aria-expanded={!collapsed} onClick={onToggle} className="hidden lg:flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-400 hover:bg-white/10">
-          {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
-          {!collapsed && 'Recolher'}
-        </button>
-      </div>
     </aside>
   );
 }

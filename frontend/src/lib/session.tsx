@@ -59,7 +59,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setName(data.name ?? '');
     setEmail(data.email ?? '');
     setAvatarUrl(data.avatar_url ?? '');
-    const address = data.registration_profile?.address;
+    const address = data.registration_profile?.location || data.registration_profile?.address;
     const city = address?.city || data.registration_profile?.city || data.registration_profile?.region_preference || '';
     const state = address?.state || '';
     setLocationLabel([city, state].filter(Boolean).join(' · '));

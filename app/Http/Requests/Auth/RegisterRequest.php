@@ -45,29 +45,38 @@ class RegisterRequest extends FormRequest
             }],
             'analytics_session' => ['nullable', 'uuid'],
             'device_name' => ['sometimes', 'string', 'max:100'],
-            'phone' => ['nullable', 'string', 'regex:/^\d{10,11}$/'],
-            'intended_product' => ['nullable', 'in:corretor,imobiliaria,house_flipper'],
-            'professional_name' => ['nullable', 'string', 'max:150'],
+            'phone' => ['required', 'string', 'regex:/^\d{10,11}$/'],
+            'intended_product' => ['required', 'in:corretor,imobiliaria,house_flipper'],
+            'professional_name' => ['required_if:intended_product,corretor', 'nullable', 'string', 'max:150'],
             'creci' => ['nullable', 'string', 'max:40'],
-            'city' => ['nullable', 'string', 'max:120'],
-            'company_name' => ['nullable', 'string', 'max:150'],
-            'region_preference' => ['nullable', 'string', 'max:120'],
-            'usage_goal' => ['nullable', 'string', 'max:180'],
-            'consent' => ['sometimes', 'accepted'],
-            'address' => ['sometimes', 'required', 'array:postal_code,street,number,complement,neighborhood,city,state'],
+            'city' => ['required_if:intended_product,corretor,imobiliaria', 'nullable', 'string', 'max:120'],
+            'company_name' => ['required_if:intended_product,imobiliaria', 'nullable', 'string', 'max:150'],
+            'region_preference' => ['required_if:intended_product,house_flipper', 'nullable', 'string', 'max:120'],
+            'usage_goal' => ['required_if:intended_product,house_flipper', 'nullable', 'string', 'max:180'],
+            'consent' => ['required', 'accepted'],
+            'address' => ['required', 'array:postal_code,street,number,complement,neighborhood,city,state'],
             'address.postal_code' => ['required_with:address', 'string', 'regex:/^\d{8}$/'],
             'address.street' => ['required_with:address', 'string', 'max:180'],
             'address.number' => ['required_with:address', 'string', 'max:20'],
-            'address.complement' => ['nullable', 'string', 'max:120'],
+            'address.complement' => ['required', 'string', 'max:120'],
             'address.neighborhood' => ['required_with:address', 'string', 'max:120'],
             'address.city' => ['required_with:address', 'string', 'max:120'],
             'address.state' => ['required_with:address', Rule::in(['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'])],
         ];
     }
 
+    public function attributes(): array
+    {
+        return ['tenant_nome' => 'nome da operação', 'name' => 'nome', 'email' => 'e-mail', 'phone' => 'telefone', 'password' => 'senha', 'intended_product' => 'produto', 'professional_name' => 'nome profissional', 'company_name' => 'nome da empresa', 'city' => 'cidade', 'region_preference' => 'região de interesse', 'usage_goal' => 'objetivo principal', 'address' => 'endereço', 'address.postal_code' => 'CEP', 'address.street' => 'rua', 'address.number' => 'número', 'address.complement' => 'complemento', 'address.neighborhood' => 'bairro', 'address.city' => 'cidade do endereço', 'address.state' => 'UF', 'consent' => 'aceite dos termos e da política de privacidade'];
+    }
+
     public function messages(): array
     {
         return [
+            'required' => 'O campo :attribute é obrigatório.',
+            'required_if' => 'O campo :attribute é obrigatório para o produto escolhido.',
+            'password.confirmed' => 'As senhas não coincidem.',
+            'phone.regex' => 'Informe um telefone válido com DDD.',
             'email.unique' => 'Não foi possível criar a conta com estes dados.',
             'consent.accepted' => 'É necessário aceitar a política de privacidade.',
         ];

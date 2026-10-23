@@ -1,3 +1,4 @@
+import DashboardInsights from '@/components/dashboard/DashboardInsights';
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Building2, GitBranch, Inbox, Users, Zap, Trophy, ArrowUpRight } from 'lucide-react';
@@ -56,7 +57,7 @@ export default function ImobiliariaDashboard() {
       <div className="fc-dashboard-metrics">
         <KpiCard titulo="Imóveis cadastrados" valor={String(k.listings)} hint={data.definitions.listings} Icon={Building2} iconBg="bg-primary-50" iconColor="text-primary-600" details={[{label:'Disponíveis',value:String(k.available)}]} />
         <KpiCard titulo="Leads novos" valor={String(k.new_leads)} hint={data.definitions.new_leads} Icon={Users} iconBg="bg-primary-50" iconColor="text-primary-600" details={[{label:'Atendimentos abertos',value:String(k.open_tickets)}]} />
-        <KpiCard titulo="Propostas abertas" valor={String(k.open_deals)} Icon={GitBranch} iconBg="bg-primary-50" iconColor="text-primary-600" details={[{label:'Negócios concluídos',value:String(k.closed_deals)}]} />
+        <KpiCard titulo="Negócios em andamento" valor={String(k.open_deals)} Icon={GitBranch} iconBg="bg-primary-50" iconColor="text-primary-600" details={[{label:'Negócios concluídos',value:String(k.closed_deals)}]} />
       </div>
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-900 border rounded-2xl p-5">
@@ -82,8 +83,8 @@ export default function ImobiliariaDashboard() {
           {!data.urgent.unassigned_tickets?.length && <p className="text-sm text-gray-500">Nenhum atendimento sem responsável.</p>}
         </section>
         <section className="bg-white dark:bg-slate-900 border rounded-2xl p-4">
-          <h2 className="font-semibold mb-2"><Trophy />Ranking de corretores</h2>
-          <p className="text-[11px] text-slate-500 mb-2">Critério: negócios fechados no período, depois leads atendidos.</p>
+          <h2 className="font-semibold mb-2"><Trophy />Negócios por responsável</h2>
+          <p className="text-[11px] text-slate-500 mb-2">Quantidade de negócios cadastrados por responsável na organização.</p>
           {(data.by_agent ?? []).slice(0, 6).map((row: any) => (
             <p key={row.assigned_user_id || row.assigned_user?.id} className="text-sm py-1 border-t first:border-0">{row.assigned_user?.name || 'Sem responsável'} · {row.deals} negócios</p>
           ))}
@@ -98,6 +99,7 @@ export default function ImobiliariaDashboard() {
           </div>
         </section>
       </div>
+      <DashboardInsights product="imobiliaria" data={data} />
     </div>
   );
 }

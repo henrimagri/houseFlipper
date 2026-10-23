@@ -5,8 +5,8 @@ namespace Tests\Feature;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class ProfileSettingsTest extends TestCase
@@ -23,9 +23,11 @@ class ProfileSettingsTest extends TestCase
             'password' => 'password-123',
             'password_confirmation' => 'password-123',
             'intended_product' => 'corretor',
+            'professional_name' => 'Nova Pessoa',
+            'city' => 'São Paulo',
             'consent' => true,
             'device_name' => 'Teste automatizado',
-            'address' => ['postal_code' => '01310100', 'street' => 'Avenida Paulista', 'number' => '1000', 'complement' => null, 'neighborhood' => 'Bela Vista', 'city' => 'São Paulo', 'state' => 'SP'],
+            'address' => ['postal_code' => '01310100', 'street' => 'Avenida Paulista', 'number' => '1000', 'complement' => 'Sem complemento', 'neighborhood' => 'Bela Vista', 'city' => 'São Paulo', 'state' => 'SP'],
         ])->assertCreated()->assertJsonPath('requires_email_verification', true);
 
         $user = User::query()->where('email', 'nova@example.test')->firstOrFail();
