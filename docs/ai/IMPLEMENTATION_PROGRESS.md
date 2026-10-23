@@ -565,3 +565,10 @@ Estado: central funcional com validação parcial de operação. Pendências: MF
 Base 2e375c6, mesma branch. Implementado TOTP com vetores RFC6238, segredo cifrado, confirmação inicial, códigos de recuperação hash/uso único, janela por token de 8h e recent_auth de 10min para ações sensíveis. Replays bloqueados por transação e versão CAS; reset exige senha + fator e não permite central sem novo cadastro. Interface libera a central somente após validação; gestão em /platform/mfa. Sem mudanças no login dos produtos. Fixtures anteriores provisionam token/credencial explicitamente; não há bypass em produção.
 
 Testes MFA 8/8,72 assertions,1.370ms; Platform antes dos dois testes adicionais 34/34,438 assertions; TypeScript/Vite aprovados (10,81s). Docs em platform-admin/MFA.md. Não foram cadastradas credenciais MFA de operadores reais. Marcos seguintes: ledger e operação de filas, com integrações externas condicionadas a configuração/validação real.
+
+
+## 22/10/2026 — SOL Fase 2, ledger imutável
+
+Fundação implementada/testada: lançamentos verificados com idempotência, ownership de assinatura/tenant/produto, transições append-only e conservação de refunds. Valores agrupados por moeda/produto/plano; MRR/ARR somente com evidência recorrente e período explícito. Sem pagamento real inserido e sem promoção de assinatura por estado financeiro arbitrário. IDs externos binários no MySQL; homologação real continua bloqueada.
+
+Teste focal do ledger: 10/10, 63 assertions. Integração ampla executada com exit 0: 180 testes, 1.498 assertions, 3 contratos MySQL ignorados, 15:10.104, heap PHP 92MiB. A rodada final com ajustes adicionais de e-mail e contratos MySQL está separada; não é atribuída a este resultado. P0 já publicado em 920379f.
