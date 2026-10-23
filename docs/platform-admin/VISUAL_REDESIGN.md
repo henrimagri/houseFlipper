@@ -47,3 +47,15 @@ Bundle por manifesto: entrada administrativa47.773→63.847bytes; grafo estátic
 4. Registrar screenshots reais de overview, cliente, segurança, requests, IA, jobs e mobile; auditar bundle final.
 
 O workflow preexistente `.github/workflows/platform-ci.yml` permanece fora deste checkpoint, preservado localmente, com a restrição de autenticação GitHub documentada na Fase2.
+
+## 23/10/2026 — Diagnóstico real do acesso
+
+Após autorização do proprietário para entrar, o formulário já preenchido autenticou normalmente a persona Combo; `/platform` retornou ao início por ausência de privilégio de plataforma. Em seguida, o login da conta administrativa local já definida no seeder funcionou. Não foram criadas contas, alteradas senhas ou extraídas sessões.
+
+O bloqueio real do admin local é e-mail não verificado; também não há MFA confirmado. Inspeção local restrita a booleanos confirmou existência, conta ativa, papel administrativo, e-mail não verificado e MFA não cadastrado. Nenhum segredo, hash ou token foi impresso. A resposta de autorização foi validada na tela real.
+
+Correção de UX em `PlatformMfaGate.tsx`: apresentar o motivo devolvido pelo servidor em vez de esconder a recusa atrás de erro genérico; diferenciar timeout; sem status confirmado não afirmar que o cadastro do autenticador é a próxima etapa. A mensagem observada após reload foi **“Confirme seu e-mail para acessar a central.”** Captura real saneada em `evidence/platform-admin/admin-access-email-required.jpg`, sem formulário de senha, e-mail, token, chave TOTP ou código de recuperação.
+
+Verificação deste ajuste: `npm test`,58/58,482,9734ms; `npm run build`,TypeScript/Vite aprovados,3.414módulos,12,14s, saída0; `git diff --check` aprovado. Warnings3D/mapa preexistentes mantidos. Backend e decisões de autorização preservados. Isso valida somente a correção da tela de acesso, **não o gate visual da Visão Geral**.
+
+Solicitada decisão entre usar conta administrativa já verificada ou autorizar um operador temporário de QA local com limpeza ao final. O operador temporário ainda não foi criado; o cadastro de um novo autenticador deverá ser realizado pelo proprietário no navegador. Não houve envio externo de e-mail, verificação manual de conta existente ou alteração de MFA para liberar acesso.
