@@ -585,3 +585,8 @@ Diagnóstico real isolado: HTTP401 sem autenticação em 17.977/12.254 ms; boots
 Pendências: MySQL real/CI remota, providers e checkout ao vivo, daemons scheduler/queue, heartbeat de processo AI/3D, backup/restore, quotas adicionais/custos/GPU por job, inventário completo, purge físico de exports e reserva concorrente atômica de reconstruções. Browser local desabilitado no Work: nenhum QA visual novo aprovado. Fase 8 e três produtos preservados, sem credenciais/datasets/pesos/GLBs preparados para commit.
 
 Pint final: 57 arquivos PHP inspecionados; apenas o router auxiliar precisou de estilo. Arquivo corrigido e rechecado com --test aprovado. Nenhuma mudança funcional na aplicação após a rodada PHP final.
+
+
+## 22/10/2026 — SOL Fase 2, CI e homologação isolada
+
+Marco operacional publicado como 6d7c91b. Preparados três jobs de CI sem deploy (PHP/Pint, MySQL 8 isolado, frontend/TypeScript/Vite), permissões mínimas e sem credenciais de produção. Cinco contratos MySQL incluem JSON/datas/índices/paginação/transações, IDs case-sensitive e quotas idempotentes isoladas. Na execução local final, os cinco foram ignorados deliberadamente; não equivalem a cinco aprovações. O opt-in anterior teve três erros por conexão recusada, antes das migrations; servidor/Docker não instalados. Benchmark exclusivamente SQLite em memória com fixtures sintéticas, sem carga na base local. Resultados e limitações em platform-admin/MYSQL_VALIDATION.md. A execução remota será consultada depois da publicação, se houver acesso disponível.
