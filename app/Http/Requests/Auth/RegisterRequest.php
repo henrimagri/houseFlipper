@@ -43,6 +43,7 @@ class RegisterRequest extends FormRequest
                     $fail('A senha deve ocupar no máximo 72 bytes. Use menos caracteres especiais.');
                 }
             }],
+            'analytics_session' => ['nullable', 'uuid'],
             'device_name' => ['sometimes', 'string', 'max:100'],
             'phone' => ['nullable', 'string', 'regex:/^\d{10,11}$/'],
             'intended_product' => ['nullable', 'in:corretor,imobiliaria,house_flipper'],

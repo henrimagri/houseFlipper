@@ -4,7 +4,6 @@ namespace App\Services\Marketplace;
 
 use App\Enums\BrokerSiteStatus;
 use App\Enums\SubscriptionStatus;
-use App\Models\BillingWebhookEvent;
 use App\Models\BrokerSite;
 use App\Models\SubscriptionEvent;
 use App\Models\TenantProductSubscription;
@@ -119,38 +118,9 @@ class BillingService
         return $row;
     }
 
+    /** @deprecated Native adapters require Request headers and timestamp verification. */
     public function handleWebhook(string $provider, string $rawPayload, ?string $signature): array
     {
-        $provider = strtolower($provider);
-        if (! in_array($provider, ['mercado_pago', 'stripe'], true)) {
-            abort(404);
-        }
-        $secret = (string) config('services.'.$provider.'.webhook_secret');
-        if ($secret === '') {
-            abort(503, 'Gateway de pagamento não configurado.');
-        }
-        $expected = hash_hmac('sha256', $rawPayload, $secret);
-        if (! is_string($signature) || ! hash_equals($expected, $signature)) {
-            abort(401, 'Assinatura de webhook inválida.');
-        }
-        $payload = json_decode($rawPayload, true);
-        if (! is_array($payload)) {
-            abort(422, 'Payload inválido.');
-        }
-        $eventId = (string) ($payload['id'] ?? $payload['event_id'] ?? '');
-        if ($eventId === '') {
-            abort(422, 'Evento sem identificador.');
-        }
-
-        $event = BillingWebhookEvent::query()->firstOrCreate(
-            ['provider' => $provider, 'provider_event_id' => $eventId],
-            ['status' => 'received', 'payload' => $payload],
-        );
-        if ($event->processed_at) {
-            return ['duplicate' => true, 'id' => $event->id];
-        }
-        $event->fill(['status' => 'processed', 'processed_at' => now()])->save();
-
-        return ['duplicate' => false, 'id' => $event->id];
+        abort(503, 'Use o callback nativo autenticado; o contrato HMAC legado foi desabilitado.');
     }
 }

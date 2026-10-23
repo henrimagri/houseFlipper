@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\Ai\AiWorkerClient;
 use App\Services\Ai\ProductEntitlement;
 use App\Services\DocumentMalwareScanner;
+use App\Services\Platform\ResourceQuota;
 use App\Support\OpportunityPhotoPathPolicy;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -328,6 +329,7 @@ class PropertyVisualizationService
             ->whereIn('status', ['queued', 'processing'])
             ->count();
         abort_if($runningForTenant >= (int) config('visualizations.max_concurrent_reconstructions_per_tenant', 1), 429, 'Já existe uma reconstrução em andamento nesta conta.');
+        app(ResourceQuota::class)->admit($user, 'house_flipper', 'reconstructions', (string) Str::uuid());
         $job = $this->startProcessingJob($visualization, $user, 'photogrammetry', $assets->pluck('id')->all());
 
         try {

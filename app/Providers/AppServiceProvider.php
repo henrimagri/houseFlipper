@@ -6,19 +6,26 @@ use App\Contracts\ItbiDatasetProviderInterface;
 use App\Models\CommercializationAuthorization;
 use App\Models\User;
 use App\Services\Platform\DomainTelemetry;
+use App\Services\Platform\EmailDeliveryTelemetry;
 use App\Services\Platform\EventRecorder;
+use App\Services\Platform\OperationalHeartbeats;
+use App\Services\Platform\RequestTiming;
 use App\Services\RealEstateData\SaoPauloItbiDatasetProvider;
 use App\Services\ResendTransportFactory;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Mail\Events\MessageSent;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,6 +43,18 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         DomainTelemetry::boot();
+        $queueWorkerId = (string) Str::uuid();
+        $queueStarted = now();
+        Queue::looping(function () use ($queueWorkerId, $queueStarted) {
+            try {
+                app(OperationalHeartbeats::class)->beat('queue', $queueWorkerId, 'laravel-'.app()->version(), $queueStarted);
+            } catch (\Throwable) {
+                \Log::warning('Queue heartbeat unavailable.');
+            }
+        });
+        Event::listen(MessageSending::class, [EmailDeliveryTelemetry::class, 'requested']);
+        Event::listen(MessageSent::class, [EmailDeliveryTelemetry::class, 'accepted']);
+        DB::listen(fn ($event) => RequestTiming::query($event));
         Event::listen(MessageSent::class, function () {
             try {
                 app(EventRecorder::class)->record('email', 'email.transport.accepted', ['outcome' => 'sent']);

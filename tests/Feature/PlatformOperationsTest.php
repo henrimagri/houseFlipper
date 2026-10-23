@@ -6,8 +6,8 @@ use App\Models\PlatformAdmin;
 use App\Models\PlatformEvent;
 use App\Models\User;
 use App\Services\Platform\EventRecorder;
+use App\Services\Platform\RequestAggregates;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class PlatformOperationsTest extends TestCase
@@ -68,6 +68,7 @@ class PlatformOperationsTest extends TestCase
         PlatformEvent::create(['category' => 'api', 'event' => 'api.request.completed', 'created_at' => now()->subDays(31)]);
         PlatformEvent::create(['category' => 'audit', 'event' => 'admin.test', 'created_at' => now()->subDays(31)]);
         config(['observability.retention.audit' => 1]);
+        app(RequestAggregates::class)->run();
         $this->artisan('platform:prune')->assertSuccessful();
         $this->assertSame(2, PlatformEvent::count());
         $this->artisan('platform:prune --execute')->assertSuccessful();

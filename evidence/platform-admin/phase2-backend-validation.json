@@ -1,0 +1,15 @@
+{
+  "exit": 0,
+  "php_peak_bytes": 96468992,
+  "tests": 183,
+  "assertions": 1506,
+  "skipped": 5,
+  "passed": 178,
+  "database": "SQLite in-memory",
+  "mysql": "blocked locally; five contracts skipped",
+  "browser_qa": "blocked: disabled in Work settings",
+  "runner_elapsed_ms": 817741.9,
+  "phpunit_reported_ms": 750076,
+  "time_scope": "Runner includes discovery/configuration; PHPUnit time is reported separately.",
+  "pint": "57 changed PHP files inspected; sole diagnostic script style issue fixed and targeted --test passed"
+}

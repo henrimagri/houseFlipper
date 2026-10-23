@@ -43,6 +43,8 @@ return [
 
     'resend' => [
         'key' => env('RESEND_API_KEY'),
+        'webhook_secret' => env('RESEND_WEBHOOK_SECRET'),
+        'native_webhooks_enabled' => env('RESEND_NATIVE_WEBHOOKS_ENABLED', false),
     ],
 
     'mercadolivre' => [
@@ -125,6 +127,7 @@ return [
     ],
 
     'stripe' => [
+        'native_webhooks_enabled' => env('STRIPE_NATIVE_WEBHOOKS_ENABLED', false),
         'secret' => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],

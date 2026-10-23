@@ -64,9 +64,6 @@ class BillingController extends Controller
 
     public function webhook(Request $request, string $provider): JsonResponse
     {
-        $signature = $request->header('X-Webhook-Signature') ?? $request->header('Stripe-Signature');
-        $result = $this->billing->handleWebhook($provider, $request->getContent(), is_string($signature) ? $signature : null);
-
-        return response()->json($result);
+        return app(PlatformProviderWebhookController::class)->receive($request, $provider);
     }
 }

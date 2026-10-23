@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 class EventRecorder
 {
     // Values are typed and selected by producers. Arbitrary payloads are never copied.
-    private const KEYS = ['rule', 'outcome', 'target_type', 'target_id', 'before', 'after', 'reason_code', 'count', 'exception_type', 'device', 'bytes', 'feature', 'source', 'campaign', 'model', 'provider', 'tokens', 'latency_ms', 'tool', 'method', 'job_id', 'status', 'product'];
+    private const KEYS = ['rule', 'outcome', 'target_type', 'target_id', 'before', 'after', 'reason_code', 'count', 'exception_type', 'device', 'bytes', 'feature', 'source', 'campaign', 'model', 'provider', 'tokens', 'latency_ms', 'tool', 'method', 'job_id', 'status', 'product', 'timings', 'account_hash'];
 
     public function record(string $category, string $event, array $metadata = [], ?Request $request = null, string $severity = 'info', ?string $dedupe = null): PlatformEvent
     {
@@ -17,7 +17,26 @@ class EventRecorder
         $actor = $request->attributes->get('platform_authenticated_user') ?? $request->user();
         $meta = array_intersect_key($metadata, array_flip(self::KEYS));
         foreach ($meta as $key => $value) {
-            if (in_array($key, ['before', 'after'])) {
+            if ($key === 'timings') {
+                $allowed = ['pipeline_ms', 'database_ms', 'database_count', 'audit_ms', 'admin_gate_ms', 'health_probes_ms'];
+                $safe = [];
+                foreach ($allowed as $name) {
+                    if (isset($value[$name]) && is_numeric($value[$name])) {
+                        $safe[$name] = max(0, min(4294967295, (float) $value[$name]));
+                    }
+                }
+                $safe['slow_queries'] = [];
+                foreach (array_slice(is_array($value['slow_queries'] ?? null) ? $value['slow_queries'] : [], 0, 10) as $query) {
+                    if (preg_match('/^[a-f0-9]{64}$/D', (string) ($query['fingerprint'] ?? '')) && is_numeric($query['ms'] ?? null)) {
+                        $safe['slow_queries'][] = ['fingerprint' => $query['fingerprint'], 'ms' => max(0, min(4294967295, (float) $query['ms']))];
+                    }
+                }
+                if ($safe === ['slow_queries' => []]) {
+                    unset($meta[$key]);
+                } else {
+                    $meta[$key] = $safe;
+                }
+            } elseif (in_array($key, ['before', 'after'])) {
                 $meta[$key] = is_array($value) ? array_intersect_key($value, array_flip(['ativo_flg', 'status', 'enabled', 'assigned_user_id', 'expires_at', 'severity'])) : null;
             } elseif (is_string($value)) {
                 $meta[$key] = mb_substr(preg_replace('/[\x00-\x1F]/u', '', $value), 0, 180);

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Services\Platform\EventRecorder;
 use App\Services\Platform\PlatformMfa;
+use App\Services\Platform\RequestTiming;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -11,6 +12,7 @@ class EnsurePlatformAdmin
 {
     public function handle(Request $request, Closure $next)
     {
+        $start = hrtime(true);
         $user = $request->user();
         abort_if(! $user, 401);
         abort_unless($user->hasVerifiedEmail(), 403, 'Confirme seu e-mail para acessar a central.');
@@ -21,8 +23,12 @@ class EnsurePlatformAdmin
         }
 
         if ($request->isMethod('GET')) {
+            $auditStart = hrtime(true);
             app(EventRecorder::class)->audit($request, 'admin.resource.viewed', 'route', $request->route()?->uri() ?? 'unknown');
+            RequestTiming::stage('audit_ms', $auditStart);
         }
+
+        RequestTiming::stage('admin_gate_ms', $start);
 
         return $next($request);
     }

@@ -41,6 +41,11 @@ class AuthService
                 ],
             ]);
             $user->save();
+            if (! empty($data['analytics_session'])) {
+                DB::table('platform_consent_attributions')->where('session_hash', hash_hmac('sha256', $data['analytics_session'], config('app.key')))
+                    ->whereNull('user_id')->where('consented_at', '>=', now()->subDays(90))
+                    ->update(['user_id' => $user->id, 'tenant_id' => $tenant->id]);
+            }
 
             $token = $user->createToken($data['device_name'] ?? 'default', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
 

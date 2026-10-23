@@ -11,6 +11,7 @@ class HealthProbe
     public function snapshot(): array
     {
         return Cache::remember('platform:health', 30, function () {
+            $probeStart = hrtime(true);
             $services = ['laravel' => ['status' => 'online', 'version' => app()->version()]];
             try {
                 DB::select('SELECT 1');
@@ -22,7 +23,7 @@ class HealthProbe
                 $url = rtrim((string) config($cfg.'.endpoint'), '/');
                 $host = parse_url($url, PHP_URL_HOST);
                 if (! $enabled || ! $url) {
-                    $services[$name] = ['status' => 'not_configured'];
+                    $services[$name] = ['status' => ! $url || $name === 'fastapi' ? 'not_configured' : 'disabled'];
 
                     continue;
                 }
@@ -44,13 +45,16 @@ class HealthProbe
                         $services[$name]['cuda_available'] = $body['torch']['cuda_available'] ?? null;
                         $services[$name]['device'] = $body['torch']['device'] ?? null;
                     }
-                } catch (\Throwable) {
-                    $services[$name] = ['status' => 'offline'];
+                } catch (\Throwable $e) {
+                    $services[$name] = ['status' => str_contains($e->getMessage(), 'cURL error 28') ? 'timeout' : 'offline'];
                 }
             }
             $root = storage_path('app');
             $services['storage'] = ['status' => is_writable($root) ? 'online' : 'degraded', 'free_bytes' => @disk_free_space($root) ?: null, 'total_bytes' => @disk_total_space($root) ?: null];
-            $services['queue'] = ['status' => config('queue.default') === 'sync' ? 'degraded' : 'not_configured', 'driver' => config('queue.default'), 'note' => 'Contagem da fila não comprova worker vivo; heartbeat ainda não configurado.'];
+            $queueBeat = app(OperationalHeartbeats::class)->snapshot()['data']['queue'];
+            $services['queue'] = ['status' => $queueBeat['status'], 'driver' => config('queue.default'), 'note' => 'Último loop observado; ausência recente não distingue job longo de worker parado. Cobertura de filas ainda parcial.'];
+
+            RequestTiming::stage('health_probes_ms', $probeStart);
 
             return ['services' => $services, 'checked_at' => now()->toIso8601String(), 'uptime' => null, 'note' => 'Snapshot atual com cache 30 s; não é histórico de uptime.'];
         });

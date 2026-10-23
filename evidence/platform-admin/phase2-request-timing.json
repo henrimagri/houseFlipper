@@ -1,0 +1,41 @@
+{
+  "scope": "local unauthenticated application HTTP, not visual QA or production SLA",
+  "samples": [
+    {
+      "checked_at": "2026-10-23T00:31:40+00:00",
+      "scope": "local_unauthenticated_probe_not_browser_qa",
+      "status": 401,
+      "autoload_ms": 2132.94,
+      "application_definition_ms": 854.36,
+      "kernel_bootstrap_ms": 10606.54,
+      "handle_and_terminate_ms": 3438.08,
+      "entry_total_ms": 17062.91,
+      "database_count": 7,
+      "database_ms": 1045.15,
+      "php_peak_bytes": 29360128,
+      "included_files": 723,
+      "client": {
+        "status": 401,
+        "wall_ms": 17977
+      }
+    },
+    {
+      "checked_at": "2026-10-23T00:32:10+00:00",
+      "scope": "local_unauthenticated_probe_not_browser_qa",
+      "status": 401,
+      "autoload_ms": 2052.56,
+      "application_definition_ms": 19.32,
+      "kernel_bootstrap_ms": 7631.14,
+      "handle_and_terminate_ms": 1602.45,
+      "entry_total_ms": 12166.07,
+      "database_count": 7,
+      "database_ms": 106.96,
+      "php_peak_bytes": 29360128,
+      "included_files": 723,
+      "client": {
+        "status": 401,
+        "wall_ms": 12254
+      }
+    }
+  ]
+}

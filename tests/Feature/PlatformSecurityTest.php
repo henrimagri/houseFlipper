@@ -9,7 +9,6 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Route;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class PlatformSecurityTest extends TestCase
@@ -34,7 +33,8 @@ class PlatformSecurityTest extends TestCase
         foreach (Route::getRoutes() as $route) {
             if (! str_starts_with($route->uri(), 'api/platform/')) {
                 continue;
-            }$path = preg_replace('/\{[^}]+\}/', '1', $route->uri());
+            }$replacement = str_contains($route->uri(), 'exports/{') || str_contains($route->uri(), 'privacy/{') ? '00000000-0000-4000-8000-000000000001' : '1';
+            $path = preg_replace('/\{[^}]+\}/', $replacement, $route->uri());
             $method = $route->methods()[0];
             $this->json($method, '/'.$path)->assertForbidden();
         }

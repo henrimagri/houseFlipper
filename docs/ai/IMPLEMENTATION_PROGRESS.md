@@ -572,3 +572,16 @@ Testes MFA 8/8,72 assertions,1.370ms; Platform antes dos dois testes adicionais 
 Fundação implementada/testada: lançamentos verificados com idempotência, ownership de assinatura/tenant/produto, transições append-only e conservação de refunds. Valores agrupados por moeda/produto/plano; MRR/ARR somente com evidência recorrente e período explícito. Sem pagamento real inserido e sem promoção de assinatura por estado financeiro arbitrário. IDs externos binários no MySQL; homologação real continua bloqueada.
 
 Teste focal do ledger: 10/10, 63 assertions. Integração ampla executada com exit 0: 180 testes, 1.498 assertions, 3 contratos MySQL ignorados, 15:10.104, heap PHP 92MiB. A rodada final com ajustes adicionais de e-mail e contratos MySQL está separada; não é atribuída a este resultado. P0 já publicado em 920379f.
+
+
+## 22/10/2026 — SOL Fase 2, operação integrada
+
+Implementados: heartbeats observados e APM incremental por minuto com cursor protegido pela retenção; diagnóstico opt-in sem SQL/bindings; alertas agrupados/correlação opt-in; incidentes com notas/responsável/prioridade; quotas de admissão IA/reconstrução; inventário dry-run limitado; checklist objetivo. Callback Stripe/Resend nativo verifica assinatura/tempo/idempotência e não aceita payload comercial genérico; recepção não ativa produto. Telemetria de email distingue requested/accepted/delivered e atribui o destinatário autorizado, não o operador. Exportações privadas em fila dedicada, cancelamento/retry controlado, workflow LGPD e proteção do último administrador. UTM somente após consentimento explícito, vínculo limitado ao cadastro, retenção de 90 dias e relatório sem pessoas únicas/causalidade.
+
+Verificação final congelada: PHP 183 testes, 1.506 assertions, 5 skips exclusivos do contrato MySQL, exit 0, 12:30.076, 92 MiB. Nenhum Python alterado. Correlação 3/3, 18 assertions no foco anterior. Migrations 004–009 aditivas aplicadas sem substituir dados. TOTP/ledger já publicados em 920379f/f5d3687. Revisão corrigiu filtros financeiros conflitantes, corrida de callback precoce, empate temporal de entrega, atribuição histórica de plano não comprovada, comparação case-sensitive e métricas de quota/heartbeat que poderiam induzir aprovação indevida.
+
+Diagnóstico real isolado: HTTP401 sem autenticação em 17.977/12.254 ms; bootstrap 10.606,54/7.631,14 ms, SQL observado 1.045,15/106,96 ms. Pico PHP 28 MiB. Evidência sanitizada em evidence/platform-admin/phase2-request-timing.json; router auxiliar encerrado. Bootstrap domina essas amostras, mas a causa subjacente não foi estabelecida. Benchmark com 100 mil eventos/50 mil API/10 mil usuários e limitações em platform-admin/MYSQL_VALIDATION.md; não houve aprovação de performance.
+
+Pendências: MySQL real/CI remota, providers e checkout ao vivo, daemons scheduler/queue, heartbeat de processo AI/3D, backup/restore, quotas adicionais/custos/GPU por job, inventário completo, purge físico de exports e reserva concorrente atômica de reconstruções. Browser local desabilitado no Work: nenhum QA visual novo aprovado. Fase 8 e três produtos preservados, sem credenciais/datasets/pesos/GLBs preparados para commit.
+
+Pint final: 57 arquivos PHP inspecionados; apenas o router auxiliar precisou de estilo. Arquivo corrigido e rechecado com --test aprovado. Nenhuma mudança funcional na aplicação após a rodada PHP final.

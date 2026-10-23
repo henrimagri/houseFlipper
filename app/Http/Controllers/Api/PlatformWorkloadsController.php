@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\Platform\BillingLedger;
 use App\Services\Platform\EventRecorder;
+use App\Services\Platform\OperationalHeartbeats;
 use App\Services\Platform\PlatformQueries;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -93,7 +95,7 @@ class PlatformWorkloadsController extends Controller
 
     public function queues(Request $r)
     {
-        return response()->json(['driver' => config('queue.default'), 'data' => DB::table('jobs')->selectRaw('queue,count(*) as pending,min(available_at) as oldest_available_at')->groupBy('queue')->limit(100)->get(), 'failed' => DB::table('failed_jobs')->count(), 'heartbeat' => null, 'throughput' => null, 'note' => 'Fila Laravel persistida. Processos FastAPI são mostrados em Jobs. Sem retry indiscriminado; worker vivo não comprovado por contagem.']);
+        return response()->json(['driver' => config('queue.default'), 'data' => DB::table('jobs')->selectRaw('queue,count(*) as pending,min(available_at) as oldest_available_at')->groupBy('queue')->limit(100)->get(), 'failed' => DB::table('failed_jobs')->count(), 'heartbeat' => app(OperationalHeartbeats::class)->snapshot(), 'throughput' => null, 'note' => 'Fila Laravel persistida. Processos FastAPI são mostrados em Jobs. Sem retry indiscriminado; worker vivo não comprovado por contagem.']);
     }
 
     public function billing(Request $r)
@@ -104,25 +106,36 @@ class PlatformWorkloadsController extends Controller
             $q->whereIn('tenant_id', DB::table('users')->select('tenant_id')->where('id', $f['user_id']));
         }
 
-        return response()->json(['data' => $q->selectRaw('product_slug,status,count(*) as subscriptions')->groupBy('product_slug', 'status')->get(), 'mrr' => null, 'arr' => null, 'received_revenue' => null, 'checkout' => 'not_configured', 'note' => 'Gateway configurado não comprova checkout operacional. Não há ledger conciliado de receita; trials e assinaturas ativas não são pagamentos.']);
+        $filters = array_filter(array_intersect_key($f, array_flip(['from', 'to', 'tenant_id', 'product', 'plan'])), fn ($v) => $v !== null && $v !== '');
+        $userTenant = ! empty($f['user_id']) ? DB::table('users')->where('id', $f['user_id'])->value('tenant_id') : null;
+        if ($userTenant) {
+            $filters['tenant_id'] = $userTenant;
+        }
+        $conflict = ! empty($f['tenant_id']) && $userTenant && (int) $f['tenant_id'] !== (int) $userTenant;
+        $ledger = (! empty($f['user_id']) && ! $userTenant) || $conflict ? ['groups' => [], 'has_evidence' => false] : app(BillingLedger::class)->metrics($filters);
+
+        return response()->json(['data' => $ledger['groups'], 'subscriptions' => $q->selectRaw('product_slug,status,count(*) as subscriptions')->groupBy('product_slug', 'status')->get(), 'has_evidence' => $ledger['has_evidence'], 'mrr' => null, 'arr' => null, 'received_revenue' => null, 'checkout' => 'not_configured', 'note' => 'Ledger por moeda/produto/plano em unidades menores. MRR exige termo recorrente pago; não há soma entre moedas. Valores globais nulos.']);
     }
 
     public function webhooks(Request $r)
     {
         $f = $this->queries->filters($r);
-        $q = DB::table('billing_webhook_events')->whereBetween('created_at', [$f['from'], $f['to']]);
+        $q = DB::table('platform_provider_receipts')->whereBetween('created_at', [$f['from'], $f['to']]);
         if (! empty($f['tenant_id']) || ! empty($f['user_id']) || ! empty($f['product'])) {
             $q->whereRaw('1=0');
         }if (! empty($f['status'])) {
             $q->where('status', $f['status']);
         }
 
-        return response()->json($this->queries->page($q->select('id', 'provider', 'status', 'processed_at', 'created_at')->latest('id'), $r) + ['note' => 'Payload e assinatura omitidos. Eventos legados não possuem vínculo verificável com tenant; filtros de tenant/produto não atribuem dados. HMAC atual não equivale a integração nativa validada do gateway. Retry não disponível.']);
+        return response()->json($this->queries->page($q->select('id', 'provider', 'event_type', 'status', 'created_at')->latest('id'), $r) + ['note' => 'Payload e assinatura omitidos. Eventos legados não possuem vínculo verificável com tenant; filtros de tenant/produto não atribuem dados. Callbacks nativos validados por assinatura e janela temporal. Não comprova teste de provedor ao vivo; sem retry manual de payload privado.']);
     }
 
     public function emails(Request $r)
     {
-        return response()->json($this->queries->events($r, 'email') + ['delivery' => 'not_configured', 'note' => 'Evento enviado indica aceitação pelo transporte. Entrega/bounce exigem webhook do provedor; conteúdo/destinatário não são coletados.']);
+        $f = $this->queries->filters($r);
+        $q = $this->queries->scope(DB::table('platform_email_deliveries'), $f)->select('id', 'provider', 'tenant_id', 'user_id', 'product', 'status', 'bounce_type', 'occurred_at', 'created_at');
+
+        return response()->json($this->queries->page($q->orderByDesc('created_at'), $r) + ['delivery' => config('services.resend.native_webhooks_enabled') ? 'callback_enabled_not_live_validated' : 'not_configured', 'note' => 'Aceitação não comprova entrega. Callback correlacionado por hash; sem conteúdo ou destinatário.']);
     }
 
     public function export(Request $r)

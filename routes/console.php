@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Platform\OperationalHeartbeats;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -19,3 +20,13 @@ Schedule::command('data-sources:probe')
 
 Schedule::command('platform:evaluate-alerts')->everyMinute()->withoutOverlapping();
 Schedule::command('platform:prune --execute')->dailyAt('04:30')->withoutOverlapping();
+
+Schedule::call(function () {
+    $id = config('observability.scheduler_id');
+    if ($id) {
+        app(OperationalHeartbeats::class)->beat('scheduler', $id, 'laravel-'.app()->version());
+    }
+})->name('platform.scheduler-heartbeat')->everyMinute()->withoutOverlapping();
+Schedule::command('platform:aggregate-requests --limit=10000')->everyMinute()->withoutOverlapping();
+
+Schedule::command('platform:probe-health')->everyMinute()->withoutOverlapping();

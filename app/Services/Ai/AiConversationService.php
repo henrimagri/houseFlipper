@@ -8,6 +8,7 @@ use App\Models\AiToolRun;
 use App\Models\AiUserPreference;
 use App\Models\OrganizationMembership;
 use App\Models\User;
+use App\Services\Platform\ResourceQuota;
 use App\Support\ProductContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -80,6 +81,8 @@ class AiConversationService
     public function reply(User $user, AiSearchSession $session, string $message): array
     {
         $this->entitlement->assert($user, 'conversational_search', $session->product_slug);
+        abort_unless((int) $session->user_id === (int) $user->id && (int) $session->tenant_id === (int) $user->tenant_id, 404);
+        app(ResourceQuota::class)->admit($user, $session->product_slug, 'ai_requests', (string) Str::uuid());
         $message = Str::of($message)->replaceMatches('/[\x00-\x1F\x7F]+/u', ' ')->squish()->limit(2000, '')->toString();
         $previousCriteria = $session->criteria ?? [];
         $classification = $this->intentClassifier->classify(

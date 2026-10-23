@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\BrokerSiteController;
 use App\Http\Controllers\Api\CaptureController;
 use App\Http\Controllers\Api\CategoriaDespesaController;
 use App\Http\Controllers\Api\CommercialListingController;
+use App\Http\Controllers\Api\ConsentAnalyticsController;
 use App\Http\Controllers\Api\CrmContactController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DataSourceStatusController;
@@ -31,8 +32,12 @@ use App\Http\Controllers\Api\OnboardingController;
 use App\Http\Controllers\Api\OpportunityController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\PersonalBoardTaskController;
+use App\Http\Controllers\Api\PlatformMfaController;
 use App\Http\Controllers\Api\PlatformOperationsController;
+use App\Http\Controllers\Api\PlatformProviderWebhookController;
+use App\Http\Controllers\Api\PlatformRuntimeController;
 use App\Http\Controllers\Api\PlatformSecurityController;
+use App\Http\Controllers\Api\PlatformWorkflowController;
 use App\Http\Controllers\Api\PlatformWorkloadsController;
 use App\Http\Controllers\Api\PostalCodeController;
 use App\Http\Controllers\Api\ProjetoController;
@@ -49,6 +54,8 @@ use App\Services\Ai\ProductEntitlement;
 use App\Services\NeighborhoodContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/analytics/visit', [ConsentAnalyticsController::class, 'visit'])->middleware('throttle:10,1');
 
 Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:register');
 
@@ -79,6 +86,7 @@ Route::get('/public/catalog', PublicCatalogController::class)->middleware('throt
 Route::post('/public/saas-leads', [SaasLeadController::class, 'store'])->middleware('throttle:saas-leads');
 
 Route::post('/billing/webhooks/{provider}', [BillingController::class, 'webhook'])->middleware('throttle:billing-webhook');
+Route::post('/platform-provider-webhooks/{provider}', [PlatformProviderWebhookController::class, 'receive'])->middleware('throttle:billing-webhook');
 
 Route::middleware(['auth:sanctum', 'active-account'])->group(function () {
 
@@ -214,7 +222,7 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
 
     Route::middleware(['platform-admin', 'throttle:platform-admin'])->prefix('platform')->group(function () {
 
-        $mfa = \App\Http\Controllers\Api\PlatformMfaController::class;
+        $mfa = PlatformMfaController::class;
         Route::get('/mfa/status', [$mfa, 'status'])->name('platform.mfa.status');
         foreach (['enrol', 'confirm', 'challenge', 'recoveries', 'disable'] as $method) {
             Route::post('/mfa/'.$method, [$mfa, $method])->middleware('throttle:platform-mfa')->name('platform.mfa.'.$method);
@@ -222,7 +230,22 @@ Route::middleware(['auth:sanctum', 'active-account', 'verified-account'])->group
 
         Route::get('/overview', [PlatformOperationsController::class, 'overview']);
 
+        $workflow = PlatformWorkflowController::class;
+        Route::get('/exports', [$workflow, 'exports']);
+        Route::post('/exports', [$workflow, 'storeExport'])->middleware('throttle:platform-action');
+        Route::get('/exports/{id}/download', [$workflow, 'downloadExport'])->whereUuid('id');
+        Route::post('/exports/{id}/retry', [$workflow, 'retryExport'])->whereUuid('id')->middleware('throttle:platform-action');
+        Route::post('/exports/{id}/cancel', [$workflow, 'cancelExport'])->whereUuid('id')->middleware('throttle:platform-action');
+        Route::get('/privacy', [$workflow, 'privacy']);
+        Route::post('/privacy', [$workflow, 'storePrivacy'])->middleware('throttle:platform-action');
+        Route::patch('/privacy/{id}', [$workflow, 'updatePrivacy'])->whereUuid('id')->middleware('throttle:platform-action');
+        Route::put('/security-signals/{id}/review', [$workflow, 'reviewSignal'])->whereNumber('id')->middleware('throttle:platform-action');
+        Route::get('/administrators', [$workflow, 'administrators']);
+        Route::post('/administrators/action', [$workflow, 'adminAction'])->middleware('throttle:platform-action');
         $controller = PlatformOperationsController::class;
+        foreach (['heartbeats', 'apm', 'slow', 'readiness', 'healthHistory', 'quotas', 'inventory', 'attribution'] as $method) {
+            Route::get('/'.$method, [PlatformRuntimeController::class, $method]);
+        }
 
         foreach (['clients', 'subscriptions', 'trials', 'churn', 'funnel', 'cohorts', 'events', 'health', 'performance', 'errors', 'search'] as $method) {
             Route::get('/'.$method, [$controller, $method]);

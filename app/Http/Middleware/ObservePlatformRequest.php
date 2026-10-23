@@ -76,7 +76,15 @@ class ObservePlatformRequest
                 $rec->record('security', 'security.signal.detected', ['rule' => $rule, 'outcome' => 'observed'], $request, 'medium');
             }
 
-            $row = $rec->record('api', $status >= 400 ? 'api.request.failed' : 'api.request.completed', ['exception_type' => $status >= 500 ? $exceptionType : null], $request, $status >= 500 ? 'high' : 'info');
+            $timings = [];
+            if (config('observability.diagnostics')) {
+                $timings = ['pipeline_ms' => round((hrtime(true) - $start) / 1e6, 2), 'database_ms' => round($request->attributes->get('platform_db_ms', 0), 2), 'database_count' => $request->attributes->get('platform_db_count', 0)];
+                foreach (['audit_ms', 'admin_gate_ms', 'health_probes_ms'] as $key) {
+                    $timings[$key] = $request->attributes->get('platform_timing_'.$key);
+                }
+                $timings['slow_queries'] = $request->attributes->get('platform_db_slow', []);
+            }
+            $row = $rec->record('api', $status >= 400 ? 'api.request.failed' : 'api.request.completed', ['exception_type' => $status >= 500 ? $exceptionType : null, 'timings' => $timings], $request, $status >= 500 ? 'high' : 'info');
 
             $row->update(['status' => $status, 'duration_ms' => min(4294967295, (int) round((hrtime(true) - $start) / 1e6)),
 
@@ -116,7 +124,7 @@ class ObservePlatformRequest
 
                 if ($action) {
 
-                    $rec->record('auth', 'auth.'.$action.'.'.($status < 400 ? 'success' : 'failed'), ['outcome' => $status < 400 ? 'success' : 'failed'], $request)->update(['status' => $status]);
+                    $rec->record('auth', 'auth.'.$action.'.'.($status < 400 ? 'success' : 'failed'), ['outcome' => $status < 400 ? 'success' : 'failed', ...($action === 'login' && $status >= 400 && is_string($request->input('email')) && strlen($request->input('email')) <= 254 ? ['account_hash' => hash_hmac('sha256', mb_strtolower(trim($request->input('email'))), (string) config('app.key'))] : [])], $request)->update(['status' => $status]);
 
                 }
 

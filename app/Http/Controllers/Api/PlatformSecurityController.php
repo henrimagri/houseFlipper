@@ -8,6 +8,7 @@ use App\Models\PlatformEvent;
 use App\Models\PlatformIncident;
 use App\Models\User;
 use App\Services\Platform\EventRecorder;
+use App\Services\Platform\PlatformMfa;
 use App\Services\Platform\PlatformQueries;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +29,13 @@ class PlatformSecurityController extends Controller
             $q->where('severity', $f['severity']);
         }
 
-        return response()->json($this->queries->page($q->latest('id'), $r));
+        $result = $this->queries->page($q->latest('id'), $r);
+        $notes = PlatformControl::where('kind', 'incident_notes')->whereIn('key', array_map('strval', array_column($result['data'], 'id')))->pluck('value', 'key');
+        foreach ($result['data'] as $row) {
+            $row->notes = $notes[(string) $row->id]['notes'] ?? [];
+        }
+
+        return response()->json($result);
     }
 
     public function storeIncident(Request $r)
@@ -48,7 +55,7 @@ class PlatformSecurityController extends Controller
     public function updateIncident(Request $r, int $id)
     {
 
-        $d = $r->validate(['status' => 'required|in:open,investigating,mitigated,resolved,false_positive', 'assigned_user_id' => 'nullable|integer|exists:platform_admins,user_id', 'resolution' => 'nullable|string|max:1000']);
+        $d = $r->validate(['status' => 'required|in:open,investigating,mitigated,resolved,false_positive', 'assigned_user_id' => 'nullable|integer|exists:platform_admins,user_id', 'resolution' => 'nullable|string|max:1000', 'severity' => 'sometimes|in:info,low,medium,high,critical', 'note' => 'nullable|string|max:1000', 'event_ids' => 'sometimes|array|max:30', 'event_ids.*' => 'integer|exists:platform_events,id']);
 
         if (in_array($d['status'], ['resolved', 'false_positive'])) {
             $r->validate(['resolution' => 'required|string|min:5|max:1000']);
@@ -56,9 +63,17 @@ class PlatformSecurityController extends Controller
 
         return DB::transaction(function () use ($r, $id, $d) {
             $i = PlatformIncident::lockForUpdate()->findOrFail($id);
-            $before = $i->only('status', 'assigned_user_id');
+            $before = $i->only('status', 'assigned_user_id', 'severity');
+            $note = $d['note'] ?? null;
+            unset($d['note']);
+            if ($note) {
+                $key = (string) $i->id;
+                $control = PlatformControl::where('kind', 'incident_notes')->where('key', $key)->lockForUpdate()->first();
+                $notes = array_slice([...($control?->value['notes'] ?? []), ['note' => $note, 'author' => $r->user()->id, 'at' => now()->toIso8601String()]], -50);
+                PlatformControl::updateOrCreate(['kind' => 'incident_notes', 'key' => $key], ['value' => ['notes' => $notes]]);
+            }
             $i->update($d);
-            $this->events->audit($r, 'admin.incident.updated', 'incident', $id, $before, $i->only('status', 'assigned_user_id'));
+            $this->events->audit($r, 'admin.incident.updated', 'incident', $id, $before, $i->only('status', 'assigned_user_id', 'severity'));
 
             return response()->json(['data' => $i]);
         });
@@ -87,7 +102,7 @@ class PlatformSecurityController extends Controller
 
         abort_unless(Hash::check($d['password'], $r->user()->password), 403, 'Reautenticação inválida.');
 
-        abort_unless(app(\App\Services\Platform\PlatformMfa::class)->verified($r, true), 403, 'Valide novamente o MFA para uma ação sensível (janela de 10 minutos).');
+        abort_unless(app(PlatformMfa::class)->verified($r, true), 403, 'Valide novamente o MFA para uma ação sensível (janela de 10 minutos).');
 
         return $d;
 
@@ -162,10 +177,11 @@ class PlatformSecurityController extends Controller
         $q->selectRaw("ip_hash,MAX(ip_mask) as ip_mask,MIN(created_at) as first_seen,MAX(created_at) as last_seen,count(*) as observations,SUM(case when category = 'security' then 1 else 0 end) as signals")->groupBy('ip_hash')->orderByDesc('last_seen');
 
         $result = $this->queries->page($q, $r);
+        $controls = PlatformControl::where('kind', 'ip')->whereIn('key', array_column($result['data'], 'ip_hash'))->where('expires_at', '>', now())->pluck('value', 'key');
         foreach ($result['data'] as $row) {
             $row->risk_score = min(100, $row->signals * 5);
             $row->risk_rule = 'min(100, sinais de segurança no período × 5); observação, não confirmação de ataque';
-            $row->control = PlatformControl::where('kind', 'ip')->where('key', $row->ip_hash)->where('expires_at', '>', now())->value('value');
+            $row->control = $controls[$row->ip_hash] ?? null;
         }
 
         return response()->json($result);
@@ -176,7 +192,7 @@ class PlatformSecurityController extends Controller
         $e = PlatformEvent::findOrFail($id);
         $q = PlatformEvent::whereBetween('created_at', [$e->created_at->copy()->subMinutes(10), $e->created_at->copy()->addMinutes(10)])->where('ip_hash', $e->ip_hash)->whereIn('category', ['security', 'auth', 'audit']);
 
-        return response()->json(['event' => $e, 'related' => $q->orderBy('id')->limit(100)->get(), 'correlation' => 'Mesmo hash de IP e janela de ±10 min; não comprova mesmo usuário.']);
+        return response()->json(['review' => DB::table('platform_signal_reviews')->where('event_id', $e->id)->first(['classification', 'reviewed_by', 'updated_at']), 'event' => $e, 'related' => $q->orderBy('id')->limit(100)->get(), 'correlation' => 'Mesmo hash de IP e janela de ±10 min; não comprova mesmo usuário.']);
     }
 
     public function support(Request $r, int $id)
@@ -194,19 +210,19 @@ class PlatformSecurityController extends Controller
 
     public function controls(Request $r)
     {
-        return response()->json(['data' => PlatformControl::whereIn('kind', ['alert', 'flag'])->limit(30)->get(['id', 'kind', 'key', 'value', 'updated_at']), 'available_alerts' => ['login_failures', 'server_errors', 'rate_limits'], 'available_flags' => ['reconstruction_enabled'], 'scheduler' => 'Requer schedule:run na implantação; sem envio externo de alertas.', 'mfa' => 'not_configured']);
+        return response()->json(['data' => PlatformControl::whereIn('kind', ['alert', 'flag'])->limit(30)->get(['id', 'kind', 'key', 'value', 'updated_at']), 'available_alerts' => ['login_failures', 'server_errors', 'rate_limits', 'correlated_auth'], 'available_flags' => ['reconstruction_enabled'], 'scheduler' => 'Requer schedule:run na implantação; sem envio externo de alertas.', 'mfa' => 'totp_required', 'flag_catalog' => [['key' => 'reconstruction_enabled', 'description' => 'Permite novos jobs de reconstrução', 'owner' => 'platform_operations', 'environment' => app()->environment(), 'default' => true, 'critical' => true]]]);
     }
 
     public function saveControl(Request $r)
     {
         $reason = $this->confirm($r);
-        $d = $r->validate(['kind' => 'required|in:alert,flag', 'key' => 'required|string|max:80', 'enabled' => 'required|boolean', 'threshold' => 'sometimes|integer|between:1,10000', 'window_seconds' => 'sometimes|integer|between:60,3600']);
-        abort_unless(in_array($d['key'], $d['kind'] === 'flag' ? ['reconstruction_enabled'] : ['login_failures', 'server_errors', 'rate_limits'], true), 422);
+        $d = $r->validate(['kind' => 'required|in:alert,flag', 'key' => 'required|string|max:80', 'enabled' => 'required|boolean', 'threshold' => 'sometimes|integer|between:1,10000', 'window_seconds' => 'sometimes|integer|between:60,3600', 'group_by' => 'sometimes|in:global,ip_hash', 'severity' => 'sometimes|in:medium,high,critical']);
+        abort_unless(in_array($d['key'], $d['kind'] === 'flag' ? ['reconstruction_enabled'] : ['login_failures', 'server_errors', 'rate_limits', 'correlated_auth'], true), 422);
 
         return DB::transaction(function () use ($r, $d, $reason) {
             $value = ['enabled' => $d['enabled']];
             if ($d['kind'] === 'alert') {
-                $value += ['threshold' => $d['threshold'] ?? 100, 'window_seconds' => $d['window_seconds'] ?? 600];
+                $value += ['threshold' => $d['threshold'] ?? 100, 'window_seconds' => $d['window_seconds'] ?? 600, 'group_by' => $d['group_by'] ?? 'global', 'severity' => $d['severity'] ?? 'high'];
             }$c = PlatformControl::updateOrCreate(['kind' => $d['kind'], 'key' => $d['key']], ['value' => $value]);
             $this->events->audit($r, 'admin.control.updated', $d['kind'], $c->id, [], ['enabled' => $d['enabled']], $reason['reason']);
 

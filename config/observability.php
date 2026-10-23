@@ -6,5 +6,7 @@ return [
     'max_window_days' => 93,
     'sample_limit' => 10000,
     'admin_per_minute' => 60,
-    'mfa' => 'not_configured',
+    'mfa' => 'totp_required',
+    'diagnostics' => env('PLATFORM_TIMING_DIAGNOSTICS', false),
+    'scheduler_id' => env('PLATFORM_SCHEDULER_UUID'),
 ];

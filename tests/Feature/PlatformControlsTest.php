@@ -13,7 +13,6 @@ use App\Services\Workspace\OrganizationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Route;
-use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class PlatformControlsTest extends TestCase
@@ -67,7 +66,7 @@ class PlatformControlsTest extends TestCase
             foreach (Route::getRoutes() as $route) {
                 if (! str_starts_with($route->uri(), 'api/platform/')) {
                     continue;
-                }$path = preg_replace('/\{[^}]+\}/', '1', $route->uri());
+                }$path = preg_replace('/\{[^}]+\}/', str_contains($route->uri(), 'platform/exports/') || str_contains($route->uri(), 'platform/privacy/') ? '550e8400-e29b-41d4-a716-446655440000' : '1', $route->uri());
                 $this->json($route->methods()[0], '/'.$path)->assertForbidden();
             }
         }

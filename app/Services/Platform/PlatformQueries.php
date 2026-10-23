@@ -8,6 +8,7 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PlatformQueries
 {
@@ -74,7 +75,15 @@ class PlatformQueries
 
         if (! empty($f['search'])) {
             $s = $f['search'];
-            $q->where(fn ($q) => $q->where('request_id', $s)->orWhere('trace_id', $s)->orWhere('id', ctype_digit($s) ? $s : 0)->orWhere('event', 'like', '%'.addcslashes($s, '%_').'%')->orWhere('ip_hash', $s));
+            if (Str::isUuid($s)) {
+                $q->where(fn ($q) => $q->where('request_id', $s)->orWhere('trace_id', $s));
+            } elseif (ctype_digit($s)) {
+                $q->where('id', $s);
+            } elseif (preg_match('/^[a-f0-9]{64}$/D', $s)) {
+                $q->where('ip_hash', $s);
+            } else {
+                $q->where('event', 'like', '%'.addcslashes($s, '%_').'%');
+            }
         }
 
         return $this->page($q->orderByDesc('id'), $r);
@@ -142,7 +151,7 @@ class PlatformQueries
         abort_unless($user, 404);
         $user->is_platform_admin = User::findOrFail($id)->isPlatformAdmin();
 
-        return ['user' => $user, 'subscriptions' => DB::table('tenant_product_subscriptions')->where('tenant_id', $user->tenant_id)->select('id', 'product_slug', 'plan_slug', 'status', 'trial_starts_at', 'trial_ends_at', 'current_period_end', 'created_at')->get(),
+        return ['user' => $user, 'financial' => $user->tenant_id ? app(BillingLedger::class)->timeline(['tenant_id' => (int) $user->tenant_id]) : [], 'subscriptions' => DB::table('tenant_product_subscriptions')->where('tenant_id', $user->tenant_id)->select('id', 'product_slug', 'plan_slug', 'status', 'trial_starts_at', 'trial_ends_at', 'current_period_end', 'created_at')->get(),
 
             'sessions' => DB::table('personal_access_tokens')->where('tokenable_type', User::class)->where('tokenable_id', $id)->select('id', 'created_at', 'last_used_at', 'expires_at')->orderByDesc('id')->limit(100)->get(),
 
@@ -181,15 +190,14 @@ class PlatformQueries
 
             $counts = (clone $users)->selectRaw('count(*) as total, sum(case when email_verified_at is not null then 1 else 0 end) as verified, sum(case when ativo_flg = 0 then 1 else 0 end) as suspended')->first();
 
-            $active = [];
-            foreach ([1, 7, 30] as $d) {
-                $e = DB::table('platform_events')->where('category', 'api')->where('status', '<', 400)->where('created_at', '>=', now()->subDays($d));
-                foreach (['tenant_id', 'user_id', 'product'] as $k) {
-                    if (! empty($f[$k])) {
-                        $e->where($k, $f[$k]);
-                    }
-                }$active[$d] = $e->distinct()->count('user_id');
+            $e = DB::table('platform_events')->where('category', 'api')->where('status', '<', 400)->where('created_at', '>=', now()->subDays(30));
+            foreach (['tenant_id', 'user_id', 'product'] as $key) {
+                if (! empty($f[$key])) {
+                    $e->where($key, $f[$key]);
+                }
             }
+            $countsActive = $e->selectRaw('COUNT(DISTINCT CASE WHEN created_at >= ? THEN user_id END) as d1, COUNT(DISTINCT CASE WHEN created_at >= ? THEN user_id END) as d7, COUNT(DISTINCT user_id) as d30', [now()->subDays(1), now()->subDays(7)])->first();
+            $active = [1 => (int) $countsActive->d1, 7 => (int) $countsActive->d7, 30 => (int) $countsActive->d30];
 
             $sub = DB::table('tenant_product_subscriptions');
             if (! empty($f['user_id'])) {
@@ -206,6 +214,7 @@ class PlatformQueries
 
                 'subscriptions' => $sub->selectRaw('product_slug,status,count(*) as total')->groupBy('product_slug', 'status')->get(),
 
+                'readiness' => Cache::remember('platform:readiness', 30, fn () => app(ProductionReadiness::class)->snapshot()),
                 'requests' => (clone $events)->where('category', 'api')->count(), 'critical_open' => DB::table('platform_incidents')->whereIn('status', ['open', 'investigating'])->where('severity', 'critical')->count(),
 
                 'activity_series' => (clone $events)->where('category', 'api')->where('status', '<', 400)->selectRaw('DATE(created_at) as day,count(distinct user_id) as total')->groupByRaw('DATE(created_at)')->orderBy('day')->get(),
@@ -243,13 +252,24 @@ class PlatformQueries
             $q->where('status', $f['status']);
         }
 
+        if ($mode === 'trials') {
+            $feature = DB::connection()->getQueryGrammar()->wrap('metadata->feature');
+            $q->selectSub(function ($events) use ($feature) {
+                $events->from('platform_events')->selectRaw('COUNT(DISTINCT '.$feature.')')
+                    ->whereColumn('platform_events.tenant_id', 'tenant_product_subscriptions.tenant_id')
+                    ->whereColumn('platform_events.product', 'tenant_product_subscriptions.product_slug')
+                    ->whereColumn('platform_events.created_at', '>=', 'tenant_product_subscriptions.trial_starts_at')
+                    ->whereColumn('platform_events.created_at', '<=', 'tenant_product_subscriptions.trial_ends_at')
+                    ->where('platform_events.event', 'product.feature.used');
+            }, 'observed_features');
+        }
         $result = $this->page($q->latest('id'), $r);
 
         foreach ($result['data'] as $row) {
             $row->reason = null;
             $row->paid_revenue = null;
             if ($mode === 'trials') {
-                $used = DB::table('platform_events')->where('tenant_id', $row->tenant_id)->where('product', $row->product_slug)->whereBetween('created_at', [$row->trial_starts_at, $row->trial_ends_at])->where('event', 'product.feature.used')->distinct()->count('metadata->feature');
+                $used = (int) $row->observed_features;
                 $row->observed_features = $used;
                 $row->classification = $used ? 'expired_with_observed_usage' : 'expired_usage_not_measured';
             }

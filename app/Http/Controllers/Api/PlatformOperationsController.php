@@ -94,7 +94,9 @@ class PlatformOperationsController extends Controller
         $s = $r->string('search')->toString();
         $db = DB::class;
 
-        return response()->json(['users' => $db::table('users')->where(fn ($q) => $q->where('email', $s)->orWhere('id', ctype_digit($s) ? $s : 0))->limit(20)->get(['id', 'name', 'tenant_id']),
+        return response()->json(['incidents' => DB::table('platform_incidents')->where('id', ctype_digit($s) ? $s : 0)->limit(20)->get(['id', 'severity', 'status', 'assigned_user_id', 'created_at']),
+            'subscriptions' => DB::table('tenant_product_subscriptions')->where(fn ($q) => $q->where('id', ctype_digit($s) ? $s : 0)->orWhere('external_subscription_id', $s))->limit(20)->get(['id', 'tenant_id', 'product_slug', 'plan_slug', 'status']),
+            'users' => $db::table('users')->where(fn ($q) => $q->where('email', $s)->orWhere('id', ctype_digit($s) ? $s : 0))->limit(20)->get(['id', 'name', 'tenant_id']),
             'tenants' => $db::table('tenants')->where(fn ($q) => $q->where('slug', $s)->orWhere('id', ctype_digit($s) ? $s : 0))->limit(20)->get(['id', 'nome', 'slug']),
             'events' => $db::table('platform_events')->where(fn ($q) => $q->where('request_id', $s)->orWhere('trace_id', $s))->limit(30)->get(['id', 'request_id', 'event', 'created_at']),
             'jobs' => $db::table('property_processing_jobs')->where(fn ($q) => $q->where('worker_job_id', $s)->orWhere('id', ctype_digit($s) ? $s : 0))->limit(20)->get(['id', 'worker_job_id', 'status', 'tenant_id'])]);
