@@ -1,0 +1,75 @@
+.sol-theme {
+  --sol-bg: #070a10;
+  --sol-card: #0d121d;
+  --sol-elevated: #101624;
+  --sol-border: rgba(148, 163, 184, .12);
+  --sol-text: #f7f8fc;
+  --sol-muted: #9ca8bd;
+  --sol-accent: #a68aff;
+  color: var(--sol-text);
+  color-scheme: dark;
+}
+.sol-overview { display: grid; gap: 24px; min-width: 0; }
+.sol-dashboard { background: radial-gradient(circle at top left,rgba(113,75,255,.08),transparent 28%),#070a10; }
+.sol-dashboard main h1 { font-size: 30px; letter-spacing: -.035em; }
+.sol-greeting { margin-top: 8px; color: #c6cede; font-size: 13px; }
+.sol-skeleton { border-radius: 6px; background: #202635; }
+.sol-skeleton-label { width: 65%; height: 12px; }
+.sol-skeleton-value { width: 35%; height: 36px; margin: 24px 0 16px; }
+.sol-skeleton-chart { height: 258px; margin-top: 24px; }
+.sol-card { min-width: 0; padding: 24px; border: 1px solid var(--sol-border); border-radius: 18px; background: var(--sol-card); box-shadow: 0 20px 50px rgba(0,0,0,.12); }
+.sol-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 16px; }
+.sol-metric-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--sol-muted); font-size: 12px; }
+.sol-icon { width: 36px; height: 36px; display: inline-grid; place-items: center; flex-shrink: 0; border: 1px solid rgba(166,138,255,.13); border-radius: 11px; background: rgba(124,92,255,.07); color: #b5a0ff; }
+.sol-metric > strong { display: block; margin-top: 20px; font-size: clamp(26px,2.5vw,36px); letter-spacing: -.04em; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sol-metric > p { margin: 10px 0 0; color: var(--sol-muted); font-size: 11px; line-height: 1.6; }
+.sol-section-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.sol-section-header h2, .sol-readiness h2 { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+.sol-section-header p, .sol-readiness p { margin: 6px 0 0; color: var(--sol-muted); font-size: 12px; line-height: 1.6; }
+.sol-overview-main { display: grid; grid-template-columns: minmax(0,1.65fr) minmax(0,1fr); gap: 20px; }
+.sol-chart { height: 258px; margin-top: 24px; }
+.sol-chart-legend { display: flex; align-items: center; gap: 6px; color: var(--sol-muted); font-size: 11px; white-space: nowrap; }
+.sol-chart-legend i { width: 6px; height: 6px; background: var(--sol-accent); border-radius: 50%; }
+.sol-empty { min-height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 12px; }
+.sol-chart-card > .sol-empty { min-height: 282px; align-items: center; text-align: center; }
+.sol-empty h3 { font-size: 13px; font-weight: 500; }
+.sol-empty > div { max-width: 420px; color: var(--sol-muted); font-size: 12px; line-height: 1.8; }
+.sol-link { display: inline-flex; align-items: center; gap: 8px; color: #bfadff; font-size: 12px; text-decoration: none; }
+.sol-link:hover { color: #e1d8ff; }
+.sol-empty .sol-link { margin-top: 16px; display: flex; }
+.sol-security { background: radial-gradient(ellipse at top right,rgba(54,215,255,.045),transparent 70%),var(--sol-card); }
+.sol-security > .sol-section-header > svg { color: #71d9c5; }
+.sol-security-alert { background: radial-gradient(ellipse at top right,rgba(255,92,122,.07),transparent 70%),var(--sol-card); }
+.sol-security-alert > .sol-section-header > svg { color: #ff91a5; }
+.sol-security-value { display: flex; align-items: center; gap: 16px; margin: 20px 0; }
+.sol-security-value > strong { font-size: 38px; font-weight: 600; letter-spacing: -.04em; }
+.sol-security-value > span { color: var(--sol-muted); font-size: 12px; line-height: 1.8; }
+.sol-security-value small { font-size: 10px; }
+.sol-security-bars { display: grid; gap: 12px; margin-bottom: 24px; }
+.sol-security-bars > div { display: grid; grid-template-columns: 74px minmax(20px,1fr) 32px; gap: 12px; align-items: center; font-size: 11px; color: var(--sol-muted); }
+.sol-security-bars b { text-align: right; color: var(--sol-text); font-weight: 500; }
+.sol-bar-track { height: 4px; background: #202635; border-radius: 4px; overflow: hidden; }
+.sol-bar-track i { display: block; height: 100%; background: #9b83db; border-radius: inherit; }
+.sol-products { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+.sol-product-title { display: flex; align-items: center; gap: 12px; }
+.sol-product-title h3 { font-size: 13px; font-weight: 600; }
+.sol-icon-link { margin-left: auto; padding: 8px; color: var(--sol-muted); border-radius: 8px; }
+.sol-icon-link:hover { background: var(--sol-elevated); color: var(--sol-text); }
+.sol-product-count { margin: 24px 0 20px; font-size: 30px; font-weight: 600; letter-spacing: -.03em; }
+.sol-product-count > span { margin-left: 10px; color: var(--sol-muted); font-size: 12px; font-weight: 400; letter-spacing: normal; }
+.sol-product-statuses { display: grid; gap: 10px; border-top: 1px solid var(--sol-border); padding-top: 16px; }
+.sol-product-statuses > div, .sol-now > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--sol-muted); font-size: 12px; }
+.sol-product-statuses b, .sol-now strong { color: var(--sol-text); font-variant-numeric: tabular-nums; font-weight: 500; }
+.sol-product-statuses > p { color: var(--sol-muted); font-size: 12px; }
+.sol-now { display: grid; margin-top: 20px; }
+.sol-now > div { min-height: 44px; border-bottom: 1px solid var(--sol-border); }
+.sol-now > div:last-child { border: 0; }
+.sol-readiness { display: flex; align-items: center; gap: 16px; }
+.sol-readiness h2 strong { margin-left: 12px; color: #c2b1ff; }
+.sol-readiness > a { margin-left: auto; white-space: nowrap; }
+.sol-observation { color: var(--sol-muted); font-size: 11px; line-height: 1.8; }
+.sol-theme :is(button,a,input,select):focus-visible { outline: 2px solid #bda9ff; outline-offset: 4px; }
+@media (max-width:1279px) { .sol-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); } .sol-overview-main { grid-template-columns: minmax(0,1fr); } }
+@media (max-width:639px) { .sol-metrics,.sol-products { grid-template-columns: minmax(0,1fr); } .sol-card { padding: 20px; } .sol-readiness { flex-wrap: wrap; } .sol-readiness > a { margin-left: 52px; } .sol-section-header { flex-wrap: wrap; } }
+@keyframes sol-pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion:no-preference) { .sol-theme a { transition: color 160ms,background 160ms; } .sol-skeleton { animation: sol-pulse 1.6s ease-in-out infinite; } }

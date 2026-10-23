@@ -1,0 +1,88 @@
+{
+  "checked_at": "2026-10-23T05:16:43.446Z",
+  "branch": "Correção-visua/proteção",
+  "scope": "Overview checkpoint, not full redesign",
+  "method": "Vite manifest static import graph; includes shared app React/chart dependencies; not browser network or visual QA",
+  "baseline_commit": "c32860c",
+  "baseline_entry_bytes": 47773,
+  "baseline_entry_gzip_bytes": 15316,
+  "baseline_static_js_bytes": 780743,
+  "entry": "src/pages/platform/PlatformConsole.tsx",
+  "static_js": [
+    {
+      "key": "src/pages/platform/PlatformConsole.tsx",
+      "file": "assets/PlatformConsole-CGbN4xYs.js",
+      "bytes": 63847,
+      "gzip_bytes": 20663
+    },
+    {
+      "key": "index.html",
+      "file": "assets/index-B-ZdFB7h.js",
+      "bytes": 335307,
+      "gzip_bytes": 106909
+    },
+    {
+      "key": "_generateCategoricalChart-DtMSl8Na.js",
+      "file": "assets/generateCategoricalChart-DtMSl8Na.js",
+      "bytes": 377741,
+      "gzip_bytes": 104543
+    },
+    {
+      "key": "_clsx-B-dksMZM.js",
+      "file": "assets/clsx-B-dksMZM.js",
+      "bytes": 374,
+      "gzip_bytes": 238
+    },
+    {
+      "key": "_CartesianGrid-BoqIY3tG.js",
+      "file": "assets/CartesianGrid-BoqIY3tG.js",
+      "bytes": 6783,
+      "gzip_bytes": 2368
+    },
+    {
+      "key": "_shield-check-DGJPsIpv.js",
+      "file": "assets/shield-check-DGJPsIpv.js",
+      "bytes": 488,
+      "gzip_bytes": 353
+    },
+    {
+      "key": "_circle-dollar-sign-HdiuAeY_.js",
+      "file": "assets/circle-dollar-sign-HdiuAeY_.js",
+      "bytes": 415,
+      "gzip_bytes": 306
+    },
+    {
+      "key": "_circle-check-Cve_nhGE.js",
+      "file": "assets/circle-check-Cve_nhGE.js",
+      "bytes": 346,
+      "gzip_bytes": 272
+    },
+    {
+      "key": "_refresh-cw-C4Syd1kr.js",
+      "file": "assets/refresh-cw-C4Syd1kr.js",
+      "bytes": 489,
+      "gzip_bytes": 325
+    },
+    {
+      "key": "_download-g_KqP3nK.js",
+      "file": "assets/download-g_KqP3nK.js",
+      "bytes": 431,
+      "gzip_bytes": 321
+    }
+  ],
+  "static_js_bytes": 786221,
+  "static_css": [
+    {
+      "file": "assets/PlatformConsole-B2D2OWG1.css",
+      "bytes": 5697,
+      "gzip_bytes": 1720
+    },
+    {
+      "file": "assets/index-CXGQNr98.css",
+      "bytes": 148035,
+      "gzip_bytes": 21751
+    }
+  ],
+  "unexpected_heavy_static_keys": [],
+  "browser_canvas_inspected": false
+}

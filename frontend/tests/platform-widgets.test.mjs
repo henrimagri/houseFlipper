@@ -83,3 +83,23 @@ test('one observed day is identified as insufficient rather than no observations
  const html=render('Overview',{data:{activity_series:[{day:'2026-10-22',total:1}],security:[]}});
  assert.ok(html.includes('Poucos dados no período'));assert.ok(!html.includes('Sem observações no período'));
 });
+
+test('executive overview does not claim live presence, reconciled revenue or protection', () => {
+ const html=render('Overview',{data:{users:{total:0,verified:0,suspended:0},active_observed:{1:0,7:0,30:0},requests:0,new_users:0,critical_open:0,security:[],subscriptions:[],revenue:{mrr:null,arr:null},activity_series:[]}});
+ for(const text of ['Ainda não há indicadores financeiros conciliados','sem inferência de presença online','Contagem global da plataforma','Sem comparação disponível'])assert.ok(html.includes(text));
+ assert.ok(!html.includes('Protegido'));assert.ok(!html.includes('R$'));assert.ok(!html.includes('NaN'));
+ assert.match(html,/>0</);
+});
+
+test('product cards retain every actual subscription status without counting users as accounts', () => {
+ const html=render('Overview',{data:{subscriptions:[{product_slug:'corretor',status:'trial',total:2},{product_slug:'corretor',status:'active',total:3},{product_slug:'house_flipper',status:'past_due',total:1}]}});
+ for(const text of ['Corretor','Imobiliária','House Flipper','Em teste','Ativas','Inadimplentes','Nenhuma assinatura neste escopo.'])assert.ok(html.includes(text));
+ assert.match(html,/>5<span/);assert.ok(html.includes('Não medido'));
+});
+
+test('overview leaves absent subscription and signal datasets unknown', () => {
+ const html=render('Overview',{data:{}});
+ assert.ok(html.includes('Consulta indisponível.'));
+ assert.ok(!html.includes('Nenhuma assinatura neste escopo.'));
+ assert.ok(!html.includes('0 sinais no período'));
+});
