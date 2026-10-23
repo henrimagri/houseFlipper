@@ -5,7 +5,7 @@ export function readAnalyticsSession():string|undefined {
  try{return localStorage.getItem('flipcontrol-analytics-consent')==='yes'?sessionStorage.getItem('flipcontrol-analytics-session')??undefined:undefined;}catch{return undefined;}
 }
 
-export default function AnalyticsConsent(){
+export default function AnalyticsConsent({ appearance = 'default' }: { appearance?: 'default' | 'landing' }){
  const [choice,setChoice]=useState<string|null>(()=>{try{return localStorage.getItem('flipcontrol-analytics-consent');}catch{return 'no';}});
  const [error,setError]=useState('');
  async function choose(allow:boolean){
@@ -18,6 +18,7 @@ export default function AnalyticsConsent(){
    await api.post('/analytics/visit',{session_id:id,consented:true,policy:'analytics-v1',utm},{timeout:10000});
   }catch{setError('Sua preferência foi mantida; a medição não foi confirmada.');}
  }
- if(choice)return <div className="px-5 py-3 text-center text-xs text-slate-500"><button onClick={()=>setChoice(null)}>Preferências de analytics</button>{error&&<p role="status">{error}</p>}</div>;
+ if(choice)return <div className={appearance === 'landing' ? 'landing-consent-saved' : 'px-5 py-3 text-center text-xs text-slate-500'}><button onClick={()=>setChoice(null)}>Preferências de analytics</button>{error&&<p role="status">{error}</p>}</div>;
+ if(appearance === 'landing')return <section className="landing-consent" aria-label="Preferências de analytics"><div className="landing-wrap landing-consent-inner"><div><p className="landing-consent-title">Sua privacidade, sua escolha.</p><p>Podemos medir a origem desta sessão para melhorar o cadastro? A recusa mantém todas as funções disponíveis.</p><details><summary>O que medimos</summary><p>Somente com sua permissão. Sem fingerprinting, conteúdo de conversas ou publicidade externa. Você pode desativar futuras medições aqui.</p></details></div><div className="landing-consent-actions"><button type="button" className="landing-btn landing-btn-ghost" onClick={()=>void choose(false)}>Recusar analytics</button><button type="button" className="landing-btn" onClick={()=>void choose(true)}>Permitir analytics</button></div>{error&&<p role="status">{error}</p>}</div></section>;
  return <section aria-label="Preferências de analytics" className="border-t border-slate-200 bg-slate-50 p-5 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"><div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4"><p className="max-w-3xl">Com sua permissão, medimos a origem desta sessão para melhorar o cadastro. Sem fingerprinting, conteúdo de conversas ou publicidade externa. A recusa mantém todas as funções disponíveis. Você pode desativar futuras medições aqui.</p><div className="flex gap-3"><button className="rounded-lg border border-slate-400 px-4 py-2" onClick={()=>void choose(false)}>Recusar analytics</button><button className="rounded-lg bg-slate-900 px-4 py-2 text-white dark:bg-cyan-700" onClick={()=>void choose(true)}>Permitir analytics</button></div></div></section>;
 }

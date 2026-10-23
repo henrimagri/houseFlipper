@@ -1,0 +1,15 @@
+{
+  "mode": "built-in image_gen",
+  "purpose": "Illustrative landing-page assets; not photographs of existing listed properties",
+  "assets": [
+    "frontend/public/assets/landing/corretor-interior.webp",
+    "frontend/public/assets/landing/imobiliaria-building.webp",
+    "frontend/public/assets/landing/flipper-renovation.webp"
+  ],
+  "prompts": [
+    "Use case: photorealistic-natural. Asset type: illustrative real estate SaaS website card for Corretor, wide photograph. Create a tasteful contemporary Brazilian apartment living room, warm oak furniture, pale limestone floor, linen sofa, tall windows with soft daylight and a balcony with tropical greenery. Editorial architectural photography, believable lived-in details, refined but attainable, muted ivory and sage accents, natural shadows, straight verticals, 35mm lens. No people, no text, no logo, no watermark. Original illustrative scene, not a listing of an existing property.",
+    "Use case: photorealistic-natural. Asset type: illustrative real estate SaaS website card for Imobiliária, wide photograph. Create an elegant contemporary residential apartment building in Brazil, five to eight stories, warm neutral facade, shaded balconies with greenery, large windows, an inviting ground-level entrance and restrained landscaping. Architectural editorial photograph from street level, soft late-afternoon daylight, realistic materials and proportion, calm composition in stone, off-white and sage greens. No people, no readable signs, no text, no logo, no watermark. Original illustrative building, not an actual property listing.",
+    "Use case: photorealistic-natural. Asset type: illustrative real estate renovation SaaS website card for House Flipper, wide photograph. Create a naturally lit apartment being thoughtfully renovated: half-finished warm plaster walls, a clean timber workbench with carefully arranged material samples and drawings without legible text, daylight through large windows, completed oak floor in foreground, another wall freshly painted a muted sage teal, no dramatic destruction. Premium editorial interior photograph, realistic textures and subtle construction details, calm warm neutral palette consistent with contemporary Brazilian architecture. No people, no text, no logo, no watermark. Original illustrative scene."
+  ],
+  "optimization": "Original generated PNGs preserved under CODEX_HOME; workspace WebP encoding quality 86, same dimensions, no semantic editing."
+}

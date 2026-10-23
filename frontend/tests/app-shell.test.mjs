@@ -33,12 +33,11 @@ test('browser CSP allows the configured map providers', async () => {
   assert.match(headers, /https:\/\/nominatim\.openstreetmap\.org/);
 });
 
-test('public national visualization uses the real Brazil geometry and identifies all capitals', async () => {
-  const [map, globe, globePrimitive, home, shadcn] = await Promise.all([
+test('preserved national visualization components use real Brazil geometry and identify all capitals', async () => {
+  const [map, globe, globePrimitive, shadcn] = await Promise.all([
     read('src/ui/WorldMap.tsx'),
     read('src/components/3d-globe-demo.tsx'),
     read('src/components/ui/3d-globe.tsx'),
-    read('src/pages/public/Home.tsx'),
     read('components.json'),
   ]);
   assert.match(map, /@svg-maps\/brazil/);
@@ -58,7 +57,6 @@ test('public national visualization uses the real Brazil geometry and identifies
   assert.match(globePrimitive, /enableRotate=\{config\.enableRotate\}/);
   assert.match(globePrimitive, /ProtectiveShield/);
   assert.doesNotMatch(globePrimitive, /distanceFactor=\{10\}/);
-  assert.match(home, /@\/components\/3d-globe-demo/);
   assert.match(shadcn, /"ui": "@\/components\/ui"/);
 });
 

@@ -97,8 +97,8 @@ export default function App() {
         <Route path="/corretor/:slug" element={<PublicBroker />} />
         <Route path="/corretor/:slug/imovel/:listingSlug" element={<PublicListing />} />
         <Route path="/i/:slug" element={<PublicAgency />} />
+        <Route path="/" element={<Home />} />
         <Route element={<PublicLayout />}>
-          <Route path="/" element={<Home />} />
           <Route path="/solucoes/corretor" element={<SolucoesCorretor />} />
           <Route path="/solucoes/imobiliaria" element={<SolucoesImobiliaria />} />
           <Route path="/solucoes/house-flipper" element={<SolucoesHouseFlipper />} />
