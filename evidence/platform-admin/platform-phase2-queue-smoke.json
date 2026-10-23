@@ -1,0 +1,9 @@
+{
+    "exit": 0,
+    "initial_queue_empty": true,
+    "fixture_job_dispatched": false,
+    "observed_queue_heartbeats": 1,
+    "persistent_worker": false,
+    "scope": "one bounded real worker loop; no daemon installation",
+    "checked_at": "2026-10-23T01:20:23+00:00"
+}

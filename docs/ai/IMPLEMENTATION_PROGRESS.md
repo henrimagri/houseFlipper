@@ -601,3 +601,14 @@ Frontend final: 55/55, saída 0, 52.989,7725 ms. TypeScript retornou 0 na etapa 
 Manifesto auditado: PlatformConsole 47.773 bytes/15.316 gzip; imports estáticos administrativos sem Three/MapCanvas/GLTF, entrada comum sem import imediato de admin. Warning de chunks grandes 3D/mapa continua visível. Não há baseline anterior comparável para afirmar redução. Evidência em evidence/platform-admin/phase2-bundle-audit.json. QA visual bloqueado pelo navegador local desabilitado; nenhum screenshot novo foi inventado.
 
 Publicação parcial: backend e contratos em 6d7c91b/25a3860 publicados; workflow recusado por escopo OAuth workflow ausente, SSH sem chave autorizada e conector403. Nenhuma permissão foi ampliada. O arquivo permanece local; testes MySQL reais/CI remota não foram aprovados.
+
+
+## 22/10/2026 — SOL Fase 2, fechamento de evidências
+
+Interface 82ee5da publicada na mesma branch. PHP final183 testes (178aprovados,5skipsMySQL),1.506assertions; frontend55/55, TypeScript e Vite aprovados nas etapas registradas. Pint57arquivos revisados, correção isolada de estilo rechecado; harness adicional de worker formatado. Evidências sanitizadas e limites em platform-admin/VALIDATION.md.
+
+Worker real limitado em platform_ops/platform-ops: fila inicialmente vazia, um heartbeat observado, saída0 e processo encerrado; nenhum daemon instalado e nenhum fixturejob despachado. Fonte reproduzível e relatório em evidence/platform-admin/phase2-queue-smoke.php e platform-phase2-queue-smoke.json. Inventário real:104arquivos/137.881.559bytes,14,803s, sem truncamento da varredura e sem exclusão; cobertura de referências ainda parcial.
+
+Permanecem bloqueados/não configurados: MySQL local e homologação remota, workflow não publicado por escopo OAuth/app insuficiente, QA visual por Work desabilitado, providers ao vivo, scheduler/worker permanentes, backup/restore e telemetria/custos/quotas adicionais. O pipeline de CI está pronto em .github/workflows/platform-ci.yml, mantido localmente; não foi criado PR, branch adicional, nova credencial ou permissão. Nenhum dataset/peso/GLB/.env/log privado foi incluído. Nenhuma aprovação comercial integral foi declarada.
+
+Próxima prioridade: liberar publicação do workflow com autenticação adequada e executar MySQL8 isolado; validar daemon/backup/restore e perfilar bootstrap no ambiente de homologação. Depois, executar o roteiro visual desktop/mobile com operador de QA autorizado. Não retomar a ponte automática ChatGPT/Codex.

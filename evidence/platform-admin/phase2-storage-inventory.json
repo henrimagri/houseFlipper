@@ -1,0 +1,10 @@
+{
+  "command": "php artisan platform:inventory-storage --limit=1000",
+  "files_observed": 104,
+  "bytes_observed": 137881559,
+  "truncated": false,
+  "seconds": 14.803,
+  "delete_executed": false,
+  "scope": "local/public disks only; bounded known references, not complete storage accounting",
+  "unknown_reference": "Potential orphan only; other modules and paths require manual reconciliation"
+}

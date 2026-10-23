@@ -166,3 +166,22 @@ Incremento P1 executado após a pintura: [MILESTONE4_PARAMETRIC_EDITOR.md](MILES
 | Interface administrativa | Parcialmente validada no navegador | Capturas reais e limites em [VALIDATION.md](../platform-admin/VALIDATION.md); timeout recuperável observado, lentidão transitória sem causa conclusiva; fluxos retomados, sem homologação de performance |
 
 Documentação e checkpoints: [central SOL](../platform-admin/README.md). Esta etapa não torna a plataforma integralmente pronta para comercialização nem altera a qualidade da reconstrução ativa.
+
+
+## SOL Fase 2 — 22/10/2026
+
+| Capacidade | Estado | Evidência e limitação |
+|---|---|---|
+| MFA obrigatório de plataforma | Implementado e testado em SQLite | TOTP, replay, recovery hash/uso único, token8h e recent_auth10min; QR local pendente, sem inscrição de operadores reais |
+| Ledger e recebimentos | Fundação implementada e testada; comercial parcial | Transições imutáveis, refunds, moeda/recorrência explícitas; sem inferir pagamento de assinatura ativa. Checkout e providers ao vivo não homologados |
+| Callbacks e e-mail | Adaptadores implementados e testados com assinatura local | Stripe/Resend desabilitados por padrão; accepted não equivale a delivered; sem payload/conteúdo de mensagem |
+| Operação e APM | Implementado e testado; operação parcial | Agregação/cursor/retention, heartbeats, health observado e diagnóstico; worker dedicado executado e encerrado, sem daemons instalados ou cobertura completa de filas |
+| Workflows administrativos | Implementado e testado em SQLite | Export privado/expirável/cancelável, revisão humana, LGPD, incidentes e último admin; purge físico e kill recovery pendentes |
+| Consentimento e origem | Implementado e testado | Sessão aleatória somente opt-in, allowlist UTM, retenção90dias e vínculo ao cadastro; sem identificação de pessoa única/causalidade |
+| Quotas/storage/custos | Parcial | Admissões IA/reconstrução aplicam teto quando configurado; outros limites/uso/custos desconhecidos permanecem nulos. Inventário limitado sem exclusão |
+| MySQL e CI | Bloqueado | Cinco contratos opt-in preparados, cinco skips na suíte local. MySQL ausente; workflow local não publicado por escopo OAuth/app insuficiente, sem execução remota aprovada |
+| Interface e bundle | Testada por código/build; visual bloqueado | Frontend55/55, TypeScript/Vite aprovados; admin separado de3D/mapa. Browser Work desabilitado; nenhuma captura nova |
+| Desempenho | Sem aprovação | Benchmark cold/search acima das metas; HTTP local12–18s, bootstrap7,6–10,6s. Causa subjacente ainda não estabelecida |
+| Backup/restore e GPU por job | Não configurado/parcial | Procedimento isolado preparado, não executado; telemetria de processo AI/3D e RAM/VRAM por job não ampliada |
+
+PHP final:178 aprovados +5 contratos MySQL ignorados,1.506assertions,exit0. Fase8 e produtos independentes preservados. Detalhes e evidências em [VALIDATION.md](../platform-admin/VALIDATION.md). Esta fase não certifica prontidão comercial integral.

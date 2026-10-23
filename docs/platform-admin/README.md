@@ -1,42 +1,46 @@
 # Central administrativa — SOL
 
-Implementação em `Correção-visua/proteção`, base `c2ea84a`. Entrada: `/platform`. Backend: `/api/platform`. A central reutiliza Laravel/Sanctum, assinaturas, leads comerciais, AiToolRun e PropertyProcessingJob existentes. Não é a administração de uma imobiliária e não concede direitos sobre produtos aos clientes.
+Entrada /platform; backend /api/platform. A Fase 2 evolui a central existente a partir de 2e375c6, exclusivamente em Correção-visua/proteção. Não recria os produtos: Corretor, Imobiliária e House Flipper preservam rotas, entitlements e autorização independentes. Administrador de imobiliária não é Platform Admin.
 
-## Estado e execução
+## Estado integrado
 
-| Etapa | Entrega | Evidência |
-|---|---|---|
-| 1 | Eventos, auditoria, autorização e retenção | `dfc2ad6`; testes iniciais 4/4, 30 assertions |
-| 2 | Clientes/perfil, trials, conversão, churn e coortes | `e22b849`; suíte Platform 12/12, 66 assertions |
-| 3 | Sinais, IPs, sessões, incidentes e ações com confirmação | `63e9c25`; Platform 16/16, 107 assertions |
-| 4 | API, erros, performance amostral e health | `0738fbf`; Platform 18/18, 124 assertions |
-| 5 | IA, RAG e ferramentas, sem conteúdo privado | `a2c0735`; Platform 19/19, 137 assertions |
-| 6 | Jobs 3D, assets registrados e filas | `a23757c`; Platform 20/20, 149 assertions |
-| 7 | Billing honesto, webhooks, e-mails e CSV | `9a512b5`; Platform 21/21, 164 assertions |
-| 8 | Interface integrada, alertas, feature flag, regressões e QA | Interface e fluxos validados; resultados e limitações em VALIDATION.md |
+| Área | Código integrado | Limites operacionais |
+| --- | --- | --- |
+| Segurança | TOTP obrigatório por token administrativo, recovery codes de uso único, reautenticação recente, registro de admins e revisão de sinais | QR local, passkeys e recuperação de identidade sem códigos pendentes |
+| Billing | Ledger imutável pela aplicação, métricas por moeda e período, timeline e adaptadores de callbacks assinados | Testes locais; sem conciliação/checkout ao vivo nem receita presumida |
+| Operação | Scheduler/queue heartbeats, alertas agrupados, incidentes, health e amostras por minuto | Daemons não presumidos; queue mede último loop e cobertura parcial; heartbeat AI/3D não integrado |
+| Performance | Agregados por minuto, histogramas p50/p75/p95/p99 estimados, slow requests e diagnóstico opcional | Outliers e cache frio ainda exigem investigação; não é APM completo ou SLA |
+| Workflows | Exportações assíncronas privadas, cancelamento/retry restrito, privacidade humana e flags auditadas | Worker real necessário; expiração não comprova limpeza física |
+| Recursos | Admissões mensais de IA/reconstruções e inventário limitado de storage | Enforcement só para esses recursos quando há limite configurado; demais medições nulas |
+| Analytics | Coortes/uso já existentes e nova coleta opcional de UTM por sessão consentida | Sem relatório UTM integrado, visitantes únicos ou causalidade |
+| Qualidade | CI e contrato MySQL isolado preparados; testes/benchmark locais documentados | MySQL indisponível e CI remota não executada; sem aprovação de produção |
 
-As contagens acima são checkpoints, não somas de testes. A revisão posterior corrige problemas encontrados nas etapas anteriores. Nenhuma prontidão comercial integral foi declarada.
+Os resultados realmente executados, inclusive falhas e QA disponível, pertencem a VALIDATION.md. Este índice não declara que toda a Fase 2 está aprovada ou que houve novo QA visual.
 
-## Operação
+## Acesso e implantação
 
-Conta ativa, e-mail realmente confirmado e PlatformAdmin existente (ou allowlist de implantação) são exigidos no backend antes de bindings. Nenhum papel de tenant concede acesso. Leituras administrativas são auditadas antes da consulta e falham se a auditoria estiver indisponível. Escritas administrativas ficam em transação com seu audit log. Ações de suspensão/revogação/bloqueio e controles exigem motivo, confirmação e senha atual; não operam sobre administradores da plataforma.
+Conta ativa, e-mail confirmado e Platform Admin são exigidos no backend. Leituras são auditadas antes da consulta; escritas administrativas relevantes ficam em transação com audit log. Sanctum bearer não habilita cookies stateful sem proteção. Administradores existentes precisam realizar enrolment TOTP; não há cadastro automático nem bypass de MFA para operação real.
 
-Sanctum bearer exige token explícito; autenticação cookie stateful sem CSRF não foi habilitada. MFA ainda não configurado: evolução recomendada é TOTP/WebAuthn com recuperação, enrolment de administradores existentes e testes antes de exigir o segundo fator; não alegar proteção atual.
+Migrations são aditivas para eventos/índices, MFA, ledger, runtime, callbacks, workflows, quotas/inventário e consentimento. Não executar rollback destrutivo sobre dados financeiros ou operacionais reais. O ambiente local usa SQLite; homologação MySQL permanece bloqueada pela infraestrutura indisponível. A suíte de contrato e CI não equivalem a execução remota aprovada.
 
-Migration aditiva `2026_10_22_000001_create_platform_operations` cria eventos, incidentes e controles. Migration `000002` acrescenta índices para consultas reais. Nenhuma tabela comercial foi substituída. Ambiente local utiliza SQLite; compatibilidade operacional MySQL deve ser validada na implantação, sem atestado de teste MySQL neste host.
+Scheduler declara avaliação de alertas, agregação e probes por minuto, além de prune diário. PLATFORM_SCHEDULER_UUID deve ser um UUID estável. Queue::looping registra observação do processo real, não um daemon instalado pelo código. Exportações grandes exigem conexão assíncrona platform_ops e worker próprio conforme WORKFLOWS.md. Não há envio externo automático de alertas nesta integração.
 
-`platform:prune` é dry-run; `--execute` aplica retenção em lotes. `platform:evaluate-alerts` avalia regras habilitadas, sem bloqueio automático. Scheduler possui avaliação a cada minuto e prune diário; seu daemon não foi instalado ou presumido ativo. Não há envio externo de alertas.
+## Bloqueios explícitos
+
+Backup e restore drill não têm fonte real configurada. Callbacks Stripe/Resend têm contratos assinados testados localmente, sem validação ao vivo. Cobertura de filas/throughput e heartbeats dos processos AI/3D são incompletos. Limites comerciais não são inventados: config/platform_resources.php não define planos por padrão. Tokens, imagens, storage, concorrência e custo financeiro local não medidos permanecem nulos/não configurados.
+
+A checagem preexistente de concorrência de reconstrução não é atômica entre contagem e criação do job; tratá-la como pendência, não como quota concorrente garantida. Fase 8 e gate geométrico são preservados, sem declarar densificação CUDA ou nova qualidade comercial. Não há endpoint administrativo para conteúdo privado de conversas ou fotografias.
 
 ## Documentação
 
-- OBSERVABILITY.md: schema, fontes, saúde e limites.
-- SECURITY_CENTER.md: sinais e ações controladas.
-- ANALYTICS.md: definições de funil/coortes/uso.
-- RETENTION.md: política e limpeza.
-- VALIDATION.md: comandos, QA e pendências.
+- OBSERVABILITY.md e RUNTIME.md: fontes, agregação, heartbeats e limites.
+- SECURITY_CENTER.md e MFA.md: autorização, segundo fator e controles.
+- BILLING_LEDGER.md: evidência financeira e normalização.
+- ANALYTICS.md: definições, consentimento e lacunas de atribuição.
+- RETENTION.md: política por categoria e tabelas ainda sem limpeza própria.
+- WORKFLOWS.md: exportação, atendimento de privacidade e administradores.
+- MYSQL_VALIDATION.md: suíte isolada, CI preparada e benchmark local.
+- PRODUCTION_READINESS.md: gates, bloqueios e requisitos antes de produção.
+- VALIDATION.md: evidências consolidadas de execução e QA.
 
-O script `scripts/platform-smoke.php` executa checks HTTP exclusivamente em APP_ENV=local com operador temporário, sem aproveitar sessão privada do navegador, imprimir credenciais ou registrar corpos das respostas. O operador e tokens são removidos ao terminar; auditoria é preservada.
-
-## Limites explícitos
-
-Sem ledger conciliado, MRR/ARR/receita permanecem indisponíveis. Checkout e webhooks nativos ainda não validados; processamento HMAC legado não é comprovação de integração comercial. Entrega/bounce, UTM/visitantes consentidos, uptime histórico, heartbeat de filas, APM completo, quotas e inventário total de storage, cancelamento administrativo cross-user e métricas GPU por job não são apresentados como concluídos. Conteúdo de conversas/fotografias não está disponível na central. Reconstrução Fase 8 e gate preservados.
+Procedimento de backup/restore isolado: [BACKUP_RESTORE.md](BACKUP_RESTORE.md). Não executado nesta fase; status continua não configurado.
